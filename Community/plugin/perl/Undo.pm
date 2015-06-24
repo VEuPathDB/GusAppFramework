@@ -189,7 +189,7 @@ sub deleteFromTable{
     while ($rows) {
       my $sql2 = "DELETE FROM $tableName
          WHERE $algInvIdColumnName IN ($algoInvocIds)";
-      $sql2 = $self->getDbHandle->getDbPlatform->limit($sql2, 10000);
+      $sql2 = $self->getDb()->getDbPlatform()->limit($sql2, 10000);
 #  and rownum<=10000";
       warn "\n$sql2\n" if $self->getArg('verbose');       
       $self->{dbh}->do($sql2) || die "Failed running sql:\n$sql2\n";
