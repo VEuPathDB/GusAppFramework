@@ -183,6 +183,7 @@ sub processVcfFile {
 
 	my %info = %{$vcfHash->{INFO}};
 	my $infoString;
+
 	foreach my  $infoKey (keys %info) {
 	    my $infoVal = $info{$infoKey};
 	    my %headerHash = %{$vcf->get_header_line(key=>'INFO', ID=>$infoKey)->[0]};
@@ -190,13 +191,14 @@ sub processVcfFile {
 	    $infoString .= $infoKey;
 	    $infoString .= "=\"$infoVal\"" if defined($infoVal);
 
-	    my $dbRefId = $self->getDbRefId($vcf, $infoKey);
-	    my $dbRefNaFeature = GUS::Model::DoTS::DbRefNAFeature
-		->new( {
-		    "db_ref_id" => $dbRefId,
-		    "na_feature_id" => $snpFeature->getId(),
-		       } );
-	    $dbRefNaFeature->submit();
+	    # don't need all these db-ref entries
+	    # my $dbRefId = $self->getDbRefId($vcf, $infoKey);
+	    # my $dbRefNaFeature = GUS::Model::DoTS::DbRefNAFeature
+	    # 	->new( {
+	    # 	    "db_ref_id" => $dbRefId,
+	    # 	    "na_feature_id" => $snpFeature->getId(),
+	    # 	       } );
+	    # $dbRefNaFeature->submit();
 	    
 	    if ($self->getArg('veryVerbose')) {
 		my $infoMsg;
