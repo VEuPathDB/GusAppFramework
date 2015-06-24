@@ -1376,9 +1376,9 @@ sub defaultPrintFeatureTree {
   foreach my $tag (@tags) {
     my @annotations = $bioperlFeatureTree->get_tag_values($tag);
     foreach my $annotation (@annotations) {
-      if (length($annotation) > 50) {
-	$annotation = substr($annotation, 0, 50) . "...";
-      }
+      #if (length($annotation) > 50) {
+	#$annotation = substr($annotation, 0, 50) . "...";
+      #}
       $btFh->print("$indent$tag: $annotation\n");
     }
   }
