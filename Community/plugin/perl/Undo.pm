@@ -187,10 +187,9 @@ sub deleteFromTable{
   my  ($rows) = $stmt->fetchrow_array();   
   if ($self->{commit} == 1) {
     while ($rows) {
-      my $sql2 = "DELETE FROM $tableName
-         WHERE $algInvIdColumnName IN ($algoInvocIds)";
-      $sql2 = $self->getDb()->getDbPlatform()->limit($sql2, 10000);
-#  and rownum<=10000";
+      my $sql2 = 
+	"DELETE FROM $tableName
+         WHERE $algInvIdColumnName IN ($algoInvocIds) and rownum<=10000";
       warn "\n$sql2\n" if $self->getArg('verbose');       
       $self->{dbh}->do($sql2) || die "Failed running sql:\n$sql2\n";
       my $numDeleted = $rows>10000 ? 10000 : $rows;
