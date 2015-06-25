@@ -138,9 +138,9 @@ sub processVcfFile {
     my $recordCount;
     my $skipCount;
     my $checkExists = $self->getArg('checkExists');
-    while (my $vcfHash = $vcf->next_data_hash()) {
+    while (my $record = $vcf->next_data_array()) {
 
-	my $rsId = $vcfHash->{ID};
+	my $rsId = $vcf->get_column($record, "ID");
 
 	my $snpFeature = GUS::Model::DoTS::SnpFeature
 	    ->new( {
@@ -156,89 +156,43 @@ sub processVcfFile {
 	    }
 	}
 
-	my $naSequenceId = $self->getSequenceId($vcfHash->{CHROM});
+	my $chr = $vcf->get_column($record, "CHROM");
+	my $pos = $vcf->get_column($record, "POS");
+	$self->log("$rsId on chromosome " . $chr  . " at location " . $pos)
+	  if $self->getArg('veryVerbose');
+
+	my $naSequenceId = $self->getSequenceId($chr);
 	$snpFeature->setNaSequenceId($naSequenceId);
 	$snpFeature->setName('variation');
-	$snpFeature->setMajorAllele($vcfHash->{REF});
-	$snpFeature->setMinorAllele(join(',', @{$vcfHash->{ALT}}));
-	$snpFeature->submit();
+	$snpFeature->setMajorAllele($vcf->get_column($record, "REF"));
+	$snpFeature->setMinorAllele($vcf->get_column($record, "ALT"));
+	$snpFeature->setDescription($vcf->get_column($record, "INFO"));
+	# $snpFeature->submit();
 
-	my $pos = $vcfHash->{POS};
 	my $naLocation = GUS::Model::DoTS::NALocation
 	    ->new( {
-		"na_feature_id" => $snpFeature->getNaFeatureId(),
+		# "na_feature_id" => $snpFeature->getNaFeatureId(),
 		"start_min" => $pos,
 		"end_max" => $pos,
 		   } );
-	$naLocation->submit();
-
-	$self->log("$rsId on chromosome " . $vcfHash->{CHROM} . " at location " . $vcfHash->{POS})
-	    if $self->getArg('veryVerbose');
-
-	# is "FILTER" used? We aren't handling that.
-	my $filterString = ${$vcfHash->{FILTER}}[0];
-	if ($filterString ne '.') {
-	    $self->log("WARNING: $rsId has the filter \"$filterString\"");
-	}
-
-	my %info = %{$vcfHash->{INFO}};
-	my $infoString;
-
-	foreach my  $infoKey (keys %info) {
-	    my $infoVal = $info{$infoKey};
-	    my %headerHash = %{$vcf->get_header_line(key=>'INFO', ID=>$infoKey)->[0]};
-	    $infoString .= ";" if $infoString;
-	    $infoString .= $infoKey;
-	    $infoString .= "=\"$infoVal\"" if defined($infoVal);
-
-	    # don't need all these db-ref entries
-	    # my $dbRefId = $self->getDbRefId($vcf, $infoKey);
-	    # my $dbRefNaFeature = GUS::Model::DoTS::DbRefNAFeature
-	    # 	->new( {
-	    # 	    "db_ref_id" => $dbRefId,
-	    # 	    "na_feature_id" => $snpFeature->getId(),
-	    # 	       } );
-	    # $dbRefNaFeature->submit();
-	    
-	    if ($self->getArg('veryVerbose')) {
-		my $infoMsg;
-		$infoMsg .= "  info:\n" unless $infoString;
-		$infoMsg .= "    $infoKey";
-		$infoMsg .= " = \"$infoVal\"" if defined($infoVal);
-		$infoMsg .= " (" . $headerHash{Description} . ")";
-		$infoMsg .= "\n";
-		$self->log($infoMsg);
-	    }
-
-	    # if this is the "VC" field, use its value to set name
-	    if ($infoKey eq "VC" && defined($infoVal)) {
-		$snpFeature->setName($infoVal);
-	    }
-
-#	    # if this is the "VP" bitfield, decode it
-#             or don't; it turns out VP basically duplicates the other INFO tags
-#	    if ($infoKey eq "VP") {
-#		my $bitfieldHashref = decode_bitfield($infoVal);
-#		foreach my $bitfield (keys(%{$bitfieldHashref})) {
-#		    my $def = GUS::Community::Utils::dbSnpBits::define_bitfield($bitfield);
-#		    print "      $bitfield ";
-#		    print "= " . $bitfieldHashref->{$bitfield}
-#		    if GUS::Community::Utils::dbSnpBits::has_value($bitfield);
-#		    print " ($def)";
-#		    print " (BITFIELD)\n";
-#		}
-#	    }
-
-	}
-	$snpFeature->setDescription($infoString);
+	$naLocation->setParent($snpFeature);
 	$snpFeature->submit();
+	# $naLocation->submit();
 
-	unless ( ($recordCount++) % 1000) {
+	# # is "FILTER" used? We aren't handling that.
+	# my $filterString = ${$vcfHash->{FILTER}}[0];
+	# if ($filterString ne '.') {
+	#     $self->log("WARNING: $rsId has the filter \"$filterString\"");
+	# }
+
+
+
+	unless ( ($recordCount++) % 500) {
 	    $self->undefPointerCache();
 	    $self->log("$recordCount records loaded")
 		if $self->getArg('verbose');
-	}
-    }
+	  }
+      }
     $self->log("loaded $recordCount records");
 }
 
