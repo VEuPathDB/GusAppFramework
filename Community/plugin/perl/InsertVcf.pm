@@ -11,17 +11,11 @@ use strict;
 use GUS::PluginMgr::Plugin;
 use Data::Dumper;
 use Vcf;
-# use Bio::EnsEMBL::Variation::Utils::dbSNP qw(decode_bitfield);
-# use GUS::Community::Utils::dbSnpBits;
 
 use GUS::Model::DoTS::SnpFeature;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::NALocation;
-use GUS::Model::DoTS::DbRefNAFeature;
-use GUS::Model::SRes::DbRef;
-use GUS::Model::Results::SeqVariation;
 
-my %infoHash;
 my %seqHash;
 
 # ----------------------------------------------------------------------
@@ -63,7 +57,7 @@ sub getDocumentation {
 
   my $purpose = 'This plugin reads SNPs from a VCF file, and inserts its content into GUS';
 
-  my $tablesAffected = [['Study::Protocol', 'Loads the "sample" protocol, which links a population to one of its members'], ['Study::ProtocolApp', 'Creates applications of the "sample" protocol'], ];
+  my $tablesAffected = [['DoTS::SnpFeature', 'Enters a row for each SNP feature'], ['DoTS::NaLocation', 'Enters a row for each SNP feature'], ];
 
   my $tablesDependedOn = []; 
 
@@ -74,6 +68,7 @@ sub getDocumentation {
   my $notes = <<NOTES;
 
 Written by John Iodice.
+Modified by Emily Greenfest-Allen
 Copyright Trustees of University of Pennsylvania 2013. 
 NOTES
 
@@ -117,7 +112,6 @@ sub run {
   $self->logArgs();
   $self->getAlgInvocation()->setMaximumNumberOfObjects(100000);
 
-
   $self->{extDbRlsId} = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
 
   $self->processVcfFile($self->getArg('vcfFile'));
@@ -138,13 +132,17 @@ sub processVcfFile {
     my $recordCount;
     my $skipCount;
     my $checkExists = $self->getArg('checkExists');
+
+    $self->getDb()->manageTransaction(0, "begin"); # start a transaction
+
     while (my $record = $vcf->next_data_array()) {
 
 	my $rsId = $vcf->get_column($record, "ID");
 
 	my $snpFeature = GUS::Model::DoTS::SnpFeature
 	    ->new( {
-		"source_id" => "$rsId",
+		    "source_id" => "$rsId",
+		    "external_database_release_id" => $self->{extDbRlsId}
 		   } );
 
 	if ($checkExists) {
@@ -158,15 +156,19 @@ sub processVcfFile {
 
 	my $chr = $vcf->get_column($record, "CHROM");
 	my $pos = $vcf->get_column($record, "POS");
-	$self->log("$rsId on chromosome " . $chr  . " at location " . $pos)
+	my $info = $vcf->get_column($record, "INFO");
+	my $name = $vcf->get_info_field($info, "VC");
+
+	$self->log("$rsId on chromosome " . $chr  . " at location " . $pos . "; name: " . $name)
 	  if $self->getArg('veryVerbose');
 
 	my $naSequenceId = $self->getSequenceId($chr);
 	$snpFeature->setNaSequenceId($naSequenceId);
-	$snpFeature->setName('variation');
+	$snpFeature->setName($name);
 	$snpFeature->setMajorAllele($vcf->get_column($record, "REF"));
 	$snpFeature->setMinorAllele($vcf->get_column($record, "ALT"));
-	$snpFeature->setDescription($vcf->get_column($record, "INFO"));
+	$snpFeature->setDescription($info);
+
 	# $snpFeature->submit();
 
 	my $naLocation = GUS::Model::DoTS::NALocation
@@ -176,22 +178,14 @@ sub processVcfFile {
 		"end_max" => $pos,
 		   } );
 	$naLocation->setParent($snpFeature);
-	$snpFeature->submit();
-	# $naLocation->submit();
+	$snpFeature->submit(1); # noTran = 1 --> do not commit at this point
 
-	# # is "FILTER" used? We aren't handling that.
-	# my $filterString = ${$vcfHash->{FILTER}}[0];
-	# if ($filterString ne '.') {
-	#     $self->log("WARNING: $rsId has the filter \"$filterString\"");
-	# }
-
-
-
-	unless ( ($recordCount++) % 500) {
-	    $self->undefPointerCache();
-	    $self->log("$recordCount records loaded")
-		if $self->getArg('verbose');
-	  }
+	unless ( ($recordCount++) % 5000) {
+	  $self->getDb()->manageTransaction(0, "commit"); # commit
+	  $self->undefPointerCache();
+	  $self->log("$recordCount records loaded")
+	    if $self->getArg('verbose');
+	}
       }
     $self->log("loaded $recordCount records");
 }
@@ -230,37 +224,13 @@ sub getSequenceId {
     return $seqHash{$chromosome}
 }
 
-# getDbRefId
-#
-# find the db_ref_id for the given info message
-sub getDbRefId {
-    my ($self, $vcf, $infoKey) = @_;
 
-    unless ($infoHash{$infoKey}) {
-
-	my $dbRef = GUS::Model::SRes::DbRef
-	    ->new( {
-		"primary_identifier" => $infoKey,
-		"external_database_release_id" => $self->{extDbRlsId},
-		   } );
-
-	if (!$dbRef->retrieveFromDB()) {
-	    my %headerHash = %{$vcf->get_header_line(key=>'INFO', ID=>$infoKey)->[0]};
-	    my $description = $headerHash{Description};
-	    $dbRef->setRemark($description);
-	    $dbRef->submit();
-	}
-	$infoHash{$infoKey} = $dbRef->getId();
-    }
-
-    return $infoHash{$infoKey}
-}
 
 # ----------------------------------------------------------------------
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.NALocation', 'DoTS.ExternalNASequence', 'DoTS.DbRefNAFeature', 'SRes.DbRef', 'DoTS.SnpFeature');
+  return ('DoTS.NALocation', 'DoTS.ExternalNASequence', 'DoTS.SnpFeature');
 }
 
 sub define_dbSnp_bitfield {
