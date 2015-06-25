@@ -133,7 +133,7 @@ sub processVcfFile {
     my $skipCount;
     my $checkExists = $self->getArg('checkExists');
 
-    $self->getDb()->manageTransaction(0, "begin"); # start a transaction
+    $self->getDb()->manageTransaction(undef, "begin"); # start a transaction
 
     while (my $record = $vcf->next_data_array()) {
 
@@ -178,15 +178,22 @@ sub processVcfFile {
 		"end_max" => $pos,
 		   } );
 	$naLocation->setParent($snpFeature);
-	$snpFeature->submit(1); # noTran = 1 --> do not commit at this point
+	$snpFeature->submit(undef, 1); # noTran = 1 --> do not commit at this point
 
 	unless ( ($recordCount++) % 5000) {
-	  $self->getDb()->manageTransaction(0, "commit"); # commit
+	  if ($self->getArg("commit")) {
+	    $self->getDb()->manageTransaction(undef, "commit"); # commit
+	    $self->getDb()->manageTransaction(undef, "begin");
+	  }
 	  $self->undefPointerCache();
 	  $self->log("$recordCount records loaded")
 	    if $self->getArg('verbose');
 	}
       }
+
+    $self->getDb()->manageTransaction(undef, "commit")
+      if ($self->getArg("commit")); # commit final batch
+
     $self->log("loaded $recordCount records");
 }
 
