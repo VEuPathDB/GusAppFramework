@@ -154,7 +154,7 @@ sub processVcfFile {
 	    }
 	}
 
-	my $chr = $vcf->get_column($record, "CHROM");
+	my $chr = "chr" . $vcf->get_column($record, "CHROM");
 	my $pos = $vcf->get_column($record, "POS");
 	my $info = $vcf->get_column($record, "INFO");
 	my $name = $vcf->get_info_field($info, "VC");
@@ -180,7 +180,7 @@ sub processVcfFile {
 	$naLocation->setParent($snpFeature);
 	$snpFeature->submit(undef, 1); # noTran = 1 --> do not commit at this point
 
-	unless ( ($recordCount++) % 5000) {
+	unless (++$recordCount % 5000) {
 	  if ($self->getArg("commit")) {
 	    $self->getDb()->manageTransaction(undef, "commit"); # commit
 	    $self->getDb()->manageTransaction(undef, "begin");
@@ -205,28 +205,12 @@ sub getSequenceId {
 
     unless ($seqHash{$chromosome}) {
 
-	my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
-	    ->new( {
+      my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
+	->new( {
 		"chromosome" => $chromosome,
-		   } );
+	       } );
 
-	if (!$externalNASequence->retrieveFromDB()) {
-
-	    # couldn't find it with that name -- remove the prefix "chr" if present
-	    if ($chromosome =~ /^chr(.*)$/) {
-		$externalNASequence->setChromosome($1);
-	    }
-
-	    if (!$externalNASequence->retrieveFromDB()) {
-		# couldn't find that either -- insert
-		# $externalNASequence->setChromosome($chromosome); # use unabbreviated chromosome name
-		$self->log("adding new sequence record for chromosome \"$chromosome\"")
-		    if $self->getArg('verbose');
-		$externalNASequence->setSequenceVersion("1");
-		$externalNASequence->submit();
-	    }
-	}
-	$seqHash{$chromosome} = $externalNASequence->getId();
+      die "Could not find externalNASequence for chromosome: " . $chromosome if (!$externalNASequence->retrieveFromDB());
     }
     return $seqHash{$chromosome}
 }
