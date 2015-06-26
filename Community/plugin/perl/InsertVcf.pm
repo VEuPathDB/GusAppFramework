@@ -137,6 +137,11 @@ sub processVcfFile {
 
     while (my $record = $vcf->next_data_array()) {
 
+	my $chr = "chr" . $vcf->get_column($record, "CHROM");
+	my $naSequenceId = $self->getSequenceId($chr);
+
+	next if ($naSequenceId eq "NA"); # skip snps whose chromosomes are not in ExternalNASequence
+
 	my $rsId = $vcf->get_column($record, "ID");
 
 	my $snpFeature = GUS::Model::DoTS::SnpFeature
@@ -154,15 +159,13 @@ sub processVcfFile {
 	    }
 	}
 
-	my $chr = "chr" . $vcf->get_column($record, "CHROM");
 	my $pos = $vcf->get_column($record, "POS");
 	my $info = $vcf->get_column($record, "INFO");
 	my $name = $vcf->get_info_field($info, "VC");
 
 	$self->log("$rsId on chromosome " . $chr  . " at location " . $pos . "; name: " . $name)
 	  if $self->getArg('veryVerbose');
-
-	my $naSequenceId = $self->getSequenceId($chr);
+	
 	$snpFeature->setNaSequenceId($naSequenceId);
 	$snpFeature->setName($name);
 	$snpFeature->setMajorAllele($vcf->get_column($record, "REF"));
@@ -210,9 +213,13 @@ sub getSequenceId {
 		"chromosome" => $chromosome,
 	       } );
 
-      die "Could not find ExternalNASequence for chromosome: " . $chromosome if (!$externalNASequence->retrieveFromDB());
-
-      $seqHash{$chromosome} = $externalNASequence->getId();
+      if (!$externalNASequence->retrieveFromDB()) {
+	self->log("WARNING: Could not find ExternalNASequence for chromosome: " . $chromosome);
+	$seqHash{$chromosome} = "NA";
+      }
+      else {
+	$seqHash{$chromosome} = $externalNASequence->getId();
+      }
     }
     return $seqHash{$chromosome}
 }
