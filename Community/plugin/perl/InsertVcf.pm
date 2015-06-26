@@ -210,7 +210,9 @@ sub getSequenceId {
 		"chromosome" => $chromosome,
 	       } );
 
-      die "Could not find externalNASequence for chromosome: " . $chromosome if (!$externalNASequence->retrieveFromDB());
+      die "Could not find ExternalNASequence for chromosome: " . $chromosome if (!$externalNASequence->retrieveFromDB());
+
+      $seqHash{$chromosome} = $externalNASequence->getId();
     }
     return $seqHash{$chromosome}
 }
