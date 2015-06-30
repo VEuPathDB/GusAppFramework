@@ -1362,7 +1362,7 @@ sub defaultPrintFeatureTree {
 
   if ($type =~ /coding_gene/ || $type =~ /RNA_gene/ || $type =~ /transcript/) {
     my $cid = $bioperlFeatureTree->{gusFeature}->getSourceId();
-    $btFh->print("$indent$type gus source_id: $cid \n");
+    $btFh->print("$indent$type gus source_id: '$cid'\n");
   }
   my @locations = $bioperlFeatureTree->location()->each_Location();
   foreach my $location (@locations) {
