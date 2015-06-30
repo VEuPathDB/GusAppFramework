@@ -44,6 +44,12 @@ sub getArgumentsDeclaration {
 		 reqd => 0,
 		 default => 0
             }),
+     stringArg({name => 'skipUntil',
+		descr => "skip records prior to the specified RS ID",
+		constraintFunc=> undef,
+		reqd => 0,
+		isList => 0
+            }),
     ];
   return $argumentDeclaration;
 }
@@ -130,19 +136,34 @@ sub processVcfFile {
     $vcf->parse_header();
 
     my $recordCount;
-    my $skipCount;
+    my $skipCount = 0 ;
     my $checkExists = $self->getArg('checkExists');
+    my $skipUntil = $self->getArg('skipUntil');
 
     $self->getDb()->manageTransaction(undef, "begin"); # start a transaction
 
     while (my $record = $vcf->next_data_array()) {
+      my $rsId = $vcf->get_column($record, "ID");
+
+      if (defined $skipUntil) {
+	if ($rsId ne $skipUntil) {
+	  unless (++$skipCount % 5000) {
+	    $self->log("SKIPPED $skipCount records") if $self->getArg('verbose');
+	  }
+	  next;
+	}
+	else {
+	  $skipUntil = undef; # otherwise, no more need to skip
+	  $self->log("Skipped $skipCount records.");
+	  $self->log("Initiating loading with SNP: $rsId");
+	}
+      }
 
 	my $chr = "chr" . $vcf->get_column($record, "CHROM");
 	my $naSequenceId = $self->getSequenceId($chr);
 
 	next if ($naSequenceId eq "NA"); # skip snps whose chromosomes are not in ExternalNASequence
 
-	my $rsId = $vcf->get_column($record, "ID");
 
 	my $snpFeature = GUS::Model::DoTS::SnpFeature
 	    ->new( {
