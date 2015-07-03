@@ -227,6 +227,8 @@ sub processVcfFile {
 sub getSequenceId {
     my ($self, $chromosome) = @_;
 
+    $chromosome = "chrM" if ($chromosome eq "chrMT"); # synonym
+
     unless ($seqHash{$chromosome}) {
 
       my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
@@ -235,7 +237,7 @@ sub getSequenceId {
 	       } );
 
       if (!$externalNASequence->retrieveFromDB()) {
-	self->log("WARNING: Could not find ExternalNASequence for chromosome: " . $chromosome);
+	$self->log("WARNING: Could not find ExternalNASequence for chromosome: " . $chromosome);
 	$seqHash{$chromosome} = "NA";
       }
       else {
