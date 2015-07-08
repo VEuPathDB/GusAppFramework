@@ -266,7 +266,6 @@ sub submitObjectList {
   my ($self, $list) = @_;
   foreach my $gusObj (@$list) {
     $gusObj->submit();
-    ++$count;
   }
 
 }
