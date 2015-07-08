@@ -231,20 +231,15 @@ sub getTermId {
 	print STDERR $term."\n";
 	my $lcTerm =  lc($term);
 	my $dbh = $self->getQueryHandle();
-	my $sql = "select name 
+	my $sql = "select ontology_term_id 
 	             from sres.ontologyTerm 
 	            where lower(name) = ?
 				  and external_database_release_id =?
 	                                                ";
 	my $sh = $dbh->prepare($sql);
 	$sh->execute($lcTerm,$ext_db_rls_id);
-	$term = $sh->fetchrow();
-	my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-          new({name => $term,
-               external_database_release_id => $ext_db_rls_id,
-              });
-	$ontologyTerm->retrieveFromDB();
-	my $id = $ontologyTerm->getId();
+	my $id = $sh->fetchrow();
+
 	return $id;
 }
 
