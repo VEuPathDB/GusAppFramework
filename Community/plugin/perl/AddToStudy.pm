@@ -122,6 +122,7 @@ sub run {
   $self->logCommit();
   $self->logArgs();
 
+  $self->{'ontologyTermCache'} = {};
   my $parser = XML::LibXML->new();
   my $doc = $parser->parse_file($self->getArg('xmlFile'));
 
@@ -253,15 +254,18 @@ sub getBibRef {
 sub getOntologyTerm {
   my ($self, $term, $extDbRlsId) = @_;
   
-  my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $term, external_database_release_id => $extDbRlsId});
-
-  if (!$ontologyTerm->retrieveFromDB()) {
-    $self->userError("Missing entry for term=$term and ext_db_rls_id=$extDbRlsId in SRes.OntologyTerm");
+  if (!defined $self->{'ontologyTermCache'}->{$term}->{$extDbRlsId}) {
+      my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $term, external_database_release_id => $extDbRlsId});
+      
+      if (!$ontologyTerm->retrieveFromDB()) {
+	  $self->userError("Missing entry for term=$term and ext_db_rls_id=$extDbRlsId in SRes.OntologyTerm");
+      }
+      elsif ($ontologyTerm->getIsObsolete()==1) {
+	  $self->userError("Term $term is obsolete in ext_db_rls_id=$extDbRlsId");
+      }
+      $self->{'ontologyTermCache'}->{$term}->{$extDbRlsId} = $ontologyTerm;
   }
-  elsif ($ontologyTerm->getIsObsolete()==1) {
-    $self->userError("Term $term is obsolete in ext_db_rls_id=$extDbRlsId");
-  }
-  return($ontologyTerm);
+  return($self->{'ontologyTermCache'}->{$term}->{$extDbRlsId});
 }
 
 sub addStudyDesigns {
