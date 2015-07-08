@@ -107,7 +107,7 @@ sub run {
   my $relationshipLines = $self->readFile($file);
   my $relCount = scalar (@$relationshipLines);
   my $relationships = $self->doRelationships($relationshipLines);
-  $self->submitObjectList($relationships) or $self->error("colud not submit relationships : $!");
+  $self->submitObjectList($relationships);
 
   my $relationshipCount = scalar(@$relationships);
 	print STDERR "Inserted $relationshipCount SRes::OntologyRelationships\n";
@@ -264,9 +264,9 @@ sub getTermId {
 
 sub submitObjectList {
   my ($self, $list) = @_;
-
   foreach my $gusObj (@$list) {
     $gusObj->submit();
+    ++$count;
   }
 
 }
