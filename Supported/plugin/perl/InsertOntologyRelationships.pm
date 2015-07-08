@@ -107,7 +107,7 @@ sub run {
   my $relationshipLines = $self->readFile($file);
   my $relCount = scalar (@$relationshipLines);
   my $relationships = $self->doRelationships($relationshipLines);
-  $self->submitObjectList($relationships);
+  $self->submitObjectList($relationships) or $self-error("colud not submit relationships : $!");
 
   my $relationshipCount = scalar(@$relationships);
 	print STDERR "Inserted $relationshipCount SRes::OntologyRelationships\n";
@@ -198,8 +198,8 @@ sub doRelationships {
 	my $objectEDRId = $self->handleExtDbRlsSpec($values->[3],$externalDatabaseSpecs);
 	my $relationshipEDRId = $self->handleExtDbRlsSpec($values->[5],$externalDatabaseSpecs);
 	
-	my $subject = $self->getTermId($subjectTerm,$subjectEDRId) or $self->error("Could not retrieve id for subject $subjectTerm : $!");
-	my $object = $self->getTermId($objectTerm,$objectEDRId) or $self->error("Could not retrieve id for object $objectTerm : $!");
+	my $subject = $self->getTermId($subjectTerm,$subjectEDRId) or $self->error("Could not retrieve id for subject $subjectTerm: $!");
+	my $object = $self->getTermId($objectTerm,$objectEDRId) or $self->error("Could not retrieve id for subject $subjectTerm: $!");
 	my $relationshipType = $self->getTermId($relationshipTerm,$relationshipEDRId) or $self->error("Could not retrieve id for relationship $relationshipTerm : $!");
 	my $relationship;
 	if (scalar (@$values) == 6) {
@@ -217,17 +217,19 @@ sub doRelationships {
 		my $predicate = $self->getTermId($predicateTerm,$predicateEDRId) or $self->error("Could not retrieve id for object $predicateTerm : $!");
 		 $relationship = GUS::Model::SRes::OntologyRelationship->
           new({subject_term_id => $subject,
-		       predicate_term_id => $predicate,
+	       predicate_term_id => $predicate,
                object_term_id => $object,
                ontology_relationship_type_id => $relationshipType,
               });
 	}
 	push(@relationships, $relationship);
       $count++;
-      if($count % 100 == 0) {
-        $self->log("Inserted $count SRes::OntologyRelationships");
+        if($count % 100 == 0) {
+          $self->log("Inserted $count SRes::OntologyRelationships");
+          $self->undefPointerCache();
+        }
       }
-	}
+    $self->undefPointerCache();
   return \@relationships;
 }
 
@@ -245,23 +247,16 @@ sub handleExtDbRlsSpec {
 }
 sub getTermId {
 	my ($self,$term,$ext_db_rls_id) = @_;
-	print STDERR $term."\n";
 	my $lcTerm =  lc($term);
 	my $dbh = $self->getQueryHandle();
-	my $sql = "select name 
+	my $sql = "select ontology_term_id 
 	             from sres.ontologyTerm 
 	            where lower(name) = ?
 				  and external_database_release_id =?
 	                                                ";
 	my $sh = $dbh->prepare($sql);
 	$sh->execute($lcTerm,$ext_db_rls_id);
-	$term = $sh->fetchrow();
-	my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-          new({name => $term,
-               external_database_release_id => $ext_db_rls_id,
-              });
-	$ontologyTerm->retrieveFromDB();
-	my $id = $ontologyTerm->getId();
+	my $id = $sh->fetchrow();
 	return $id;
 }
 
