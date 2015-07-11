@@ -4,12 +4,59 @@ package GUS::Community::FileTranslator::Functions;
 
 use strict;
 
+use POSIX;
+
+use Date::Parse;
+
+use Data::Dumper;
+
 sub new {
   my ($M) = @_;
   my $self = {};
   bless $self,$M;
   
   return $self;
+}
+
+#--------------------------------------------------------------------------------
+sub swapMappedValues{
+  my ($self, $hash) = @_;
+
+  my $mapHash = $hash->{map_hash};
+  my $swapMappedValues; $swapMappedValues = sub {
+    my $valuesString = shift;
+    my ($value, $characteristic ) = split(/\t/, $valuesString);
+    my $lower_characteristic = lc($characteristic);
+    my $lower_value = lc($value);
+
+    if (exists ($mapHash->{$lower_characteristic})) {
+      if (exists($mapHash->{$lower_characteristic}->{$lower_value})) { 
+        $value = $mapHash->{$lower_characteristic}->{$lower_value};
+      }
+    }
+    return $value;
+  };
+  return $swapMappedValues;
+}
+#--------------------------------------------------------------------------------
+
+sub formatDate {
+  my $formatDate; $formatDate = sub {
+    my $valuesString = shift;
+    my ($date) = split(/\t/, $valuesString);
+    return undef unless (defined $date);
+    my  ($junk1,$junk2,$junk3,$day,$month,$year) = strptime($date);
+    my  ($curr_sec,$curr_min,$curr_hour,$curr_mday,$curr_mon,$curr_year,$curr_wday,$current_yday,$curr_isdst)  = localtime();
+    $month += 1;
+   # die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
+   # die "invalid day for id, $date, $year-$month-$day " unless (0< $day &&  $day <32);
+    $month = "0".$month if $month <10;
+    $year = ($year + 2000) > ($curr_year + 1900) ?  $year+1900 : $year + 2000;
+
+    return $year.$month.$day;
+  };
+return $formatDate;
+
 }
 
 #--------------------------------------------------------------------------------
