@@ -24,17 +24,20 @@ sub new {
 sub formatDate {
   my ($self,$hash) = @_;
   my $formatDate; $formatDate = sub {
-    my $date = shift;
+    my $valuesString = shift;
+    my ($date,$char) = split("\t",$valuesString);
     return undef unless $date;
     my  ($junk1,$junk2,$junk3,$day,$month,$year) = strptime($date);
+    print stderr $day; 
     $month += 1;
     die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
     die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
     $day = "0".$day if $day <10;
     $month = "0".$month if $month <10;
-    $year = $year+1900;
-
-    return $year.$month.$day;
+    $year = $year < 16 ? $year +2000 : $year+1900;
+    my $formatted_date = $year.$month.$day;
+    die "date is messed up $formatted_date"  unless (length($year.$month.$day) == 8);
+    return $formatted_date;
   };
 return $formatDate;
 }
@@ -44,21 +47,58 @@ return $formatDate;
 sub swapMappedValues {
   my ($self,$hash) = @_;
   my $mapHash = $hash->{'map_hash'};
-  open (check, ">/home/jcade/tester1.out");
-  print check Dumper $hash;
   my $swapMappedValues; $swapMappedValues = sub {
     my $valuesString = shift;
     my ($value,$char) = split("\t",$valuesString);
+    return undef unless $value;
+    return $value unless $char;
     $char = lc($char);
     my $lv = lc($value);
+    open ( TEST, '>>', "/home/jcade/tester1.out");
+    print TEST "start point \n";
     if (defined ($mapHash->{$char})) {
       if (defined ($mapHash->{$char}->{$lv})) {
+        print TEST $char."\t". $value."\n";
         $value = $mapHash->{$char}->{$lv};
+        print TEST $char."\t". $value."\n";
       }
     }
+    print TEST "final answer $value\n";
     return $value;
   };
   return $swapMappedValues;
+}
+
+#--------------------------------------------------------------------------------
+
+sub formatHouseholdId {
+  my ($self,$hash) = @_;
+
+  my $formatHouseholdId; $formatHouseholdId = sub {
+    my $valuesString = shift;
+    my ($value,$char) = split("\t",$valuesString);
+    if ($value=~/^HH\d+$/i) {
+      $value = uc($value);
+    }
+    else {
+      $value = "HH$value";
+    }
+    return $value;
+  };
+  return $formatHouseholdId;
+}
+
+#--------------------------------------------------------------------------------
+
+sub replaceValues {
+  my ($self,$hash) = @_;
+  my $replaceValues; $replaceValues = sub {
+    my $valuesString = shift;
+    my ($value,$replaceString) = split("\t",$valuesString);
+    $value = $replaceString if defined $value;
+    return $value;
+  };
+  return $replaceValues;
 }
 #--------------------------------------------------------------------------------
 sub qPercentToConfidence {
