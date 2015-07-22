@@ -196,18 +196,25 @@ sub translateMapKey {
 
   my @V ;
 
-  $mapkey =~ s/\$//g;
   my @MK = split /\\t/, $mapkey ;
 
   foreach my $k (@MK) {
     foreach my $in (@{ $idMap->{in} } ) {
-      if ($in  eq $k ) {
+
+      print "K=$k\tIN=$in\n";
+
+      if ('$' . $in  eq $k ) {
         push @V, $A->[$config->header($in)->{idx}];
+      }
+      else {
+        push @V, $k;
       }
     }
   }
   return \@V;
 }
+
+
 
 
 sub createMapFunctions {
