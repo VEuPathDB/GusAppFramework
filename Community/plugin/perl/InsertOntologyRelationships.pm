@@ -36,9 +36,9 @@ PURPOSE_BRIEF
 
 my $notes = <<NOTES;
 relationship file should be tab-delimited with the following header:
-subject subject_xdbr object object_xdbr relationship_type relationship_type_xdbr
+subject subject_xdbr object object_xdbr predicate predicate_xdbr
 where _xdbr is the external database release, specified by Name|Version
-subject, object, and relationship_type may be specified by either the term or the source_id of the term in the external database
+subject, object, and predicate may be specified by either the term or the source_id of the term in the external database
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
@@ -85,49 +85,45 @@ sub new {
 sub run {
   my ($self) = @_;
 
-  $self->_loadRelationships();
+  $self->loadRelationships();
 }
 
 
-sub getExtDbRlsDetails {
-    my ($self, $extDbRls, $extDbRlsHash) = @_;
+sub getExtDbRlsId {
+    my ($self, $extDbRls, $extDbRlsMap) = @_;
 
-    if (!exists $extDbRlsHash->{$extDbRls}) {
-	my $extDbRlsName = $self->getArg('extDbRlsName');
-	my $extDbRlsVer = $self->getArg('extDbRlsVer');
-	my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
+    if (!exists $extDbRlsMap->{$extDbRls}) {
+	$extDbRlsMap->{$extDbRls} = $self->getExtDbRlsId($extDbRls);
     }
 
-    return $extDbRlsHash;
+    return $extDbRlsMap;
 }
 sub loadRelationships {
 
     my ($self) = @_;
 
-    my $extDbRlsHash = undef;
+    my $xdbrId = undef;
+    my $extDbRlsMap = undef;
     my $relCount = 0;
     my $relationshipFile = $self->getArg('relationshipFile');
     open(RELATIONSHIPS, "<$relationshipFile") or $self->error("Couldn't open '$relationshipFile': $!\n");
     while (<RELATIONSHIPS>) {
 	chomp;
-	my ($subject, $subjectExtDbRls, $object, $objectExtDbRls, $relation, $relationExtDbRls) = spit /\t/;
+	my ($subject, $subjectExtDbRls, $object, $objectExtDbRls, $predicate, $predicateExtDbRls) = split /\t/;
 
-	$extDbRlsHash = getExtDbRlsDetails($subjectXbr, $extDbRlsHash)
-	my $extDbRlsName = $self->getArg('extDbRlsName');
-	my $extDbRlsVer = $self->getArg('extDbRlsVer');
-	my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
+	$extDbRlsMap = getExtDbRlsId($subjectExtDbRls, $extDbRlsMap);
+	$extDbRlsMap = getExtDbRlsId($objectExtDbRls, $extDbRlsMap);
+	$extDbRlsMap = getExtDbRlsId($predicateExtDbRls, $extDbRlsMap);
 
-	my $parentTerm = $self->_retrieveOntologyTerm($parentId, undef, undef, undef,
-						      undef, undef, $extDbRlsId);
-	my $childTerm = $self->_retrieveOntologyTerm($childId, undef, undef, undef,
-						      undef, undef, $extDbRlsId);
-	my $predicate = $self->_retrieveRelationshipPredicate($relation, $extDbRlsId);
+	my $subjectTerm = $self->retrieveOntologyTerm($subject, $extDbRlsMap->{$subjectExtDbRls});
+	my $objectTerm = $self->retrieveOntologyTerm($object, $extDbRlsMap->{$objectExtDbRls});
+	my $predicateTerm = $self->retrieveOntologyTerm($predicate, $extDbRlsMap->{$objectExtDbRls});
 
 	my $ontologyRelationship =
 	    GUS::Model::SRes::OntologyRelationship->new({
-		subject_term_id   => $childTerm->getOntologyTermId(),
-		predicate_term_id => $predicate->getOntologyTermId(),
-		object_term_id    => $parentTerm->getOntologyTermId(),
+		subject_term_id   => $subjectTerm->getOntologyTermId(),
+		predicate_term_id => $predicateTerm->getOntologyTermId(),
+		object_term_id    => $objectTerm->getOntologyTermId(),
 							});
 
 	$ontologyRelationship->submit();
@@ -138,69 +134,29 @@ sub loadRelationships {
     }
 }
 
+sub retrieveOntologyTerm {
 
-sub _retrieveRelationshipPredicate {
-
-  my ($self, $type, $extDbRlsId) = @_;
-
-  my $predicateTerm = GUS::Model::SRes::OntologyTerm->new({
-    name                         => $type,
-    ontology_term_type_id        => $self->_getOntologyTermTypeId('relationship'),
-    external_database_release_id => $extDbRlsId,
-  });
-
-  $predicateTerm->submit()
-    unless ($predicateTerm->retrieveFromDB());
-
-  return $predicateTerm;
-}
-
-sub _retrieveOntologyTerm {
-
-  my ($self, $id, $name, $def, $comment, $synonyms, $isObsolete, $extDbRlsId) = @_;
+  my ($self, $term, $extDbRlsId) = @_;
 
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
-    source_id                    => $id,
-    ontology_term_type_id        => $self->_getOntologyTermTypeId('class'),
+    source_id                    => $term,
     external_database_release_id => $extDbRlsId,
   });
 
+  unless ($ontologyTerm->retrieveFromDB()) { # try against name value
+    $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
+      name                         => $term,
+      external_database_release_id => $extDbRlsId,
+							});
+  }
+
   unless ($ontologyTerm->retrieveFromDB()) {
-      $ontologyTerm->setName("Not yet available");
-    }
-
-  # some of these may not actually yet be available, if we've been
-  # called while building a relationship:
-
-  $ontologyTerm->setName($name) if length($name);
-  $ontologyTerm->setDefinition($def) if length($def);
-  $ontologyTerm->setNotes($comment) if length($comment);
-  $ontologyTerm->setIsObsolete(1) if ($isObsolete && $isObsolete eq "true");
-
-  $self->_setOntologyTermSynonyms($ontologyTerm, $synonyms, $extDbRlsId) if $synonyms;
-
-  $ontologyTerm->submit();
+    $self->error("Term " . $term . "not in DB."); 
+  }
 
   return $ontologyTerm;
 }
 
-sub _getOntologyTermTypeId {
-
-  my ($self, $name) = @_;
-
-  if (!$ontologyTermTypeId) {
-    my $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({
-      name                         => $name,
-    });
-
-    $ontologyTermType->submit()
-      unless ($ontologyTermType->retrieveFromDB());
-
-    $ontologyTermTypeId = $ontologyTermType->getOntologyTermTypeId();
-  }
-
-  return ($ontologyTermTypeId);
-}
 
 sub undoTables {
   my ($self) = @_;
