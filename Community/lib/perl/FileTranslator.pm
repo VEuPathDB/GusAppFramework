@@ -206,9 +206,6 @@ sub translateMapKey {
         push @V, $A->[$config->header($in)->{idx}];
         $found++;
       }
-      else {
-        push @V, $k;
-      }
     }
     push @V, $k unless $found;
   }
