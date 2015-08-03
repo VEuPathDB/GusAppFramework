@@ -32,7 +32,7 @@ sub formatDate {
     $month += 1;
     die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
     die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
-    $day = "0".$day if $day <10;
+    $day = "0".$day if length($day) == 1;
     $month = "0".$month if $month <10;
     $year = $year < 16 ? $year +2000 : $year+1900;
     my $formatted_date = $year.$month.$day;
@@ -52,6 +52,7 @@ sub swapMappedValues {
     my ($value,$char) = split("\t",$valuesString);
     return undef unless $value;
     return $value unless $char;
+    
     $char = lc($char);
     my $lv = lc($value);
     open ( TEST, '>>', "/home/jcade/tester1.out");
@@ -60,6 +61,7 @@ sub swapMappedValues {
       if (defined ($mapHash->{$char}->{$lv})) {
         print TEST $char."\t". $value."\n";
         $value = $mapHash->{$char}->{$lv};
+        $value = '' if $value =~/^null$/; 
         print TEST $char."\t". $value."\n";
       }
     }
@@ -99,6 +101,45 @@ sub replaceValues {
     return $value;
   };
   return $replaceValues;
+}
+#--------------------------------------------------------------------------------
+
+sub stripLeadingRegex {
+  my ($self,$hash) = @_;
+  my $stripLeadingRegex; $stripLeadingRegex = sub {
+    my $valuesString = shift;
+    my ($value,$regex) = split("\t",$valuesString);
+    $value =~s/^$regex//i;
+    return $value;
+  };
+  return $stripLeadingRegex;
+}
+
+#--------------------------------------------------------------------------------
+
+
+sub stripTrailingRegex {
+  my ($self,$hash) = @_;
+  my $stripTrailingRegex; $stripTrailingRegex = sub {
+    my $valuesString = shift;
+    my ($value,$regex) = split("\t",$valuesString);
+    $value =~s/$regex$//i;
+    return $value;
+  };
+  return $stripTrailingRegex;
+}
+
+#--------------------------------------------------------------------------------
+
+sub makeCompositeId {
+  my ($self,$hash) = @_;
+  my $makeCompositeId; $makeCompositeId = sub {
+    my $valuesString = shift;
+    my ($parent,$month, $year) = split("\t",$valuesString);
+    my $id = $parent.$year.$month;
+    return $id;
+  };
+  return $makeCompositeId;
 }
 #--------------------------------------------------------------------------------
 sub qPercentToConfidence {
