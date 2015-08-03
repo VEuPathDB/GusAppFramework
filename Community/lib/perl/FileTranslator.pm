@@ -170,6 +170,7 @@ sub translate {
         my $mapkey = $idMap->{mapkey};
         my $values = $slf->translateMapKey(\@A, $mapkey, $idMap, $config);
 
+
         # Allow the Funtion to give a coderef OR hashref 
         if(ref($function) eq 'CODE') {
           $writer->print("\t" . $function->( join "\t", @$values ) );
@@ -199,17 +200,17 @@ sub translateMapKey {
   my @MK = split /\\t/, $mapkey ;
 
   foreach my $k (@MK) {
+    my $found;
     foreach my $in (@{ $idMap->{in} } ) {
-
-      print "K=$k\tIN=$in\n";
-
       if ('$' . $in  eq $k ) {
         push @V, $A->[$config->header($in)->{idx}];
+        $found++;
       }
       else {
         push @V, $k;
       }
     }
+    push @V, $k unless $found;
   }
   return \@V;
 }
