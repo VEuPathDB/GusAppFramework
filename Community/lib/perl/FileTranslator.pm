@@ -179,17 +179,14 @@ sub translateMapKey {
   my @MK = split /\\t/, $mapkey ;
 
   foreach my $k (@MK) {
+    my $found;
     foreach my $in (@{ $idMap->{in} } ) {
-
-      print "K=$k\tIN=$in\n";
-
       if ('$' . $in  eq $k ) {
         push @V, $A->[$config->header($in)->{idx}];
-      }
-      else {
-        push @V, $k;
+        $found++;
       }
     }
+    push @V, $k unless $found;
   }
   return \@V;
 }
