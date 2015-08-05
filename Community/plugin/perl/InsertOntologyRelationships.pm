@@ -10,7 +10,8 @@ use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologyTermType;
 use GUS::Model::SRes::OntologyRelationship;
 
-my $ontologyTermTypeId;
+use Data::Dumper;
+
 
 my $argsDeclaration =
   [
@@ -91,9 +92,11 @@ sub run {
 
 sub getExtDbRlsId {
     my ($self, $extDbRls, $extDbRlsMap) = @_;
-
+$self->log($self->getExtDbRlsId($extDbRls)) if $self->getArg('verbose');
     if (!exists $extDbRlsMap->{$extDbRls}) {
+      $self->log($self->getExtDbRlsId($extDbRls)) if $self->getArg('verbose');
 	$extDbRlsMap->{$extDbRls} = $self->getExtDbRlsId($extDbRls);
+      
     }
 
     return $extDbRlsMap;
@@ -102,22 +105,34 @@ sub loadRelationships {
 
     my ($self) = @_;
 
+    $self->getDb()->manageTransaction(undef, "begin"); # start a transaction
+
     my $xdbrId = undef;
     my $extDbRlsMap = undef;
     my $relCount = 0;
     my $relationshipFile = $self->getArg('relationshipFile');
+
     open(RELATIONSHIPS, "<$relationshipFile") or $self->error("Couldn't open '$relationshipFile': $!\n");
+    my $header = <RELATIONSHIPS>;
+
     while (<RELATIONSHIPS>) {
 	chomp;
 	my ($subject, $subjectExtDbRls, $object, $objectExtDbRls, $predicate, $predicateExtDbRls) = split /\t/;
 
-	$extDbRlsMap = getExtDbRlsId($subjectExtDbRls, $extDbRlsMap);
-	$extDbRlsMap = getExtDbRlsId($objectExtDbRls, $extDbRlsMap);
-	$extDbRlsMap = getExtDbRlsId($predicateExtDbRls, $extDbRlsMap);
+	$self->log($subject .", " . $object) if $self->getArg('verbose');
+
+	$extDbRlsMap = $self->getExtDbRlsId($subjectExtDbRls, $extDbRlsMap);
+	$extDbRlsMap = $self->getExtDbRlsId($objectExtDbRls, $extDbRlsMap);
+	$extDbRlsMap = $self->getExtDbRlsId($predicateExtDbRls, $extDbRlsMap);
+
+	$self->log(Dumper($extDbRlsMap)) if $self->getArg('verbose');
+
+	$self->log($subjectExtDbRls . ":" . $extDbRlsMap->{$subjectExtDbRls}) if $self->getArg('verbose');
 
 	my $subjectTerm = $self->retrieveOntologyTerm($subject, $extDbRlsMap->{$subjectExtDbRls});
 	my $objectTerm = $self->retrieveOntologyTerm($object, $extDbRlsMap->{$objectExtDbRls});
 	my $predicateTerm = $self->retrieveOntologyTerm($predicate, $extDbRlsMap->{$objectExtDbRls});
+
 
 	my $ontologyRelationship =
 	    GUS::Model::SRes::OntologyRelationship->new({
@@ -126,17 +141,37 @@ sub loadRelationships {
 		object_term_id    => $objectTerm->getOntologyTermId(),
 							});
 
-	$ontologyRelationship->submit();
-	unless ($relCount++ % 500) {
-	    warn "Processed $relCount relationships\n";
-	    $self->undefPointerCache();
+	if ($self->getArg("verbose")) {
+	  $self->log($relCount . ":" . Dumper($ontologyRelationship));
 	}
-    }
-}
+
+
+	$ontologyRelationship->submit(undef, 1); # noTran = 1 --> do not commit at this point
+
+	unless (++$relCount % 500) {
+	  if ($self->getArg("commit")) {
+	    $self->getDb()->manageTransaction(undef, "commit"); # commit
+	    $self->getDb()->manageTransaction(undef, "begin");
+	  }
+	  $self->undefPointerCache();
+	  $self->log("$relCount relationships loaded")
+	    if $self->getArg('verbose');
+	}
+      }
+  
+    $self->getDb()->manageTransaction(undef, "commit")
+      if ($self->getArg("commit")); # commit final batch
+    
+    $self->log("loaded $relCount relationships");
+
+  }
+
 
 sub retrieveOntologyTerm {
 
   my ($self, $term, $extDbRlsId) = @_;
+  
+  $self->log($term . " " . $extDbRlsId) if $self->getArg("verbose");
 
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
     source_id                    => $term,
@@ -151,6 +186,7 @@ sub retrieveOntologyTerm {
   }
 
   unless ($ontologyTerm->retrieveFromDB()) {
+    $self->log($term . ' not in db');
     $self->error("Term " . $term . "not in DB."); 
   }
 
