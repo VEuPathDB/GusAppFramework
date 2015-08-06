@@ -54,6 +54,11 @@ sub getArgumentsDeclaration {
 		  constraintFunc => undef,
 		  reqd           => 0,
 		  isList         => 0 }),
+     stringArg({ name  => 'category',
+		  descr => "category for terms, must match a name or source_id in SRes.OntologyTerm",
+		  constraintFunc => undef,
+		  reqd           => 0,
+		  isList         => 0 }),
      booleanArg({name => 'hasHeader',
              descr => 'do the input files have a header row?',
 reqd => 0
@@ -161,18 +166,38 @@ sub run {
 # ----------------------------------------------------------------------
 sub ontologyTermType {
     my ($self) = @_;
-    my $ontologyTermType = undef;
+    my $otTypeId = undef;
     my $otType = $self->getArg('ontologyTermType');
 
     if ($otType) {
-      $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({name => $otType});
+      my $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({name => $otType});
 
       unless ($ontologyTermType->retrieveFromDB()) {
-	$self->error('Ontology Term Type ' . $otType . ' not found in DB');
+	$self->error('Ontology Term Type ' . $otType . ' not found in SRes.OntologyTermType');
       }
+
+      $otTypeId = $ontologyTermType->getOntologyTermTypeId();
     }
 
-    return $ontologyTermType->getOntologyTermTypeId();
+    return $otTypeId;
+}
+
+sub category {
+    my ($self) = @_;
+    my $category = $self->getArg('category');
+    my $categoryOntologyTermId = undef;
+    if ($category) {
+	my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $category});
+	unless ($ontologyTerm->retrieveFromDB()) {
+	    $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $category}); # try source_id instead
+	}
+	unless ($ontologyTerm->retrieveFromDB()) {
+	    $self->error('Category ' . $category . ' not found in SRes.OntologyTerm')
+	}
+	$categoryOntologyTermId = $ontologyTerm->getOntologyTermId();
+    }
+
+    return $categoryOntologyTermId;
 }
 
 sub insertTerms {
@@ -187,7 +212,7 @@ sub insertTerms {
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete eq 'false' ? 0 : 1;
 
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete, ontology_term_type_id => $self->ontologyTermType()});
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete, ontology_term_type_id => $self->ontologyTermType(), category => $self->category()});
 
     if (!$ontologyTerm->retrieveFromDB()) {
       $countTerms++;
