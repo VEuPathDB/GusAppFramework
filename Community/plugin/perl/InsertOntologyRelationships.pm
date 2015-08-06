@@ -1,3 +1,13 @@
+#######################################################################
+##                 InsertOntologyRelationships
+##
+## Community plugin for InsertOntologyRelationships to create relationships
+## between existing ontology terms
+## $Id: InsertOntologyRelationships.pm allenem $
+##
+#######################################################################
+
+
 package GUS::Community::Plugin::InsertOntologyRelationships;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
@@ -7,11 +17,8 @@ use strict;
 use GUS::PluginMgr::Plugin;
 
 use GUS::Model::SRes::OntologyTerm;
-use GUS::Model::SRes::OntologyTermType;
 use GUS::Model::SRes::OntologyRelationship;
-
-use Data::Dumper;
-
+use GUS::Model::SRes::OntologySynonym;
 
 my $argsDeclaration =
   [
@@ -28,11 +35,11 @@ my $argsDeclaration =
   ];
 
 my $purpose = <<PURPOSE;
-Insert GO relationships from a tab-delimited file.
+Insert relationships between ontology terms already existing in the DB.  Load will fail if a term in the OntologyRelationship file is not found in SRes.OntologyTerm or SRes.OntologySynonym.
 PURPOSE
 
 my $purposeBrief = <<PURPOSE_BRIEF;
-Insert GO relationships from a tab-delimited file.
+Insert relationships between existing ontology terms.
 PURPOSE_BRIEF
 
 my $notes = <<NOTES;
@@ -43,7 +50,7 @@ subject, object, and predicate may be specified by either the term or the source
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
-SRes.OntologyTermType, SRes.OntologyRelationship
+SRes.OntologyRelationship
 TABLES_AFFECTED
 
 my $tablesDependedOn = <<TABLES_DEPENDED_ON;
@@ -51,7 +58,7 @@ SRes.OntologyTerm, SRes.OntologySynonym
 TABLES_DEPENDED_ON
 
 my $howToRestart = <<RESTART;
-Just reexecute the plugin; Relationships which alread exist will not be duplicated.
+Just re-execute the plugin; Relationships which already exist will not be duplicated.
 RESTART
 
 my $failureCases = <<FAIL_CASES;
@@ -90,24 +97,25 @@ sub run {
 }
 
 
-sub getExtDbRlsId {
+sub extDbRlsId {
     my ($self, $extDbRls, $extDbRlsMap) = @_;
-$self->log($self->getExtDbRlsId($extDbRls)) if $self->getArg('verbose');
-    if (!exists $extDbRlsMap->{$extDbRls}) {
-      $self->log($self->getExtDbRlsId($extDbRls)) if $self->getArg('verbose');
-	$extDbRlsMap->{$extDbRls} = $self->getExtDbRlsId($extDbRls);
-      
+
+    unless (exists $extDbRlsMap->{$extDbRls}) {
+	unless ($self->getExtDbRlsId($extDbRls)) {
+	    $self->error($extDbRls . " not in DB.");
+	}
+	$extDbRlsMap->{$extDbRls} =  $self->getExtDbRlsId($extDbRls);
     }
 
     return $extDbRlsMap;
 }
+
 sub loadRelationships {
 
     my ($self) = @_;
 
     $self->getDb()->manageTransaction(undef, "begin"); # start a transaction
 
-    my $xdbrId = undef;
     my $extDbRlsMap = undef;
     my $relCount = 0;
     my $relationshipFile = $self->getArg('relationshipFile');
@@ -119,20 +127,17 @@ sub loadRelationships {
 	chomp;
 	my ($subject, $subjectExtDbRls, $object, $objectExtDbRls, $predicate, $predicateExtDbRls) = split /\t/;
 
-	$self->log($subject .", " . $object) if $self->getArg('verbose');
+	$self->log("Relationship:" . $subject ." -> "
+		   . $predicate . " -> "  . $object)
+	  if $self->getArg('veryVerbose');
 
-	$extDbRlsMap = $self->getExtDbRlsId($subjectExtDbRls, $extDbRlsMap);
-	$extDbRlsMap = $self->getExtDbRlsId($objectExtDbRls, $extDbRlsMap);
-	$extDbRlsMap = $self->getExtDbRlsId($predicateExtDbRls, $extDbRlsMap);
-
-	$self->log(Dumper($extDbRlsMap)) if $self->getArg('verbose');
-
-	$self->log($subjectExtDbRls . ":" . $extDbRlsMap->{$subjectExtDbRls}) if $self->getArg('verbose');
+	$extDbRlsMap = $self->extDbRlsId($subjectExtDbRls, $extDbRlsMap);
+	$extDbRlsMap = $self->extDbRlsId($objectExtDbRls, $extDbRlsMap);
+	$extDbRlsMap = $self->extDbRlsId($predicateExtDbRls, $extDbRlsMap);
 
 	my $subjectTerm = $self->retrieveOntologyTerm($subject, $extDbRlsMap->{$subjectExtDbRls});
 	my $objectTerm = $self->retrieveOntologyTerm($object, $extDbRlsMap->{$objectExtDbRls});
-	my $predicateTerm = $self->retrieveOntologyTerm($predicate, $extDbRlsMap->{$objectExtDbRls});
-
+	my $predicateTerm = $self->retrieveOntologyTerm($predicate, $extDbRlsMap->{$predicateExtDbRls});
 
 	my $ontologyRelationship =
 	    GUS::Model::SRes::OntologyRelationship->new({
@@ -140,11 +145,6 @@ sub loadRelationships {
 		predicate_term_id => $predicateTerm->getOntologyTermId(),
 		object_term_id    => $objectTerm->getOntologyTermId(),
 							});
-
-	if ($self->getArg("verbose")) {
-	  $self->log($relCount . ":" . Dumper($ontologyRelationship));
-	}
-
 
 	$ontologyRelationship->submit(undef, 1); # noTran = 1 --> do not commit at this point
 
@@ -154,7 +154,7 @@ sub loadRelationships {
 	    $self->getDb()->manageTransaction(undef, "begin");
 	  }
 	  $self->undefPointerCache();
-	  $self->log("$relCount relationships loaded")
+	  $self->log("$relCount relationships loaded.")
 	    if $self->getArg('verbose');
 	}
       }
@@ -162,7 +162,7 @@ sub loadRelationships {
     $self->getDb()->manageTransaction(undef, "commit")
       if ($self->getArg("commit")); # commit final batch
     
-    $self->log("loaded $relCount relationships");
+    $self->log("Loaded $relCount records into SRes.OntologyRelationship");
 
   }
 
@@ -171,23 +171,32 @@ sub retrieveOntologyTerm {
 
   my ($self, $term, $extDbRlsId) = @_;
   
-  $self->log($term . " " . $extDbRlsId) if $self->getArg("verbose");
-
-  my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
+  my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ # try against source_id
     source_id                    => $term,
     external_database_release_id => $extDbRlsId,
   });
 
-  unless ($ontologyTerm->retrieveFromDB()) { # try against name value
+  unless ($ontologyTerm->retrieveFromDB()) { # try against name 
     $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
       name                         => $term,
       external_database_release_id => $extDbRlsId,
 							});
   }
 
+  unless ($ontologyTerm->retrieveFromDB()) { # try against synonyms
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ 
+      ontology_synonym                         => $term,
+      external_database_release_id              => $extDbRlsId,
+								 });
+    if ($ontologySynonym->retrieveFromDB()) {
+      $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
+	   ontology_term_id => $ontologySynonym->getOntologyTermId()
+							  });
+    }
+  }
+
   unless ($ontologyTerm->retrieveFromDB()) {
-    $self->log($term . ' not in db');
-    $self->error("Term " . $term . "not in DB."); 
+    $self->error("Term " . $term . " with extDbRlsId " . $extDbRlsId . " not in SRes.OntologyTerm or SRes.OntologySynonym"); 
   }
 
   return $ontologyTerm;
@@ -197,6 +206,6 @@ sub retrieveOntologyTerm {
 sub undoTables {
   my ($self) = @_;
 
-  return ('SRes.OntologyRelationship',
+  return ('SRes.OntologyRelationship'
 	 );
 }
