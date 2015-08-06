@@ -87,7 +87,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 4.0,
-		      cvsRevision       => '$Revision: 16419 $',
+		      cvsRevision       => '$Revision: 16426 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -117,7 +117,7 @@ sub extDbRlsId {
 }
 
 sub validateTerm {
-    my ($self, $ontologyTerm);
+    my ($self, $ontologyTerm) = @_;
 
     my $failOnTermNotFound = $self->getArg('failOnTermNotFound');
     unless ($ontologyTerm->retrieveFromDB()) {
