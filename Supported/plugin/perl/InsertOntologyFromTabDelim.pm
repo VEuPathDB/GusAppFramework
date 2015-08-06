@@ -87,7 +87,7 @@ sub getDocumentation {
 
 =head1 AUTHOR
 
-Written by Elisabetta Manduchi.
+Written by Elisabetta Manduchi
 
 =head1 COPYRIGHT
 
