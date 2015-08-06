@@ -32,6 +32,12 @@ my $argsDeclaration =
 	     isList         => 0,
 	   }),
 
+   booleanArg({ name           => 'failOnTermNotFound',
+	     descr          => 'load will fail with error if a term is not found in the DB; otherwise a warning statement is output and relationship is skipped',
+	     reqd           => 0,
+	    
+	   }),
+
   ];
 
 my $purpose = <<PURPOSE;
@@ -81,7 +87,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 4.0,
-		      cvsRevision       => '$Revision: 16159 $',
+		      cvsRevision       => '$Revision: 16419 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -110,6 +116,23 @@ sub extDbRlsId {
     return $extDbRlsMap;
 }
 
+sub validateTerm {
+    my ($self, $ontologyTerm);
+
+    my $failOnTermNotFound = $self->getArg('failOnTermNotFound');
+    unless ($ontologyTerm->retrieveFromDB()) {
+	if ($failOnTermNotFound) {
+	    $self->error("Term: " . $ontologyTerm->getName() . $ontologyTerm->getSourceId() . " not found in database.");
+	}
+	else { 
+	    $self->log("Term: " . $ontologyTerm->getName() . $ontologyTerm->getSourceId() . " not found in database.");
+	    $ontologyTerm = undef; # not a valid term
+	}
+    }
+
+    return $ontologyTerm;
+}
+
 sub loadRelationships {
 
     my ($self) = @_;
@@ -119,6 +142,10 @@ sub loadRelationships {
     my $extDbRlsMap = undef;
     my $relCount = 0;
     my $relationshipFile = $self->getArg('relationshipFile');
+    my $skippedCount = 0;
+    my $subjectTerm = undef;
+    my $objectTerm = undef;
+    my $predicateTerm = undef;
 
     open(RELATIONSHIPS, "<$relationshipFile") or $self->error("Couldn't open '$relationshipFile': $!\n");
     my $header = <RELATIONSHIPS>;
@@ -134,11 +161,16 @@ sub loadRelationships {
 	$extDbRlsMap = $self->extDbRlsId($subjectExtDbRls, $extDbRlsMap);
 	$extDbRlsMap = $self->extDbRlsId($objectExtDbRls, $extDbRlsMap);
 	$extDbRlsMap = $self->extDbRlsId($predicateExtDbRls, $extDbRlsMap);
+	
+	$subjectTerm = $self->validateTerm($self->retrieveOntologyTerm($subject, $extDbRlsMap->{$subjectExtDbRls}));
+	$objectTerm = $self->validateTerm($self->retrieveOntologyTerm($object, $extDbRlsMap->{$objectExtDbRls}));
+	$predicateTerm = $self->validateTerm($self->retrieveOntologyTerm($predicate, $extDbRlsMap->{$predicateExtDbRls}));
 
-	my $subjectTerm = $self->retrieveOntologyTerm($subject, $extDbRlsMap->{$subjectExtDbRls});
-	my $objectTerm = $self->retrieveOntologyTerm($object, $extDbRlsMap->{$objectExtDbRls});
-	my $predicateTerm = $self->retrieveOntologyTerm($predicate, $extDbRlsMap->{$predicateExtDbRls});
-
+	unless (defined $subjectTerm and defined $objectTerm and defined $predicateTerm) {
+	  $skippedCount++;
+	  next;
+	}
+	
 	my $ontologyRelationship =
 	    GUS::Model::SRes::OntologyRelationship->new({
 		subject_term_id   => $subjectTerm->getOntologyTermId(),
@@ -163,6 +195,8 @@ sub loadRelationships {
       if ($self->getArg("commit")); # commit final batch
     
     $self->log("Loaded $relCount records into SRes.OntologyRelationship");
+    $self->log("Skipped $skippedCount relationships that involved terms that could not be mapped.") 
+      if (!$self->getArg('failOnTermNotFound'));
 
   }
 
@@ -193,10 +227,6 @@ sub retrieveOntologyTerm {
 	   ontology_term_id => $ontologySynonym->getOntologyTermId()
 							  });
     }
-  }
-
-  unless ($ontologyTerm->retrieveFromDB()) {
-    $self->error("Term " . $term . " with extDbRlsId " . $extDbRlsId . " not in SRes.OntologyTerm or SRes.OntologySynonym"); 
   }
 
   return $ontologyTerm;
