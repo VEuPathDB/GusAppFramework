@@ -14,6 +14,7 @@ use GUS::PluginMgr::Plugin;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologySynonym;
 use GUS::Model::SRes::OntologyRelationship;
+use GUS::Model::SRes::OntologyTermType;
 
 # ----------------------------------------------------------------------
 # Arguments
@@ -48,7 +49,12 @@ sub getArgumentsDeclaration {
 		  constraintFunc => undef,
 		  reqd           => 0,
 		  isList         => 0 }),
- booleanArg({name => 'hasHeader',
+     stringArg({ name  => 'ontologyTermType',
+		  descr => "the type of ontology term; must match a 'name' value in SRes.OntologyTermType",
+		  constraintFunc => undef,
+		  reqd           => 0,
+		  isList         => 0 }),
+     booleanArg({name => 'hasHeader',
              descr => 'do the input files have a header row?',
 reqd => 0
             }),
@@ -71,7 +77,7 @@ sub getDocumentation {
 
   my $tablesAffected = [['SRes::OntologyTerm', 'Enters a row for each term'], ['SRes::OntologySynomym', 'Enters rows linking each entered term to its Synonyms'], ['SRes::OntologyRelationship', 'Links related terms']];
 
-  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The release of the Ontology']];
+  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The release of the Ontology'], ['SRes::OntologyTermType', 'the type of ontology term']];
 
   my $howToRestart = "No restart. Delete entries (can use Undo.pm) and rerun.";
 
@@ -153,6 +159,21 @@ sub run {
 # ----------------------------------------------------------------------
 # methods called by run
 # ----------------------------------------------------------------------
+sub ontologyTermType {
+    my ($self) = @_;
+    my $ontologyTermType = undef;
+    my $otType = $self->getArg('ontologyTermType');
+
+    if ($otType) {
+      $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({name => $otType});
+
+      unless ($ontologyTermType->retrieveFromDB()) {
+	$self->error('Ontology Term Type ' . $otType . ' not found in DB');
+      }
+    }
+
+    return $ontologyTermType->getOntologyTermTypeId();
+}
 
 sub insertTerms {
   my ($self, $file, $extDbRls) = @_;  
@@ -165,7 +186,9 @@ sub insertTerms {
     chomp($line);
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete eq 'false' ? 0 : 1;
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete });   
+
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete, ontology_term_type_id => $self->ontologyTermType()});
+
     if (!$ontologyTerm->retrieveFromDB()) {
       $countTerms++;
     }
