@@ -141,7 +141,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16201 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16431 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -182,7 +182,6 @@ sub fetchSnpNAFeatureId {
 sub fetchOntologyTermId {
     my ($self, $term, $xdbr) = @_;
 
-    $self->log($term . " : " . $xdbr);
     my $xdbrId = $self->getExtDbRlsId($xdbr);
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
 							    name => $term,
@@ -325,11 +324,11 @@ sub loadResults {
 	%fieldValues = $self->parseFieldValues(\%fieldValues);
 
 	$fieldValues{snp_na_feature_id} = $self->fetchSnpNAFeatureId($sourceId);
+	$fieldValues{protocol_app_node_id} = $protocolAppNode->getProtocolAppNodeId();
 
 	$self->log(Dumper(\%fieldValues)) if $self->getArg('verbose');
 
-	my $seqVariationResult = GUS::Model::Results::SeqVariation->new(%fieldValues);
-	$seqVariationResult->setParent($protocolAppNode);
+	my $seqVariationResult = GUS::Model::Results::SeqVariation->new(\%fieldValues);
 	$seqVariationResult->submit(undef, 1); # noTran = 1 --> do not commit at this point
 
 	unless (++$recordCount % 5000) {
