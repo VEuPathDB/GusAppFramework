@@ -50,8 +50,8 @@ sub swapMappedValues {
   my $swapMappedValues; $swapMappedValues = sub {
     my $valuesString = shift;
     my ($value,$char) = split("\t",$valuesString);
-    return undef unless $value;
-    return $value unless $char;
+    return undef unless defined  $value ;
+    return $value unless defined $char;
     
     $char = lc($char);
     my $lv = lc($value);
@@ -102,6 +102,7 @@ sub replaceValues {
   };
   return $replaceValues;
 }
+
 #--------------------------------------------------------------------------------
 
 sub stripLeadingRegex {
