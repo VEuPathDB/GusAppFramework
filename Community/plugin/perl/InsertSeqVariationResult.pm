@@ -113,10 +113,13 @@ PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
 INPUT FILE must be tab-delimited with first column containing a snp_id (source_id in DoTS.SnpFeature)
-remaining columns should be named for fields in the Results.SeqVariation table, except for 'phenotype_id',
-which should be specificed as a two-column pair: 'phenotype' (term or source_id) and 'phenotype_xdbr' specifying the 
-ontology and version (Ontology|Version) .  Alternatively, 'phenotype_id' may be directly provided, as long as values
-map to an existing 'ontology_term_id' in SRes::OntologyTerm.
+remaining columns should be named for fields in the Results.SeqVariation table,
+
+except for 'phenotype_id' and 'sequence_ontology_id', which should be specificed as a two-column pair: 
+'phenotype' (or 'sequence_ontology') providing a term or source_id 
+and 'phenotype_xdbr' (or 'sequence_ontology_xdbr') specifying the ontology and version (Ontology|Version).  
+Alternatively, 'phenotype_id' or 'sequence_ontology_id' may be directly provided, as long as values map 
+to an existing 'ontology_term_id' in SRes::OntologyTerm.
 
 CHARACTERISTIC FILE is a two column tab-delimited file
 first column contains the term or term_source_id
@@ -251,6 +254,18 @@ sub parseFieldValues { #
     $fieldValues->{phenotype_id} = $self->fetchOntologyTermId($fieldValues->{phenotype}, $fieldValues->{phenotype_xdbr});
     delete $fieldValues->{phenotype}; # remove phenotype/phenotype_xdbr b/c they are not fields in SeqVariation 
     delete $fieldValues->{phenotype_xdbr};
+  }
+
+  # map sequence ontology terms to ontology_term_id; throw error if no External database specification is provided
+  if (exists $fieldValues->{sequence_ontology}) {
+      $self->error("must provide a 'sequence_ontology_xdbr' (Ontology|Version) column if providing 'sequence_ontology' terms or source_ids in data file") 
+	  if (!exists $fieldValues->{sequence_ontology_xdbr});
+      
+      $fieldValues->{sequence_ontology_id} = $self->fetchOntologyTermId($fieldValues->{sequence_ontology},
+									$fieldValues->{sequence_ontology_xdbr});
+
+      delete $fieldValeus->{sequence_ontology};
+      delete $fieldValues->{sequence_ontology_xdbr};
   }
 
   return %$fieldValues;
