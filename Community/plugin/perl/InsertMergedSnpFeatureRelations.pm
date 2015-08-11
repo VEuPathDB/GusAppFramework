@@ -100,7 +100,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16447 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16448 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -171,7 +171,7 @@ sub run {
       $featureRelation->submit(undef, 1); # noTran = 1 --> do not commit at this point
       $submitCount += 1;
 
-      unless ($submitCount % 5000) {
+      unless ($submitCount % 1000) {
 	if ($self->getArg("commit")) {
 	  $self->getDb()->manageTransaction(undef, "commit"); # commit
 	  $self->getDb()->manageTransaction(undef, "begin");
@@ -224,7 +224,7 @@ sub insertMissedTargets {
       $featureRelation->submit(undef, 1); # noTran = 1 --> do not commit at this point
       $submitCount += 1;
 
-      unless ($submitCount % 5000) {
+      unless ($submitCount % 1000) {
 	if ($self->getArg("commit")) {
 	  $self->getDb()->manageTransaction(undef, "commit"); # commit
 	  $self->getDb()->manageTransaction(undef, "begin");
