@@ -100,7 +100,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16419 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16447 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -147,7 +147,7 @@ sub run {
 	$missingTargetCount++;
 	$missingTargets->{$rsHigh} = $rsLow;
 	$self->log("Merge target SNP $rsLow for $rsHigh not found in DB. Saving for second pass.")
-	  if ($self->getArg('verbose'));
+	  if ($self->getArg('veryVerbose'));
 	next;
       }
 
@@ -171,7 +171,7 @@ sub run {
       $featureRelation->submit(undef, 1); # noTran = 1 --> do not commit at this point
       $submitCount += 1;
 
-      unless ($submitCount % 1000) {
+      unless ($submitCount % 5000) {
 	if ($self->getArg("commit")) {
 	  $self->getDb()->manageTransaction(undef, "commit"); # commit
 	  $self->getDb()->manageTransaction(undef, "begin");
@@ -224,7 +224,7 @@ sub insertMissedTargets {
       $featureRelation->submit(undef, 1); # noTran = 1 --> do not commit at this point
       $submitCount += 1;
 
-      unless ($submitCount % 1000) {
+      unless ($submitCount % 5000) {
 	if ($self->getArg("commit")) {
 	  $self->getDb()->manageTransaction(undef, "commit"); # commit
 	  $self->getDb()->manageTransaction(undef, "begin");
@@ -266,20 +266,6 @@ sub fetchRelationshipTypeId {
     }
 
     return $relationshipType->getNaFeatRelationshipTypeId();
-}
-
-sub fetchSnpNAFeatureId {
-  my ($self, $snpId) = @_;
-
-  my $snpFeature = GUS::Model::DoTS::SnpFeature->new({source_id => $snpId});
-
-  unless ($snpFeature->retrieveFromDB()) {
-      $self->error("No record found for $snpId is DoTs.SnpFeature");
-  }
-
-  $self->log('SNP: $snpId - ' . $snpFeature->getNaFeatureId) if ($self->getArg('veryVerbose'));
-
-  return $snpFeature->getNaFeatureId();
 }
 
 sub undoTables {
