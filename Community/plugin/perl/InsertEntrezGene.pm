@@ -15,6 +15,7 @@ use GUS::PluginMgr::Plugin;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use FileHandle;
 use Carp;
+use Data::Dumper;
 
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Gene;
@@ -125,6 +126,7 @@ sub run {
     my ($self) = @_;
     my $msg;
 
+    $hugoDbName = $self->getArg('hugoExtDbRlsName');
     $self->getAlgInvocation()->setMaximumNumberOfObjects(100000);
 
     open(GFF3, $self->getArg('inputFile'));
@@ -171,7 +173,7 @@ sub processTopLevelFeature {
   # first feature
   my ($sequenceSourceId, $source, $type, $start, $end, $score, $strand, $phase, $attributes)
     = split(/\t/, shift(@{$inputArrayRef}));
-
+  
   # not handling all top-level feature types
   if ($type ne 'gene' && $type ne 'tRNA'
       && $type ne 'V_gene_segment' && $type ne 'J_gene_segment'
@@ -208,7 +210,7 @@ sub processTopLevelFeature {
     my %attr;
     map { my ($name, $value) = split("=", $_); $attr{$name} = $value;} split(";", $attributes);
 
-    if ($type eq "transcript" || $type eq "mRNA" || $type eq "ncRNA" || $type eq "rRNA") {
+    if ($type eq "transcript" || $type eq "mRNA" || $type eq "ncRNA" || $type eq "rRNA" || $type eq "primary_transcript" || $type eq "tRNA") {
       my $name = $attr{Name};
       $name = $attr{ID} unless $name;
       my $transcript = GUS::Model::DoTS::Transcript->new( {
@@ -250,7 +252,7 @@ sub processTopLevelFeature {
     } elsif ($type eq "CDS") {
       $self->setCodingRegion($transcriptFeatureId{$attr{Parent}}, $start, $end);
     } else {
-      print "not handling feature type \"$type\"\n";
+      $self->log("not handling feature type '$type'");
       next;
     }
   }
@@ -326,35 +328,39 @@ sub getGeneId {
 
   my ($hgncId, $gene);
 
-  if ($attributes =~ /HGNC:([0-9]*)/) {
-    $hgncId = $1;
-    $hugoDbName = $self->getArg('hugoExtDbRlsName')
-      unless $hugoDbName;
-    if ($hugoDbName && !$hugoQuery) {
-      $hugoQuery = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
-            select g.gene_id
-            from dots.Gene g, sres.ExternalDatabaseRelease edr, sres.ExternalDatabase ed
-            where g.source_id = ?
-              and g.external_database_release_id = edr.external_database_release_id
-              and edr.external_database_id = ed.external_database_id
-              and ed.name = '$hugoDbName'
+  # if HUGO genes are loaded, link to those
+  if ($hugoDbName) { # if HUGO external database info has been provided
+      if ($attributes =~ /HGNC:([0-9]*)/) {
+	  
+	  $hgncId = $1;
+ 
+	  if (!$hugoQuery) {
+	      $hugoQuery = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
+	          select g.gene_id
+		  from dots.Gene g, sres.ExternalDatabaseRelease edr, sres.ExternalDatabase ed
+		  where g.source_id = ?
+		  and g.external_database_release_id = edr.external_database_release_id
+		  and edr.external_database_id = ed.external_database_id
+		  and ed.name = '$hugoDbName'
 SQL
-    }
+	  }
 
-    $hugoQuery->execute($hgncId) or die DBI::errstr;
-    my ($geneId) = $hugoQuery->fetchrow_array();
-    $hugoQuery->finish();
-
-    if ($geneId) {
-      $gene = GUS::Model::DoTS::Gene->new( {
+	  $hugoQuery->execute($hgncId) or die DBI::errstr;
+	  my ($geneId) = $hugoQuery->fetchrow_array();
+	  $hugoQuery->finish();
+      
+	  if ($geneId) {
+	      $gene = GUS::Model::DoTS::Gene->new( {
 					    'gene_id' => $geneId,
 					    'source_id' => $hgncId,
-					   } );
-    } else {
-      $hugoNotFound++;
-    }
+						   } );
+	  } else {
+	      $hugoNotFound++;
+	  }
+      }
   }
 
+  # else create new gene entries 
   if (!$gene) {
     my $geneId;
     if ($attributes =~ /GeneID:([0-9]*)[,;\s]/) {
