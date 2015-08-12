@@ -49,7 +49,7 @@ my $argsDeclaration =
 	       reqd           => 1,
 	       isList         => 0 }),
 
-  intArg({ name  => 'skip',
+  integerArg({ name  => 'skip',
 	       descr => "skip until line",
 	       constraintFunc => undef,
 	       reqd           => 0,
@@ -114,7 +114,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16449 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16454 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -140,7 +140,7 @@ sub run {
   my $missingTargets = undef;
   my $missingTargetCount = 0;
 
-  my $skipCount = 0;
+  my $rowCount = 0;
   my $skip = $self->getArg('skip');
 
   my $fName = $self->getArg('inFile');
@@ -150,6 +150,8 @@ sub run {
   while (<$fh>) {
       my @values = split /\t/;
       chomp(@values);
+
+      $rowCount += 1;
 
       # dbSnp merges high to low; rsHigh is the id that was merged
       my $rsHigh = 'rs' . $values[0]; # rsHigh
@@ -165,18 +167,26 @@ sub run {
 	$missingTargets->{$rsHigh} = $rsLow;
 	$self->log("Merge target SNP $rsLow for $rsHigh not found in DB. Saving for second pass.")
 	  if ($self->getArg('veryVerbose'));
-
-	$skipCount += 1; # row is processed, so count it (missing targets still need to be caught)
 	next;
       }
 
-      next if $self->getArg('skipAll'); # only care about nested merges to be processed after iterating over file
+      if ($self->getArg('skipAll') ){
+	if ($rowCount % 1000) {
+	  $self->log("SKIPPED $rowCount rows.\n");
+	  $self->undefPointerCache(); # need to clear the pointer cache
+	}
+	next;
+      }
 
-      if (++$skipCount <= $skip ) {
-	  next;
+      if ($rowCount <= $skip ) {
+	if ($rowCount % 1000) {
+	  $self->log("SKIPPED $rowCount rows.\n");
+	  $self->undefPointerCache(); # need to clear the pointer cache
+	}
+	next;
       }
       else {
-	  $self->log("Skipped $skipCount.  Resuming load with $rsHigh -> $rsLow.");
+	  $self->log("SKIPPED $rowCount rows.  Resuming load with $rsHigh -> $rsLow.");
       }
 
       # create a new entry in SnpFeature for the high snp
