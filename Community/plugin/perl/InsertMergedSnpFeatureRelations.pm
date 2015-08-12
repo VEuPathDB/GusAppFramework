@@ -114,7 +114,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16461 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16462 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -154,10 +154,11 @@ sub run {
 
       $rowCount += 1;
 
-      $self->undefPointerCache() if (!$rowCount % 1000); # need to clear the pointer cache
-      if (!$rowCount % 5000) {
+      unless ($rowCount % 5000) {
+	$self->undefPointerCache(); # need to clear the pointer cache
 	$self->log("SKIPPED $rowCount rows.") if ($skipAll or $rowCount <= $skip) ;
       }
+
       # dbSnp merges high to low; rsHigh is the id that was merged
       my $rsHigh = 'rs' . $values[0]; # rsHigh
       my $rsLow = 'rs' . $values[1]; # rsLow
@@ -203,7 +204,6 @@ sub run {
 	  $self->getDb()->manageTransaction(undef, "begin");
 	}
 	
- 	# $self->undefPointerCache();
 	$self->log("$submitCount records loaded.")
 	  if $self->getArg('verbose');
       }
