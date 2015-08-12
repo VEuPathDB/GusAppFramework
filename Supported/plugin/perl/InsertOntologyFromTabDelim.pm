@@ -215,7 +215,7 @@ sub insertTerms {
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete eq 'false' ? 0 : 1;
 
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete, ontology_term_type_id => $ontologyTermType, category => $category});
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete, ontology_term_type_id => $ontologyTermType, ancestor_term_id => $category, });
 
     if (!$ontologyTerm->retrieveFromDB()) {
       $countTerms++;
