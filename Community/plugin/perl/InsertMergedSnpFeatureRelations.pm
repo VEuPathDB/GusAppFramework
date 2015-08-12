@@ -114,7 +114,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16455 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16456 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -172,7 +172,6 @@ sub run {
 
       if ($self->getArg('skipAll') ){
 	if ($rowCount % 5000) {
-	  $self->log("SKIPPED $rowCount rows.");
 	  $self->undefPointerCache(); # need to clear the pointer cache
 	}
 	next;
@@ -180,7 +179,6 @@ sub run {
 
       if ($rowCount <= $skip ) {
 	if ($rowCount % 5000) {
-	  $self->log("SKIPPED $rowCount rows.");
 	  $self->undefPointerCache(); # need to clear the pointer cache
 	}
 	next;
