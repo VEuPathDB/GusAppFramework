@@ -48,6 +48,18 @@ my $argsDeclaration =
 	       constraintFunc => undef,
 	       reqd           => 1,
 	       isList         => 0 }),
+
+  intArg({ name  => 'skip',
+	       descr => "skip until line",
+	       constraintFunc => undef,
+	       reqd           => 0,
+	       isList         => 0 }),
+
+ booleanArg({ name  => 'skipAll',
+	       descr => "iterate over file to find nested merges, only load those",
+	       constraintFunc => undef,
+	       reqd           => 0,
+	       isList         => 0 }),
  
   
   ];
@@ -75,7 +87,9 @@ my $tablesDependedOn = [
 ];
 
 my $howToRestart = <<PLUGIN_RESTART;
-No restart facility available.
+Restart with skip flag.  Plugin will still iterate over file to assemble hash to catch nested merges.  
+To skip all and just load nested merges, use the --skipAll option
+
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -100,7 +114,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16448 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16449 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -126,6 +140,9 @@ sub run {
   my $missingTargets = undef;
   my $missingTargetCount = 0;
 
+  my $skipCount = 0;
+  my $skip = $self->getArg('skip');
+
   my $fName = $self->getArg('inFile');
 
   my $fh = FileHandle->new;
@@ -148,13 +165,23 @@ sub run {
 	$missingTargets->{$rsHigh} = $rsLow;
 	$self->log("Merge target SNP $rsLow for $rsHigh not found in DB. Saving for second pass.")
 	  if ($self->getArg('veryVerbose'));
+
+	$skipCount += 1; # row is processed, so count it (missing targets still need to be caught)
 	next;
+      }
+
+      next if $self->getArg('skipAll'); # only care about nested merges to be processed after iterating over file
+
+      if (++$skipCount <= $skip ) {
+	  next;
+      }
+      else {
+	  $self->log("Skipped $skipCount.  Resuming load with $rsHigh -> $rsLow.");
       }
 
       # create a new entry in SnpFeature for the high snp
       my $highSnpFeature = $self->retrieveSnpFeature($rsHigh, $xdbrId);
-      $highSnpFeature->setName('merged');
-
+    
       unless ($highSnpFeature->retrieveFromDB()) {
 	$highSnpFeature->setName('merged');
 	$highSnpFeature->submit(undef, 1); # noTran = 1 --> do not commit at this point
@@ -202,40 +229,40 @@ sub insertMissedTargets {
 
   while  (my ($rsHigh, $rsLow) = each %$mergeRelations) {
     my $lowSnpFeature = $self->retrieveSnpFeature($rsLow, $xdbrId);
-    if ($lowSnpFeature->retrieveFromDB()) { # if the lowSNP is now in the db, add the merged (high) SNP
+    next unless ($lowSnpFeature->retrieveFromDB()); # if lowSNP is not in the DB, it must be from another genome build, skip
       
-      # create a new entry in SnpFeature for the high snp
-      my $highSnpFeature = $self->retrieveSnpFeature($rsHigh, $xdbrId);
-      $highSnpFeature->setName('merged');
-
-      unless ($highSnpFeature->retrieveFromDB()) {
+    # create a new entry in SnpFeature for the high snp
+    my $highSnpFeature = $self->retrieveSnpFeature($rsHigh, $xdbrId);
+      
+    unless ($highSnpFeature->retrieveFromDB()) { # if we resumed, this may have already been loaded
 	$highSnpFeature->setName('merged');
 	$highSnpFeature->submit(undef, 1); # noTran = 1 --> do not commit at this point
 	$submitCount++;
-      }
-
-      # create the feature relationships
-      my $featureRelation = GUS::Model::DoTS::NAFeatureRelationship->new({
-            parent_na_feature_id => $lowSnpFeature->getNaFeatureId(),
-            child_na_feature_id => $highSnpFeature->getNaFeatureId(),
-            na_feat_relationship_type_id => $relationshipTypeId
-									 });
-
-      $featureRelation->submit(undef, 1); # noTran = 1 --> do not commit at this point
-      $submitCount += 1;
-
-      unless ($submitCount % 1000) {
+    }
+ 
+     
+    # create the feature relationships
+    my $featureRelation = GUS::Model::DoTS::NAFeatureRelationship->new({
+	parent_na_feature_id => $lowSnpFeature->getNaFeatureId(),
+	child_na_feature_id => $highSnpFeature->getNaFeatureId(),
+	na_feat_relationship_type_id => $relationshipTypeId
+								       });
+    unless ($featureRelation->retrieveFromDB()) {# again, if resumed, this may have already been loaded
+	$featureRelation->submit(undef, 1); # noTran = 1 --> do not commit at this point
+	$submitCount += 1;
+    }
+    
+    unless ($submitCount % 1000) {
 	if ($self->getArg("commit")) {
-	  $self->getDb()->manageTransaction(undef, "commit"); # commit
-	  $self->getDb()->manageTransaction(undef, "begin");
+	    $self->getDb()->manageTransaction(undef, "commit"); # commit
+	    $self->getDb()->manageTransaction(undef, "begin");
 	}
 	
 	$self->undefPointerCache();
 	$self->log("$submitCount records loaded.")
-	  if $self->getArg('verbose');
-      }
+	    if $self->getArg('verbose');
     }
-  }
+  } # end iterate over hash
 
   if ($self->getArg("commit")) {
     $self->getDb()->manageTransaction(undef, "commit"); # commit final batch
