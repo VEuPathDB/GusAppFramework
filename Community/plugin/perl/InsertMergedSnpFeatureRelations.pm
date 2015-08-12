@@ -155,7 +155,7 @@ sub run {
       $rowCount += 1;
 
       if ($rowCount % 5000) {
-	$self->log("SKIPPED $rowCount rows.") if ($skipAll or $skipCount <= $skip);
+	$self->log("SKIPPED $rowCount rows.") if ($skipAll or $rowCount <= $skip);
 	$self->undefPointerCache(); # need to clear the pointer cache
       }
 
