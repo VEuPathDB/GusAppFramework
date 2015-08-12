@@ -198,8 +198,8 @@ sub doRelationships {
 	my $objectEDRId = $self->handleExtDbRlsSpec($values->[3],$externalDatabaseSpecs);
 	my $relationshipEDRId = $self->handleExtDbRlsSpec($values->[5],$externalDatabaseSpecs);
 	
-	my $subject = $self->getTermId($subjectTerm,$subjectEDRId) or $self->error("Could not retrieve id for subject $subjectTerm: $!");
-	my $object = $self->getTermId($objectTerm,$objectEDRId) or $self->error("Could not retrieve id for subject $subjectTerm: $!");
+	my $subject = $self->getTermId($subjectTerm,$subjectEDRId) or $self->error("Could not retrieve id for subject $subjectTerm for ext_db $subjectEDRId: $!");
+	my $object = $self->getTermId($objectTerm,$objectEDRId) or $self->error("Could not retrieve id for object $objectTerm for ext_db $objectEDRId: $!");
 	my $relationshipType = $self->getTermId($relationshipTerm,$relationshipEDRId) or $self->error("Could not retrieve id for relationship $relationshipTerm : $!");
 	my $relationship;
 	if (scalar (@$values) == 6) {
