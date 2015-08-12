@@ -373,8 +373,9 @@ SQL
     map { my ($name, $value) = split("=", $_); $attr{$name} = $value;} split(";", $attributes);
     $gene = GUS::Model::DoTS::Gene->new( {
                          'source_id' => $geneId,
-                         'description' => $attributes,
+                         'description' => $attr{description},
                          'name' => $attr{Name},
+                         'gene_symbol' => $attr{Name},
                          'external_database_release_id' => $extDbRlsId,
 					 } );
     $gene->submit();
@@ -439,17 +440,15 @@ sub undoTables {
   my ($self) = @_;
 
   return ('DoTS.ExternalNaSequence',
-          'DoTS.Gene',
-          'DoTS.GeneFeature',
-          'DoTS.GeneInstance',
-	  'DoTS.ExternalNASequence',
-	  'DoTS.Gene',
+	  'DoTS.NALocation',
+	  'DoTS.GeneInstance',
+	  'DoTS.GeneFeature',
+  	  'DoTS.Gene',
 	  'DoTS.GeneFeature',
 	  'DoTS.GeneInstance',
-	  'DoTS.Transcript',
-	  'DoTS.ExonFeature',
 	  'DoTS.RNAFeatureExon',
-	  'DoTS.NALocation',
+	  'DoTS.ExonFeature',
+	  'DoTS.Transcript'
          );
 
 }
