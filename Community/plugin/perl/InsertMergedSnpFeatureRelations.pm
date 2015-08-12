@@ -114,7 +114,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16456 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16457 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -142,6 +142,7 @@ sub run {
 
   my $rowCount = 0;
   my $skip = $self->getArg('skip');
+  my $skipAll = $self->getArg('skipAll');
 
   my $fName = $self->getArg('inFile');
 
@@ -153,12 +154,16 @@ sub run {
 
       $rowCount += 1;
 
+      if ($rowCount % 5000) {
+	$self->log("SKIPPED $rowCount rows.") if ($skipAll or $skipCount <= $skip);
+	$self->undefPointerCache(); # need to clear the pointer cache
+      }
+
       # dbSnp merges high to low; rsHigh is the id that was merged
       my $rsHigh = 'rs' . $values[0]; # rsHigh
       my $rsLow = 'rs' . $values[1]; # rsLow
 
       my $lowSnpFeature = $self->retrieveSnpFeature($rsLow, $xdbrId);
-      
       unless ($lowSnpFeature->retrieveFromDB()) {
 	# the lowSnpFeature might not be in the DB -- either it is itself later merged in the file
 	# or it is defined against a different genome build (dbSNP releases may be for multiple builds)
@@ -170,22 +175,9 @@ sub run {
 	next;
       }
 
-      if ($self->getArg('skipAll') ){
-	if ($rowCount % 5000) {
-	  $self->undefPointerCache(); # need to clear the pointer cache
-	}
-	next;
-      }
-
-      if ($rowCount <= $skip ) {
-	if ($rowCount % 5000) {
-	  $self->undefPointerCache(); # need to clear the pointer cache
-	}
-	next;
-      }
-      else {
-	  $self->log("SKIPPED $rowCount rows.  Resuming load with $rsHigh -> $rsLow.");
-      }
+      next if ($skipAll);
+      next if ($rowCount <= $skip);
+      $self->log("SKIPPED $rowCount rows.  Resuming load with $rsHigh -> $rsLow.") if ($rowCount > $skip);
 
       # create a new entry in SnpFeature for the high snp
       my $highSnpFeature = $self->retrieveSnpFeature($rsHigh, $xdbrId);
@@ -212,7 +204,7 @@ sub run {
 	  $self->getDb()->manageTransaction(undef, "begin");
 	}
 	
-	$self->undefPointerCache();
+ 	# $self->undefPointerCache();
 	$self->log("$submitCount records loaded.")
 	  if $self->getArg('verbose');
       }
