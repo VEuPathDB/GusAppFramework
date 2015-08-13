@@ -116,7 +116,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16463 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16475 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -177,7 +177,7 @@ sub run {
       $self->log("Merge target SNP $rsLow for $rsHigh not found in DB. Saving for second pass.")
 	if ($self->getArg('veryVerbose'));
 
-      print $nestedMergeFile join("\t", $rsHigh, $rsLow) . "\n" if ($nestedMergeFile);	
+      print $nestedMergeFile join("\t", values[0], values[1]) . "\n" if ($nestedMergeFile); # don't want to output the 'rs'	
       next;
     }
 
