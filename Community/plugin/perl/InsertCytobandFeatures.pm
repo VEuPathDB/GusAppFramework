@@ -1,7 +1,7 @@
 #######################################################################
 ##                 InsertCytobandFeatures.pm
 ##
-## $Id: InsertCytobandFeatures allenem $
+## $Id: InsertCytobandFeatures 16480 2015-08-13 17:33:25Z allenem $
 ##
 #######################################################################
 
@@ -97,7 +97,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16475 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16481 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
