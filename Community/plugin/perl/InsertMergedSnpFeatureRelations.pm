@@ -177,7 +177,7 @@ sub run {
       $self->log("Merge target SNP $rsLow for $rsHigh not found in DB. Saving for second pass.")
 	if ($self->getArg('veryVerbose'));
 
-      print $nestedMergeFile join("\t", values[0], values[1]) . "\n" if ($nestedMergeFile); # don't want to output the 'rs'	
+      print $nestedMergeFile join("\t", $values[0], $values[1]) . "\n" if ($nestedMergeFile); # don't want to output the 'rs'	
       next;
     }
 
