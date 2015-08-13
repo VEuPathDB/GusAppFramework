@@ -55,6 +55,7 @@ my $argsDeclaration =
              constraintFunc => undef,
              isList         => 0,
            }),
+ 
   ];
 
 
@@ -202,12 +203,7 @@ sub processTopLevelFeature {
     = split(/\t/, shift(@{$inputArrayRef}));
 
   if (%sequenceMap) {
-    if (exists $sequenceMap{$sequenceSourceId}) {
-      $sequenceSourceId = $sequenceMap{$sequenceSourceId};
-    }
-    else {
-      $self->error("No mapping for Sequence $sequenceSourceId provided in sequence mapping file");
-    }
+      $sequenceSourceId = $sequenceMap{$sequenceSourceId}  if (exists $sequenceMap{$sequenceSourceId});
   }
 
   # not handling all top-level feature types
@@ -350,6 +346,7 @@ sub getSequenceId {
 								} );
 
       unless ( $sequence->retrieveFromDB() ) {
+	  $self->log("No entry found for sequence $sequenceSourceId; creating record") if $self->getArg('verbose');
 	  $sequence->setSequenceVersion(1);
 	  $sequence->setExternalDatabaseReleaseId($extDbRlsId);
 	  $sequence->submit();
