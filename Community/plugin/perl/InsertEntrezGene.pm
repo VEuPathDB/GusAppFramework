@@ -102,6 +102,7 @@ my $documentation = { purpose=>$purpose,
 my %processedFeatureCount; # top-level features processed, by feature type
 my %ignoredFeatureCount;  # top-level features not processed, by feature type
 my %sequenceMap; # map of sequence source id from GFF3 file to sequence source ids in DB (e.g., RefSeq acccession to chrN)
+my %naSequenceIds; # hash storing na_sequence_ids mapped to sequence_source_ids to reduce slow lookups
 my $totalFeatureCount;   # total number of top-level features processed
 my $extDbRlsId;         # Entrez Gene external database release ID
 my $hugoQuery;         # prepared query for HUGO genes
@@ -343,18 +344,20 @@ sub getSequenceId {
 
   my ($self, $sequenceSourceId, $extDbRlsId) = @_;
 
-  my $sequence = GUS::Model::DoTS::ExternalNASequence->new( {
+  unless (exists $naSequenceIds{$sequenceSourceId}) {
+      my $sequence = GUS::Model::DoTS::ExternalNASequence->new( {
           'source_id' => $sequenceSourceId,
-    } );
+								} );
 
-  unless ( $sequence->retrieveFromDB() ) {
-    $sequence->setSequenceVersion(1);
-    $sequence->setExternalDatabaseReleaseId($extDbRlsId);
-    $sequence->submit();
-    $self->undefPointerCache();
+      unless ( $sequence->retrieveFromDB() ) {
+	  $sequence->setSequenceVersion(1);
+	  $sequence->setExternalDatabaseReleaseId($extDbRlsId);
+	  $sequence->submit();
+	  $self->undefPointerCache();
+      }
+      $naSequenceIds{$sequenceSourceId} = $sequence->getNaSequenceId();
   }
-
-  return $sequence->getNaSequenceId();
+  return $naSequenceIds{$sequenceSourceId};
 }
 
 sub getGeneId {
