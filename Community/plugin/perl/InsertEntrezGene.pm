@@ -47,6 +47,14 @@ my $argsDeclaration =
                constraintFunc => undef,
                isList         => 0,
              }),
+     fileArg({ name           => 'sequenceMappingFile',
+             descr          => 'mapping between sequences source ids in the GFF3 file and those stored in SRes::ExternalNASequence (e.g., RefSeq Accession to chrN); tab-delimited file with two columns: <gff3 sequence source id>   <database sequence source id>.  If not specified plugin will create placeholder entries in SRes::ExternalNASequence for any sequence_source_id not in the table',
+             reqd           => 0,
+             mustExist      => 0,
+             format         => 'tab-delim',
+             constraintFunc => undef,
+             isList         => 0,
+           }),
   ];
 
 
@@ -93,6 +101,7 @@ my $documentation = { purpose=>$purpose,
 
 my %processedFeatureCount; # top-level features processed, by feature type
 my %ignoredFeatureCount;  # top-level features not processed, by feature type
+my %sequenceMap; # map of sequence source id from GFF3 file to sequence source ids in DB (e.g., RefSeq acccession to chrN)
 my $totalFeatureCount;   # total number of top-level features processed
 my $extDbRlsId;         # Entrez Gene external database release ID
 my $hugoQuery;         # prepared query for HUGO genes
@@ -128,6 +137,8 @@ sub run {
 
     $hugoDbName = $self->getArg('hugoExtDbRlsName');
     $self->getAlgInvocation()->setMaximumNumberOfObjects(100000);
+
+    readSequenceIdMap($self) if $self->getArg('sequenceMappingFile');
 
     open(GFF3, $self->getArg('inputFile'));
 
@@ -167,13 +178,37 @@ sub run {
     return $msg;
 }
 
+sub readSequenceIdMap {
+  my ($self) = @_;
+
+  open(FILE, $self->getArg('sequenceMappingFile'));
+
+  while(<FILE>) {
+    chomp;
+    my ($fileSequence, $dbSequence) = split /\t/;
+    $sequenceMap{$fileSequence} = $dbSequence;
+  }
+  close FILE;
+  $self->log(Dumper(\%sequenceMap)) if $self->getArg('veryVerbose');
+}
+  
+
 sub processTopLevelFeature {
   my ($self, $inputArrayRef) = @_;
 
   # first feature
   my ($sequenceSourceId, $source, $type, $start, $end, $score, $strand, $phase, $attributes)
     = split(/\t/, shift(@{$inputArrayRef}));
-  
+
+  if (%sequenceMap) {
+    if (exists $sequenceMap{$sequenceSourceId}) {
+      $sequenceSourceId = $sequenceMap{$sequenceSourceId};
+    }
+    else {
+      $self->error("No mapping for Sequence $sequenceSourceId provided in sequence mapping file");
+    }
+  }
+
   # not handling all top-level feature types
   if ($type ne 'gene' && $type ne 'tRNA'
       && $type ne 'V_gene_segment' && $type ne 'J_gene_segment'
