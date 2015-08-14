@@ -92,10 +92,16 @@ sub read {
             if ($pathway->{$pathwayStep}->{'nextStep'} ne 'None') {
                 my $nextSteps = $pathway->{$pathwayStep}->{'nextStep'};
                 my @outgoingCompounds = ($pathway->{$pathwayStep}->{'Direction'} eq 'LEFT-TO-RIGHT') ? keys(%{$pathway->{$pathwayStep}->{'Compounds'}->{'right'}}) : keys(%{$pathway->{$pathwayStep}->{'Compounds'}->{'left'}});
+                my $siblingNodes;
                 foreach my $nextStep (@{$nextSteps}) {
                     $nextStep =~ s/^#//;
-                    my @incomingCompounds = ($pathway->{$nextStep}->{'Direction'} eq 'LEFT-TO-RIGHT') ? keys(%{$pathway->{$nextStep}->{'Compounds'}->{'left'}}) :  keys(%{$pathway->{$nextStep}->{'Compounds'}->{'right'}});
+                    push (@{$pathway->{$nextStep}->{'Parents'}}, $pathwayStep);
+                    my $incomingSide = ($pathway->{$nextStep}->{'Direction'} eq 'LEFT-TO-RIGHT') ? 'left' : 'right';
+                    my @incomingCompounds = keys(%{$pathway->{$nextStep}->{'Compounds'}->{$incomingSide}});
                     foreach my $outgoingCompound (@outgoingCompounds) {
+                        if (exists $siblingNodes->{$outgoingCompound}) {
+                            delete $pathway->{$nextStep}->{'Compounds'}->{$incomingSide}->{$outgoingCompound};
+                        }
                         if (any {$_ eq $outgoingCompound} @incomingCompounds) {
                             if ($pathway->{$pathwayStep}->{'Direction'} eq 'LEFT-TO-RIGHT') {
                                 delete $pathway->{$pathwayStep}->{'Compounds'}->{'right'}->{$outgoingCompound};
@@ -115,9 +121,31 @@ sub read {
             foreach my $edge (keys(%{$pathway->{$pathwayStep}->{'Edges'}})) {
                 my $node = $pathway->{$pathwayStep}->{'Edges'}->{$edge}->{'Node'};
                 if ($node =~ /SmallMoleculeReference/ || $node =~ /ProteinReference/ || $node =~ /Complex/ || $node =~ /Rna/) {
-                    #incoming compounds - these should always be in the hash for this pathway step
+                    #incoming compounds - look in the hash for this pathway step
                     my $side = ($pathway->{$pathwayStep}->{'Direction'} eq 'LEFT-TO-RIGHT') ? 'left' : 'right';
-                    $pathway->{$pathwayStep}->{'Edges'}->{$edge}->{'Node'} = $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$node}->{'UniqueId'};
+                    if (exists $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$node}) {
+                        $pathway->{$pathwayStep}->{'Edges'}->{$edge}->{'Node'} = $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$node}->{'UniqueId'};
+                    
+                    }else{
+                        #otherwise, look for a step with a shared parent that has this compound incoming
+                        my $siblings;
+                        foreach my $parent (@{$pathway->{$pathwayStep}->{'Parents'}}) {
+                            foreach my $child (@{$pathway->{$parent}->{'nextStep'}}) {
+                                push (@{$siblings}, $child) unless $child eq $pathwayStep;
+                            }
+                        }
+                        my $count = 0;
+                        foreach my $sibling (@{$siblings}) {
+                            my $siblingSide = ($pathway->{$sibling}->{'Direction'} eq 'LEFT-TO-RIGHT') ? 'left' : 'right';
+                            if (exists $pathway->{$sibling}->{'Compounds'}->{$siblingSide}->{$node}) {
+                                $pathway->{$pathwayStep}->{'Edges'}->{"$edge $count"}->{'Node'} = $pathway->{$sibling}->{'Compounds'}->{$siblingSide}->{$node}->{'UniqueId'};
+                                $pathway->{$pathwayStep}->{'Edges'}->{"$edge $count"}->{'AssociatedNode'} = $pathway->{$pathwayStep}->{'Edges'}->{$edge}->{'AssociatedNode'};
+                                $count ++;
+                            }
+                        }
+                        delete $pathway->{$pathwayStep}->{'Edges'}->{$edge};
+                    }
+                        
 
                 }elsif ($node =~ /BiochemicalReaction/ || $node =~ /Transport/) {
                     #outgoing compounds
@@ -131,12 +159,16 @@ sub read {
                     #otherwise, look in hash for next pathway step(s)
                     }else {
                         my $nextSteps = $pathway->{$pathwayStep}->{'nextStep'};
+                        my $count = 0;
                         foreach my $nextStep (@{$nextSteps}) {
                             my $nextSide = ($pathway->{$nextStep}->{'Direction'} eq 'LEFT-TO-RIGHT') ? 'left' : 'right';
                             if (exists ($pathway->{$nextStep}->{'Compounds'}->{$nextSide}->{$associatedNode})) {
-                                $pathway->{$pathwayStep}->{'Edges'}->{$edge}->{'AssociatedNode'} = $pathway->{$nextStep}->{'Compounds'}->{$nextSide}->{$associatedNode}->{'UniqueId'};
+                                $pathway->{$pathwayStep}->{'Edges'}->{"$edge $count"}->{'AssociatedNode'} = $pathway->{$nextStep}->{'Compounds'}->{$nextSide}->{$associatedNode}->{'UniqueId'};
+                                $pathway->{$pathwayStep}->{'Edges'}->{"$edge $count"}->{'Node'} = $pathway->{$pathwayStep}->{'Edges'}->{$edge}->{'Node'};
+                                $count ++;
                             }
                         }
+                        delete $pathway->{$pathwayStep}->{'Edges'}->{$edge};
                     }
                 }
             }
