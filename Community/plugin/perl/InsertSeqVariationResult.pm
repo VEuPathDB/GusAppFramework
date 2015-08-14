@@ -52,6 +52,12 @@ my $argsDeclaration =
 	       constraintFunc => undef,
 	       reqd           => 0,
 	       isList         => 0 }),
+
+ stringArg({ name  => 'snpExtDbRlsSpec',
+	       descr => "The ExternalDBRelease specifier for the referenced SNPs. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 }),
   stringArg({ name  => 'sourceId',
 	       descr => "external database source_id for the result in the specified External Database; or internal identifier",
 	       constraintFunc => undef,
@@ -77,6 +83,11 @@ my $argsDeclaration =
 	       constraintFunc => undef,
 	       reqd           => 0,
 	       isList         => 0 }),
+   booleanArg({ name  => 'skipMissingSNPs',
+		descr => "skip results mapped to SNPs not found in the database.  If flag is not provided, plugin will fail when a result cannot be mapped to a SNP",
+		constraintFunc => undef,
+		reqd           => 0,
+		isList         => 0 }),
   
   ];
 
@@ -157,29 +168,74 @@ sub new {
 # Main Routine
 #######################################################################
 
+
 sub run {
   my ($self) = @_;
 
   my $protocolAppNode = $self->loadProtocolAppNode();
   $self->loadCharacteristics($protocolAppNode);
-  $self->loadResults($protocolAppNode);
-
+  
   $self->loadResults($protocolAppNode);
 
 }
 
-sub fetchSnpNAFeatureId {
-  my ($self, $snpId) = @_;
+sub fetchMergeFeatureRelationTypeId {
+    my ($self) = @_;
+    
+    my $featureRelationType = GUS::Model::DoTS::NAFeatRelationshipType->new({name => 'merge'});
+    
+    my $typeId = ($featureRelationType->retrieveFromDB()) ? $featureRelationType->getNAFeatRelationshipTypeId() : undef;
 
-  my $snpFeature = GUS::Model::DoTS::SnpFeature->new({source_id => $snpId});
+    return $typeId;
+}
+
+sub fetchSnpNAFeatureId {
+  my ($self, $snpId, $mergeFeatureRelationTypeId) = @_;
+
+  my $snpFeature = GUS::Model::DoTS::SnpFeature->new({source_id => $snpId,
+						      external_database_release_id => $self->getArg('snpExtDbsRlsId')});	
 
   unless ($snpFeature->retrieveFromDB()) {
-      $self->error("No record found for $snpId is DoTs.SnpFeature");
+    if ($self->getArg('skipMissingSNPs')) {
+      $self->log("No record found for $snpId in DoTS.SnpFeature");
+      return undef;
+    }
+    else {
+      $self->error("No record found for $snpId in DoTs.SnpFeature");
+    }
   }
 
-  $self->log('SNP: $snpId - ' . $snpFeature->getNaFeatureId) if ($self->getArg('veryVerbose'));
+  # if SNP has been merged, map to parent
+  if ($snpFeature->getName() eq 'merged') {
+    return $self->getParentSnpFeature($snpFeature->getNaFeatureId());
+  }
 
   return $snpFeature->getNaFeatureId();
+}
+
+
+sub getParentSnpFeature {
+  my ($self, $childNaFeatureId) = @_;
+  
+  # TODO: this is PostgreSQL specific; needs to be generalized for Oracle (limit --> rownum | recursive with)
+  my $query = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
+WITH RECURSIVE parentFeature AS (
+(SELECT parent_na_feature_id AS na_feature_id, sf.source_id FROM
+DoTS.NAFeatureRelationship r, DoTS.SnpFeature sf
+WHERE r.child_na_feature_id = ? AND sf.na_feature_id = r.parent_na_feature_id)
+UNION
+SELECT parent_na_feature_id AS na_feature_id, sf.source_id FROM 
+parentFeature pf, DoTS.NAFeatureRelationship r, DoTS.SnpFeature sf
+WHERE r.child_na_feature_id = pf.na_feature_id AND sf.na_feature_id = r.parent_na_feature_id)
+SELECT * FROM parentFeature ORDER by source_id DESC LIMIT 1;
+SQL
+
+  $query->execute($childNaFeatureId);
+  my ($parentNaFeatureId, $parentSourceId) = $query->fetchrow_array();
+  $query->finish();
+
+  return $parentNaFeatureId;
+
 }
 
 sub fetchOntologyTermId {
@@ -222,7 +278,6 @@ sub link2table { # create entry in SRes.Characteristic that links the protocol a
 							       value => 'SeqVariation',
 							       table_id => $tableId
 							      });
-  
   return $characteristic;
 }
 
@@ -264,7 +319,7 @@ sub parseFieldValues { #
       $fieldValues->{sequence_ontology_id} = $self->fetchOntologyTermId($fieldValues->{sequence_ontology},
 									$fieldValues->{sequence_ontology_xdbr});
 
-      delete $fieldValeus->{sequence_ontology};
+      delete $fieldValues->{sequence_ontology};
       delete $fieldValues->{sequence_ontology_xdbr};
   }
 
@@ -316,6 +371,8 @@ sub loadResults {
 
     # begin transaction management
     $self->getDb()->manageTransaction(undef, "begin"); # start a transaction
+
+    my $mergeFeatureRelationTypeId = $self->fetchMergeFeatureRelationTypeId(); # need to make sure no results are mapped to 'merged' rs Ids
 
     my $fName = $self->getArg('inFile');
     my $fh = FileHandle->new;
