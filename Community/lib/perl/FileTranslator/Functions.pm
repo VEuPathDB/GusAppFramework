@@ -71,6 +71,44 @@ sub swapMappedValues {
   return $swapMappedValues;
 }
 
+
+#--------------------------------------------------------------------------------
+
+sub swapMappedValueSet {
+  my ($self,$hash) = @_;
+  my $mapHash = $hash->{'map_hash'};
+  my $swapMappedValues; $swapMappedValues = sub {
+    my $valuesString = shift;
+    my ($valueSet,$char) = split("\t",$valuesString);
+    return undef unless defined  $valueSet;
+    return $valueSet unless defined $char;
+    
+    my @values = split(",",$valueSet);
+    $char = lc($char);
+    my @RV;
+    foreach my $value (@values) {
+      my $lv = lc($value);
+      open ( TEST, '>>', "/home/jcade/tester1.out");
+      print TEST "start point \n";
+      if (defined ($mapHash->{$char})) {
+        if (defined ($mapHash->{$char}->{$lv})) {
+          print TEST $char."\t". $value."\n";
+          $value = $mapHash->{$char}->{$lv};
+          $value = '' if $value =~/^null$/; 
+          print TEST $char."\t". $value."\n";
+        }
+      }
+      print TEST "final answer $value\n";
+      push @RV, $value;
+    }
+    @RV = sort@RV;
+    print Dumper \@RV;
+    $valueSet = join(",",@RV);
+    print STDERR $valueSet;
+    return $valueSet;
+  };
+  return $swapMappedValues;
+}
 #--------------------------------------------------------------------------------
 
 sub formatHouseholdId {
