@@ -156,7 +156,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16448 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16497 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -320,9 +320,10 @@ sub parseFieldValues { #
       $self->error("must provide a 'sequence_ontology_xdbr' (Ontology|Version) column if providing 'sequence_ontology' terms or source_ids in data file") 
 	  if (!exists $fieldValues->{sequence_ontology_xdbr});
       
-      $fieldValues->{sequence_ontology_id} = $self->fetchOntologyTermId($fieldValues->{sequence_ontology},
-									$fieldValues->{sequence_ontology_xdbr});
-
+      if ($fieldValues->{sequence_ontology}) { # if a value is present
+	  $fieldValues->{sequence_ontology_id} = $self->fetchOntologyTermId($fieldValues->{sequence_ontology},
+									    $fieldValues->{sequence_ontology_xdbr});
+      }
       delete $fieldValues->{sequence_ontology};
       delete $fieldValues->{sequence_ontology_xdbr};
   }
@@ -388,6 +389,9 @@ sub loadResults {
     my $recordCount = 0;
     while(<$fh>) {
 	my ($sourceId, @values) = split /\t/;
+
+	$self->log($sourceId) if $self->getArg('veryVerbose');
+
 	chomp(@values);
 
 	my %fieldValues = undef;
@@ -405,7 +409,6 @@ sub loadResults {
 	$fieldValues{protocol_app_node_id} = $protocolAppNode->getProtocolAppNodeId();
 
 	if ($self->getArg('veryVerbose')) {
-	  $self->log($sourceId); 
 	  $self->log(Dumper(\%fieldValues));
 	}
 
