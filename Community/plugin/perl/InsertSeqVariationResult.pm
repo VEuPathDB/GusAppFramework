@@ -23,6 +23,7 @@ use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologySynonym;
 use GUS::Model::Results::SeqVariation;
 use GUS::Model::DoTS::SnpFeature;
+use GUS::Model::DoTS::NAFeatureRelationship;
 
 use Data::Dumper;
 use FileHandle;
@@ -155,7 +156,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16431 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16448 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -179,21 +180,11 @@ sub run {
 
 }
 
-sub fetchMergeFeatureRelationTypeId {
-    my ($self) = @_;
-    
-    my $featureRelationType = GUS::Model::DoTS::NAFeatRelationshipType->new({name => 'merge'});
-    
-    my $typeId = ($featureRelationType->retrieveFromDB()) ? $featureRelationType->getNAFeatRelationshipTypeId() : undef;
-
-    return $typeId;
-}
-
 sub fetchSnpNAFeatureId {
   my ($self, $snpId, $mergeFeatureRelationTypeId) = @_;
 
   my $snpFeature = GUS::Model::DoTS::SnpFeature->new({source_id => $snpId,
-						      external_database_release_id => $self->getArg('snpExtDbsRlsId')});	
+						      external_database_release_id => $self->getExtDbRlsId($self->getArg('snpExtDbRlsSpec'))});
 
   unless ($snpFeature->retrieveFromDB()) {
     if ($self->getArg('skipMissingSNPs')) {
@@ -291,6 +282,17 @@ sub getTypeId {
   return $typeId;
 }
 
+
+# round numberes > e-308 to zero
+sub zero{
+  my ($self, $value) = @_;
+  my $exponent =  ($value =~ /[E|e]-(\d+)/) ? $1 : undef;
+
+  return 0 if ($exponent > 308);
+  return $value;
+  
+}
+
 sub parseFieldValues { # 
   my ($self, $fieldValues) = @_;
 
@@ -300,6 +302,8 @@ sub parseFieldValues { #
   while (my ($key, $value) = each %$fieldValues) {
     $fieldValues->{$key} = undef if $value eq '';
   }
+
+  $fieldValues->{p_value} = $self->zero($fieldValues->{p_value}) if (exists $fieldValues->{p_value});
 
   # map phenotypes to ontology_term_id; throw error if no External Database specification is provided 
   if (exists $fieldValues->{phenotype}) {
@@ -372,8 +376,6 @@ sub loadResults {
     # begin transaction management
     $self->getDb()->manageTransaction(undef, "begin"); # start a transaction
 
-    my $mergeFeatureRelationTypeId = $self->fetchMergeFeatureRelationTypeId(); # need to make sure no results are mapped to 'merged' rs Ids
-
     my $fName = $self->getArg('inFile');
     my $fh = FileHandle->new;
     $fh->open("<$fName") || $self->error("Unable to open data file: $fName\n");
@@ -395,10 +397,17 @@ sub loadResults {
 	# and fetch ontology_term_ids for phenotypes
 	%fieldValues = $self->parseFieldValues(\%fieldValues);
 
-	$fieldValues{snp_na_feature_id} = $self->fetchSnpNAFeatureId($sourceId);
+	my $naFeatureId = $self->fetchSnpNAFeatureId($sourceId);
+
+	next if (!$naFeatureId);
+
+	$fieldValues{snp_na_feature_id} = $naFeatureId;
 	$fieldValues{protocol_app_node_id} = $protocolAppNode->getProtocolAppNodeId();
 
-	$self->log(Dumper(\%fieldValues)) if $self->getArg('verbose');
+	if ($self->getArg('veryVerbose')) {
+	  $self->log($sourceId); 
+	  $self->log(Dumper(\%fieldValues));
+	}
 
 	my $seqVariationResult = GUS::Model::Results::SeqVariation->new(\%fieldValues);
 	$seqVariationResult->submit(undef, 1); # noTran = 1 --> do not commit at this point
@@ -408,10 +417,10 @@ sub loadResults {
 		$self->getDb()->manageTransaction(undef, "commit"); # commit
 		$self->getDb()->manageTransaction(undef, "begin");
 	    }
-	    $self->undefPointerCache();
 	    $self->log("$recordCount records loaded.")
 		if $self->getArg('verbose');
 	}
+	$self->undefPointerCache();
     }
 
     if ($self->getArg("commit")) {
