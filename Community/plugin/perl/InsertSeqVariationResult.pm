@@ -89,6 +89,11 @@ my $argsDeclaration =
 		constraintFunc => undef,
 		reqd           => 0,
 		isList         => 0 }),
+  booleanArg({ name  => 'negLogP',
+		descr => "transform pvalues using -log10",
+		constraintFunc => undef,
+		reqd           => 0,
+		isList         => 0 }),
   
   ];
 
@@ -156,7 +161,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16497 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16503 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -283,13 +288,13 @@ sub getTypeId {
 }
 
 
-# round numberes > e-308 to zero
-sub zero{
+# take neg log10 of pvalues; use value of exponent when value is >= 300 due to floating point issues
+sub negLog10{
   my ($self, $value) = @_;
   my $exponent =  ($value =~ /[E|e]-(\d+)/) ? $1 : undef;
 
-  return 0 if ($exponent > 308);
-  return $value;
+  return $exponent if ($exponent > 300);
+  return -log10($value);
   
 }
 
@@ -302,8 +307,8 @@ sub parseFieldValues { #
   while (my ($key, $value) = each %$fieldValues) {
     $fieldValues->{$key} = undef if $value eq '';
   }
-
-  $fieldValues->{p_value} = $self->zero($fieldValues->{p_value}) if (exists $fieldValues->{p_value});
+  
+  $fieldValues->{p_value} = $self->negLog10($fieldValues->{p_value}) if ($self->getArg('negLogP'));
 
   # map phenotypes to ontology_term_id; throw error if no External Database specification is provided 
   if (exists $fieldValues->{phenotype}) {
