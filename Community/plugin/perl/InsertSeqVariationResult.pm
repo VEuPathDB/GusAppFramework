@@ -28,6 +28,7 @@ use GUS::Model::DoTS::NAFeatureRelationship;
 use Data::Dumper;
 use FileHandle;
 use Carp;
+use POSIX qw(log10);
 
 my $argsDeclaration =
   [
@@ -161,7 +162,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16503 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16507 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -193,11 +194,11 @@ sub fetchSnpNAFeatureId {
 
   unless ($snpFeature->retrieveFromDB()) {
     if ($self->getArg('skipMissingSNPs')) {
-      $self->log("No record found for $snpId in DoTS.SnpFeature");
-      return undef;
+	$self->log("No record found for $snpId in DoTS.SnpFeature") if ($self->getArg('verbose'));
+	return undef;
     }
     else {
-      $self->error("No record found for $snpId in DoTs.SnpFeature");
+	$self->error("No record found for $snpId in DoTs.SnpFeature");
     }
   }
 
@@ -294,7 +295,7 @@ sub negLog10{
   my $exponent =  ($value =~ /[E|e]-(\d+)/) ? $1 : undef;
 
   return $exponent if ($exponent > 300);
-  return -log10($value);
+  return sprintf("%.2f",-log10($value));
   
 }
 
@@ -395,7 +396,7 @@ sub loadResults {
     while(<$fh>) {
 	my ($sourceId, @values) = split /\t/;
 
-	$self->log($sourceId) if $self->getArg('veryVerbose');
+	$self->log($sourceId) if ($self->getArg('veryVerbose'));
 
 	chomp(@values);
 
