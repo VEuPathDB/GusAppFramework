@@ -95,6 +95,11 @@ my $argsDeclaration =
 		constraintFunc => undef,
 		reqd           => 0,
 		isList         => 0 }),
+   integerArg({name=>'protocolAppNodeId',
+	       descr => 'protocol app node id for resume or linking to exisiting protocol app node',
+	       constraintFunc => undef,
+	       reqd => 0,
+	       isList => 0}),
   
   ];
 
@@ -162,7 +167,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16508 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16513 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -268,14 +273,16 @@ sub fetchOntologyTermId {
 }
 
 sub link2table { # create entry in SRes.Characteristic that links the protocol app node to a result table
-  my ($self) = @_;
+  my ($self, $protocolAppNodeId) = @_;
 
   my $tableId = $self->className2TableId('Results::SeqVariation');
   my $characteristic = GUS::Model::Study::Characteristic->new({
 							       value => 'SeqVariation',
-							       table_id => $tableId
+							       table_id => $tableId,
+							       protocol_app_node_id => $protocolAppNodeId
 							      });
-  return $characteristic;
+  $characteristic->submit() unless ($characteristic->retrieveFromDB());
+
 }
 
 sub getTypeId {
@@ -350,8 +357,18 @@ sub parseFieldValues { #
 # that indicates that the result is stored in SeqVariation
 sub loadProtocolAppNode {
     my ($self) = @_;
+    
+    my $protocolAppNode = undef;
 
-    my $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({
+    my $protocolAppNodeId = $self->getArg('protocolAppNodeId');
+    if ($protocolAppNodeId) {
+      $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({
+        protocol_app_node_id => $protocolAppNodeId});
+      $self->error("No record found in Study.ProtocolAppNode where protocol_app_node_id = $protocolAppNodeId") 
+	unless ($protocolAppNode->retrieveFromDB());
+    }
+    else {
+      $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({
 	external_database_release_id => $self->getExtDbRlsId($self->getArg('extDbRlsSpec')),
 	type_id => $self->getTypeId($self->getArg('type')),
 	subtype_id => $self->getTypeId($self->getArg('subType')),
@@ -359,10 +376,10 @@ sub loadProtocolAppNode {
 	source_id => $self->getArg('sourceId'),
 	description => $self->getArg('description')
 								  });
-
-    my $resultTableCharacteristic = $self->link2table();
-    $resultTableCharacteristic->setParent($protocolAppNode);
-    $protocolAppNode->submit();
+      $protocolAppNode->submit();
+    }
+     
+    $self->link2table($protocolAppNode->getProtocolAppNodeId());
 
     return $protocolAppNode;
 }
