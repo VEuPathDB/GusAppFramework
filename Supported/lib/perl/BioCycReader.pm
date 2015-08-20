@@ -103,6 +103,7 @@ sub read {
                             delete $pathway->{$nextStep}->{'Compounds'}->{$incomingSide}->{$outgoingCompound};
                         }
                         if (any {$_ eq $outgoingCompound} @incomingCompounds) {
+                            push (@{$siblingNodes->{$outgoingCompound}->{'nextSteps'}}, $nextStep);
                             if ($pathway->{$pathwayStep}->{'Direction'} eq 'LEFT-TO-RIGHT') {
                                 delete $pathway->{$pathwayStep}->{'Compounds'}->{'right'}->{$outgoingCompound};
                             } elsif ($pathway->{$pathwayStep}->{'Direction'} eq 'RIGHT-TO-LEFT') {
