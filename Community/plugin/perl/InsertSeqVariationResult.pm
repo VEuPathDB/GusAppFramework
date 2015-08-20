@@ -162,7 +162,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16507 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16508 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -333,6 +333,15 @@ sub parseFieldValues { #
       delete $fieldValues->{sequence_ontology};
       delete $fieldValues->{sequence_ontology_xdbr};
   }
+
+  if (exists $fieldValues->{allele}) { # allele field can only have char length 1
+      my $allele = $fieldValues->{allele};
+      if (length $allele > 1) {
+	  $self->log("Allele $allele length > 1; inserting NULL value instead") 
+	      if $self->getArg('veryVerbose');
+	  $fieldValues->{allele} = undef;
+      }
+    }
 
   return %$fieldValues;
 }
