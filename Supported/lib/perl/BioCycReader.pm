@@ -224,24 +224,25 @@ sub getCompounds {
     my $compounds = $reaction->{$side};
     foreach my $compound (@{$compounds}) {
         $compound =~ s/^#//;
+        my $standardName = $rdf->{'SmallMolecule'}->{$compound}->{'standardName'};
         if (exists($rdf->{'SmallMolecule'}->{$compound}->{'entityReference'})) {
             my $smallMolRef = $rdf->{'SmallMolecule'}->{$compound}->{'entityReference'};
             $smallMolRef =~ s/^#//;
-            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef}->{'NodeType'} = 'compound';
-            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef}->{'standardName'} = $rdf->{'SmallMolecule'}->{$compound}->{'standardName'};
-            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef}->{'UniqueId'} = "$pathwayStep.$smallMolRef";
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'NodeType'} = 'compound';
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'standardName'} = $standardName;
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'UniqueId'} = "$pathwayStep.$smallMolRef.$standardName";
             foreach my $xref (@{$rdf->{'SmallMoleculeReference'}->{$smallMolRef}->{'xref'}}) {
                 $xref =~ s/^#//;
                 if ($xref =~ /UnificationXref/) {
                     if ($rdf->{'UnificationXref'}->{$xref}->{'db'} eq 'ChEBI')  {
-                        $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef}->{'chEBI'} = $rdf->{'UnificationXref'}->{$xref}->{'id'};
+                        $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'chEBI'} = $rdf->{'UnificationXref'}->{$xref}->{'id'};
                     }
                 }
             }
         }else {
-            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound}->{'NodeType'} = 'compound';
-            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound}->{'standardName'} = $rdf->{'SmallMolecule'}->{$compound}->{'standardName'};
-            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound}->{'UniqueId'} = "$pathwayStep.$compound";
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'NodeType'} = 'compound';
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'standardName'} = $standardName;
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'UniqueId'} = "$pathwayStep.$compound.$standardName";
         }
     }
 }
