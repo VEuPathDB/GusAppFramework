@@ -167,7 +167,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16513 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16519 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -289,7 +289,8 @@ sub getTypeId {
   my ($self, $typeStr) = @_;
   my $typeId = undef;
   if ($typeStr) {
-    my @type = $self->getArg('type').split(";"); # term;xdbr
+    my @type = split ';',  $typeStr; # term;xdbr
+    $self->log(Dumper(\@type));
     $typeId = $self->fetchOntologyTermId($type[0], $type[1]);
   }
   return $typeId;
