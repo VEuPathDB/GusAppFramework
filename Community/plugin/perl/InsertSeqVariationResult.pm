@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16559 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16560 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -302,7 +302,7 @@ sub link2table { # create entry in SRes.Characteristic that links the protocol a
 
   my $tableId = $self->className2TableId($table);
   my $characteristic = GUS::Model::Study::Characteristic->new({
-							       value => '$table',
+							       value => $table,
 							       table_id => $tableId,
 							       protocol_app_node_id => $protocolAppNodeId
 							      });
