@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16523 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16559 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -208,7 +208,7 @@ my $snpExternalDbRlsId;
 sub run {
   my ($self) = @_;
 
-  $snpExternalDbRlsId = self->getExtDbRlsId($self->getArg('snpExtDbRlsSpec'));
+  $snpExternalDbRlsId = $self->getExtDbRlsId($self->getArg('snpExtDbRlsSpec'));
   my $protocolAppNode = $self->loadProtocolAppNode();
   $self->loadCharacteristics($protocolAppNode);
   
@@ -439,6 +439,7 @@ sub fetchNaSequenceId {
 								external_database_release_id => $naSequenceXdbrId});
     if ($naSequence->retrieveFromDB()) {
       $naSequenceMap{$chr} = $naSequence->getNaSequenceId();
+      undef $naSequence;
     }
     else {
       $self->error("No sequence for $chr found in the DB");
@@ -452,8 +453,10 @@ sub fetchNaSequenceId {
 sub loadSegmentResult {
     my ($self, $sourceId, $fieldValues, $protocolAppNodeId, $hasSegmentResultLink) = @_;
     
-    my ($chr, $location) = split(':', $sourceId) if ($sourceId =~ /:/);
-    my ($chr, $location) = split('-', $sourceId) if ($sourceId =~ /-/);
+    my $chr = undef;
+    my $location = undef;
+    ($chr, $location) = split(':', $sourceId) if ($sourceId =~ /:/);
+    ($chr, $location) = split('-', $sourceId) if ($sourceId =~ /\-/);
 
     $chr = 'chr' . $chr;
 
@@ -464,10 +467,11 @@ sub loadSegmentResult {
          protocol_app_node_id => $protocolAppNodeId,
          segment_start => $location});
 
-    $segmentResult->setP_value($fieldValues->{p_value}) if (exists $fieldValues->{p_value});
+ 
+    $segmentResult->setPValue($fieldValues->{p_value}) if (exists $fieldValues->{p_value});
     $segmentResult->submit();
 
-    $self->log("Inserted result for $sourceId in Results::SegmentResult") if ($self->getArg('veryVerbose'));
+    $self->log("Inserted result for $sourceId in Results::SegmentResult") if ($self->getArg('verbose'));
     if (!$hasSegmentResultLink) {
       $self->link2table($protocolAppNodeId, 'Results::SegmentResult');
       $hasSegmentResultLink = 1;
@@ -511,23 +515,22 @@ sub loadResults {
 	if (!$naFeatureId) {
 	  if ($self->getArg('loadSegmentResults') and $sourceId !~ 'rs') {
 	    $hasSegmentResultLink = $self->loadSegmentResult($sourceId, \%fieldValues, 
-							     $protocolAppNode, 
+							     $protocolAppNode->getProtocolAppNodeId(), 
 							     $hasSegmentResultLink);	    
 	  }
-	  else {
-	    next;
+	 
+	}
+	else {
+	  $fieldValues{snp_na_feature_id} = $naFeatureId;
+	  $fieldValues{protocol_app_node_id} = $protocolAppNode->getProtocolAppNodeId();
+	  
+	  if ($self->getArg('veryVerbose')) {
+	    $self->log(Dumper(\%fieldValues));
 	  }
+
+	  my $seqVariationResult = GUS::Model::Results::SeqVariation->new(\%fieldValues);
+	  $seqVariationResult->submit(undef, 1); # noTran = 1 --> do not commit at this point
 	}
-
-	$fieldValues{snp_na_feature_id} = $naFeatureId;
-	$fieldValues{protocol_app_node_id} = $protocolAppNode->getProtocolAppNodeId();
-
-	if ($self->getArg('veryVerbose')) {
-	  $self->log(Dumper(\%fieldValues));
-	}
-
-	my $seqVariationResult = GUS::Model::Results::SeqVariation->new(\%fieldValues);
-	$seqVariationResult->submit(undef, 1); # noTran = 1 --> do not commit at this point
 
 	unless (++$recordCount % 5000) {
 	    if ($self->getArg("commit")) {
