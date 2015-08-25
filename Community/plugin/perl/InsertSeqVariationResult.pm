@@ -4,6 +4,10 @@
 ## Loads results from tab-delimited file into Results.SeqVariation
 ## also links results to annotations via the Study.ProtocolAppNode
 ##
+## Also includes option to load results associated with markers 
+## identified by position (e.g., 1-1239341 or 1:12313) into 
+## Results.SegmentResult
+## 
 ## $Id: InsertSeqVariationResult.pm allenem $
 ##
 #######################################################################
@@ -24,6 +28,8 @@ use GUS::Model::SRes::OntologySynonym;
 use GUS::Model::Results::SeqVariation;
 use GUS::Model::DoTS::SnpFeature;
 use GUS::Model::DoTS::NAFeatureRelationship;
+use GUS::Model::Results::SegmentResult;
+use GUS::Model::DoTS::ExternalNASequence;
 
 use Data::Dumper;
 use FileHandle;
@@ -51,6 +57,12 @@ my $argsDeclaration =
 
    stringArg({ name  => 'extDbRlsSpec',
 	       descr => "The ExternalDBRelease specifier for the result. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+	       constraintFunc => undef,
+	       reqd           => 0,
+	       isList         => 0 }),
+
+   stringArg({ name  => 'sequenceExtDbRlsSpec',
+	       descr => "The ExternalDBRelease specifier for the sequence (for SegmentResults). Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 	       constraintFunc => undef,
 	       reqd           => 0,
 	       isList         => 0 }),
@@ -95,6 +107,12 @@ my $argsDeclaration =
 		constraintFunc => undef,
 		reqd           => 0,
 		isList         => 0 }),
+  booleanArg({ name  => 'loadSegmentResults',
+		descr => "load results associated with missing SNPs or positional ids into segment result",
+		constraintFunc => undef,
+		reqd           => 0,
+		isList         => 0 }),
+
    integerArg({name=>'protocolAppNodeId',
 	       descr => 'protocol app node id for resume or linking to exisiting protocol app node',
 	       constraintFunc => undef,
@@ -110,12 +128,15 @@ PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
 Loads snp results in Results.SeqVariation and links to meta-data via a Study.ProtocolAppNode
+If flag --loadSegmentResults is specified, will load data that cannot be linked to a dbSNP rs Id 
+into Results.SegmentResult
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
                       ['Study::ProtocolAppNode', 'Each dataset is represented by one record.'],
                       ['Study::Characteristic', 'Each record links a dataset to an ontology term.'],
                       ['Results::SeqVariation', 'Each record stores one pvalue/allele frequence for a snp.'],
+                      ['Results::SegmentResult', 'Each records stores a pvalue for an unmapped location.']
                      ];
 
 my $tablesDependedOn = [
@@ -128,7 +149,7 @@ my $tablesDependedOn = [
 ];
 
 my $howToRestart = <<PLUGIN_RESTART;
-No restart facility available.
+Provide a revised input file and a --protocolAppNodeId to resume a load.
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -167,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16519 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16523 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -175,6 +196,9 @@ sub new {
 
   return $self;
 }
+
+my %naSequenceMap = undef;
+my $snpExternalDbRlsId;
 
 #######################################################################
 # Main Routine
@@ -184,6 +208,7 @@ sub new {
 sub run {
   my ($self) = @_;
 
+  $snpExternalDbRlsId = self->getExtDbRlsId($self->getArg('snpExtDbRlsSpec'));
   my $protocolAppNode = $self->loadProtocolAppNode();
   $self->loadCharacteristics($protocolAppNode);
   
@@ -195,7 +220,7 @@ sub fetchSnpNAFeatureId {
   my ($self, $snpId, $mergeFeatureRelationTypeId) = @_;
 
   my $snpFeature = GUS::Model::DoTS::SnpFeature->new({source_id => $snpId,
-						      external_database_release_id => $self->getExtDbRlsId($self->getArg('snpExtDbRlsSpec'))});
+						      external_database_release_id => $snpExternalDbRlsId});
 
   unless ($snpFeature->retrieveFromDB()) {
     if ($self->getArg('skipMissingSNPs')) {
@@ -273,16 +298,17 @@ sub fetchOntologyTermId {
 }
 
 sub link2table { # create entry in SRes.Characteristic that links the protocol app node to a result table
-  my ($self, $protocolAppNodeId) = @_;
+  my ($self, $protocolAppNodeId, $table) = @_;
 
-  my $tableId = $self->className2TableId('Results::SeqVariation');
+  my $tableId = $self->className2TableId($table);
   my $characteristic = GUS::Model::Study::Characteristic->new({
-							       value => 'SeqVariation',
+							       value => '$table',
 							       table_id => $tableId,
 							       protocol_app_node_id => $protocolAppNodeId
 							      });
   $characteristic->submit() unless ($characteristic->retrieveFromDB());
 
+  return 1;
 }
 
 sub getTypeId {
@@ -380,7 +406,7 @@ sub loadProtocolAppNode {
       $protocolAppNode->submit();
     }
      
-    $self->link2table($protocolAppNode->getProtocolAppNodeId());
+    $self->link2table($protocolAppNode->getProtocolAppNodeId(), 'Results::SeqVariation');
 
     return $protocolAppNode;
 }
@@ -404,6 +430,51 @@ sub loadCharacteristics {
     }
 }
 
+sub fetchNaSequenceId {
+  my ($self, $chr) = @_;
+
+  unless (exists $naSequenceMap{$chr}) {
+    my $naSequenceXdbrId = $self->getExtDbRlsId($self->getArg('sequenceExtDbRlsSpec'));
+    my $naSequence = GUS::Model::DoTS::ExternalNASequence->new({source_id => $chr,
+								external_database_release_id => $naSequenceXdbrId});
+    if ($naSequence->retrieveFromDB()) {
+      $naSequenceMap{$chr} = $naSequence->getNaSequenceId();
+    }
+    else {
+      $self->error("No sequence for $chr found in the DB");
+    }
+  }
+
+  return $naSequenceMap{$chr};
+}
+
+
+sub loadSegmentResult {
+    my ($self, $sourceId, $fieldValues, $protocolAppNodeId, $hasSegmentResultLink) = @_;
+    
+    my ($chr, $location) = split(':', $sourceId) if ($sourceId =~ /:/);
+    my ($chr, $location) = split('-', $sourceId) if ($sourceId =~ /-/);
+
+    $chr = 'chr' . $chr;
+
+    my $naSequenceId = $self->fetchNaSequenceId($chr);
+    
+    my $segmentResult = GUS::Model::Results::SegmentResult->new({
+         na_sequence_id => $naSequenceId,
+         protocol_app_node_id => $protocolAppNodeId,
+         segment_start => $location});
+
+    $segmentResult->setP_value($fieldValues->{p_value}) if (exists $fieldValues->{p_value});
+    $segmentResult->submit();
+
+    $self->log("Inserted result for $sourceId in Results::SegmentResult") if ($self->getArg('veryVerbose'));
+    if (!$hasSegmentResultLink) {
+      $self->link2table($protocolAppNodeId, 'Results::SegmentResult');
+      $hasSegmentResultLink = 1;
+    }
+    return $hasSegmentResultLink;
+}
+
 sub loadResults {
     my ($self, $protocolAppNode) = @_;
 
@@ -420,6 +491,7 @@ sub loadResults {
     chomp(@fields);
 
     my $recordCount = 0;
+    my $hasSegmentResultLink = 0;
     while(<$fh>) {
 	my ($sourceId, @values) = split /\t/;
 
@@ -435,8 +507,17 @@ sub loadResults {
 	%fieldValues = $self->parseFieldValues(\%fieldValues);
 
 	my $naFeatureId = $self->fetchSnpNAFeatureId($sourceId);
-
-	next if (!$naFeatureId);
+	
+	if (!$naFeatureId) {
+	  if ($self->getArg('loadSegmentResults') and $sourceId !~ 'rs') {
+	    $hasSegmentResultLink = $self->loadSegmentResult($sourceId, \%fieldValues, 
+							     $protocolAppNode, 
+							     $hasSegmentResultLink);	    
+	  }
+	  else {
+	    next;
+	  }
+	}
 
 	$fieldValues{snp_na_feature_id} = $naFeatureId;
 	$fieldValues{protocol_app_node_id} = $protocolAppNode->getProtocolAppNodeId();
