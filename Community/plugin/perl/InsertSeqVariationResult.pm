@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16560 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16561 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -465,10 +465,12 @@ sub loadSegmentResult {
     my $segmentResult = GUS::Model::Results::SegmentResult->new({
          na_sequence_id => $naSequenceId,
          protocol_app_node_id => $protocolAppNodeId,
-         segment_start => $location});
+         segment_start => $location
+});
 
  
     $segmentResult->setPValue($fieldValues->{p_value}) if (exists $fieldValues->{p_value});
+    $segmentResult->setCategoricalValue($fieldValues->{allele}) if (exists $fieldValues->{allele});
     $segmentResult->submit();
 
     $self->log("Inserted result for $sourceId in Results::SegmentResult") if ($self->getArg('verbose'));
