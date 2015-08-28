@@ -319,7 +319,7 @@ sub getGeneFeatureId {
                          'external_database_release_id' => $extDbRlsId,
                          'label' => $attributes,
 					 } );
-  $geneFeature->submit();
+  $geneFeature->submit() unless ($geneFeature->retrieveFromDB());
 
   return $geneFeature->getNaFeatureId();
 }
@@ -413,7 +413,7 @@ SQL
                          'gene_symbol' => $attr{Name},
                          'external_database_release_id' => $extDbRlsId,
 					 } );
-    $gene->submit();
+    $gene->submit() unless ($gene->retrieveFromDB());
   }
 
   return $gene->getGeneId();
@@ -434,7 +434,7 @@ sub setFeatureLocation {
                          'end_max' => $end,
                          'is_reversed' => $isReversed,
 						      } );
-  $location->submit();
+  $location->submit() unless ($location->retrieveFromDB());
 }
 
 sub setCodingRegion {
