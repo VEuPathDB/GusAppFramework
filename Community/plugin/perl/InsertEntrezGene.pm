@@ -47,14 +47,13 @@ my $argsDeclaration =
                constraintFunc => undef,
                isList         => 0,
              }),
-  booleanArg({ name           => 'skipMissingSequences'
+  booleanArg({ name           => 'skipMissingSequences',
                descr          => 'plugin will skip features associated with sequence_source_ids not found in SRes::ExternalNASequence.  If not specified, plugin will create placeholder entries in SRes::ExternalNASequence',
                reqd           => 0,
-               constraintFunc => undef,
                isList         => 0,
              }),
      fileArg({ name           => 'sequenceMappingFile',
-             descr          => 'mapping between sequences source ids in the GFF3 file and those stored in SRes::ExternalNASequence (e.g., RefSeq Accession to chrN); tab-delimited file with two columns: <gff3 sequence source id>   <database sequence source id>. '
+             descr          => 'mapping between sequences source ids in the GFF3 file and those stored in SRes::ExternalNASequence (e.g., RefSeq Accession to chrN); tab-delimited file with two columns: <gff3 sequence source id>   <database sequence source id>. ',
              reqd           => 0,
              mustExist      => 0,
              format         => 'tab-delim',
