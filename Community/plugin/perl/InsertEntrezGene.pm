@@ -47,8 +47,14 @@ my $argsDeclaration =
                constraintFunc => undef,
                isList         => 0,
              }),
+  booleanArg({ name           => 'skipMissingSequences'
+               descr          => 'plugin will skip features associated with sequence_source_ids not found in SRes::ExternalNASequence.  If not specified, plugin will create placeholder entries in SRes::ExternalNASequence',
+               reqd           => 0,
+               constraintFunc => undef,
+               isList         => 0,
+             }),
      fileArg({ name           => 'sequenceMappingFile',
-             descr          => 'mapping between sequences source ids in the GFF3 file and those stored in SRes::ExternalNASequence (e.g., RefSeq Accession to chrN); tab-delimited file with two columns: <gff3 sequence source id>   <database sequence source id>.  If not specified plugin will create placeholder entries in SRes::ExternalNASequence for any sequence_source_id not in the table',
+             descr          => 'mapping between sequences source ids in the GFF3 file and those stored in SRes::ExternalNASequence (e.g., RefSeq Accession to chrN); tab-delimited file with two columns: <gff3 sequence source id>   <database sequence source id>. '
              reqd           => 0,
              mustExist      => 0,
              format         => 'tab-delim',
@@ -347,10 +353,12 @@ sub getSequenceId {
 
       unless ( $sequence->retrieveFromDB() ) {
 	  $self->log("No entry found for sequence $sequenceSourceId; creating record") if $self->getArg('verbose');
-	  $sequence->setSequenceVersion(1);
-	  $sequence->setExternalDatabaseReleaseId($extDbRlsId);
-	  $sequence->submit();
-	  $self->undefPointerCache();
+	  unless ($self->getArg('skipMissingSequences')) {
+	      $sequence->setSequenceVersion(1);
+	      $sequence->setExternalDatabaseReleaseId($extDbRlsId);
+	      $sequence->submit();
+	      $self->undefPointerCache();
+	  }
       }
       $naSequenceIds{$sequenceSourceId} = $sequence->getNaSequenceId();
   }
