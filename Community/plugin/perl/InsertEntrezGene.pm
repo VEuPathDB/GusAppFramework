@@ -225,6 +225,7 @@ sub processTopLevelFeature {
 
   # sequence
   my $sequenceId = $self->getSequenceId($sequenceSourceId, $extDbRlsId);
+  next if (!$sequenceId); # skip missing sequences
 
   # gene
   my $geneId = $self->getGeneId($attributes, $extDbRlsId);
@@ -338,7 +339,7 @@ sub createGeneInstance {
                          'na_feature_id' => $geneFeatureId,
                          'is_reference' => 0,
 					 } );
-  $geneInstance->submit();
+  $geneInstance->submit() unless ($geneInstance->retrieveFromDB());
 }
 
 sub getSequenceId {
