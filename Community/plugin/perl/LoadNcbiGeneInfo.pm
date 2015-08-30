@@ -4,7 +4,7 @@
 ## updates records in DoTS.Gene from the NCBI gene info file,
 ## overwriting stored information
 ##
-## $Id: LoadNcbiGeneInfo.pm 16053 2015-08-29 11:51:34Z allenem $
+## $Id: LoadNcbiGeneInfo.pm 16594 2015-08-29 11:51:34Z allenem $
 ##
 #######################################################################
 
@@ -127,7 +127,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16503 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16594 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -232,7 +232,7 @@ sub loadGeneInfo {
 
 	$self->log("$entrezGeneId does not exist") if (!$geneExists);
 
-	$gene->setGeneSymbol($officialSymbol);
+	$gene->setGeneSymbol($officialSymbol) if $officialSymbol ne '-';
 	$gene->setDescription($description) if $description ne '-';
 	$gene->setName($officialName) if $officialName ne '-';
 	$gene->setSequenceOntologyId($soMap->{$type}) if ($soMap);
@@ -248,11 +248,17 @@ sub loadGeneInfo {
 	  $chr = 23 if ($chr eq 'X');
 	  $chr = 24 if ($chr eq 'Y');
 	  $chr = 25 if ($chr eq 'M' or $chr eq 'MT');
-	  $chr = 26 if ($chr eq 'X|Y');
+	  $chr = 99 if ($chr =~ /\|/);
 
 	  my $geneChromosomalLocation = GUS::Model::DoTS::GeneChromosomalLocation->new({cytogenetic => $mapLocation
 											  , chromosome=> $chr});
 	  $geneChromosomalLocation->setParent($gene);
+	}
+
+	if ($type ne '-') {
+	  my $geneCategory = GUS::Model::DoTS::GeneCategory->new({term => $type});
+	  $geneCategory->submit() unless ($geneCategory->retriveFromDB());
+	  $gene->setGeneCategoryId($geneCategory->getGeneCategoryId());
 	}
 
 	$gene->submit();
@@ -264,14 +270,18 @@ sub loadGeneInfo {
 	    
 	    my @dbRefs = split /\|/, $dbXrefs;
 	    foreach my $d (@dbRefs) {
-		my ($db, $id)  = split /:/, $d;
-		$self->log("$db - $id") if ($self->getArg('veryVerbose'));
-		my $dbRef = GUS::Model::SRes::DbRef->new({external_database_release_id => $geneInfoExtDbRlsId,
-							  primary_identifier => $gene->getGeneId(),
-							  secondary_identifier => $id,
-							  gene_symbol => $gene->getGeneSymbol(),
-							  remark => $db});
-		$dbRef->submit();
+	      my @dbr = split /:/, $d;
+	      my $db = $dbr[0];
+	      my $id = $dbr[1];
+
+	      $id = $dbr[2] if ($db eq 'HGNC');
+	      $self->log("$db - $id") if ($self->getArg('veryVerbose'));
+	      my $dbRef = GUS::Model::SRes::DbRef->new({external_database_release_id => $geneInfoExtDbRlsId,
+							primary_identifier => $gene->getGeneId(),
+							secondary_identifier => $id,
+							gene_symbol => $gene->getGeneSymbol(),
+							remark => $db});
+	      $dbRef->submit();
 	    }
 	}
 	$self->undefPointerCache();
