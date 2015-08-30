@@ -4,7 +4,7 @@
 ## updates records in DoTS.Gene from the NCBI gene info file,
 ## overwriting stored information
 ##
-## $Id: LoadNcbiGeneInfo.pm allenem $
+## $Id: LoadNcbiGeneInfo.pm 16053 2015-08-29 11:51:34Z allenem $
 ##
 #######################################################################
 
@@ -26,6 +26,7 @@ use GUS::Model::DoTS::GeneFeature;
 use GUS::Model::SRes::DbRef;
 use GUS::Model::DoTS::DbRefNAFeature;
 use GUS::Model::SRes::OntologyTerm;
+use GUS::Model::SRes::OntologySynonym;
 
 use Data::Dumper;
 use FileHandle;
@@ -79,11 +80,11 @@ PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
 Loads NCBI Gene Info, over-writing anything previous in place in DoTS.Gene, 
-inserting new rows in all other affected tables (unless fail duplicate entry checks)
+inserting new rows otherwise (and in all other affected tables (unless fail duplicate entry checks))
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
-                      ['DoTS::Gene','update description, name, symbol, gene_category_id , and sequence_ontology_id for each gene'],
+                      ['DoTS::Gene','update/inset description, name, symbol, gene_category_id , and sequence_ontology_id for each gene'],
                       ['DoTS::GeneCategory', 'Each record stores one NCBI gene category' ],
                       ['DoTS::GeneSynonym', 'Each record stores a gene synonym'],
                       ['DoTS::GeneChromosomalLocation', 'Each record stores the map location of a gene'],
@@ -184,8 +185,8 @@ sub getSequenceOntologyMapping {
   my ($self) = @_;
   if ($self->getArg('sequenceOntologyMap')) {
     my $soMap = undef;
-    my $soExtDbRlsId = ($self->getArg('soExtDbRlsSpec')) ? $self->getExtDbRlsId($self->getArg('soExtDbRlsSpec')) : undef;
-    $self->error("Must provide external database specification for sequence ontology if mapping gene types.") if (!$soExtDbRlsId);
+
+#    $self->error("Must provide external database specification for sequence ontology if mapping gene types.") if (!$soExtDbRlsId);
     my $fh = FileHandle->new;
     $fh->open("<" . $self->getArg('sequenceOntologyMap')) 
       || $self->error("Unable to open sequence ontology map: ". $self->getArg('sequenceOntologyMap'));
@@ -193,7 +194,8 @@ sub getSequenceOntologyMapping {
     while (<$fh>) {
       chomp;
       my ($geneType, $soSourceId) = split /\t/;
-      $soMap->{$geneType} = $self->fetchOntologyTermId($soSourceId, $soExtDbRlsId);
+      $self->log("$geneType : $soSourceId");
+      $soMap->{$geneType} = $self->fetchOntologyTermId($soSourceId, $self->getArg('soExtDbRlsSpec'));
     }
     $fh->close();
     return $soMap;
@@ -226,45 +228,52 @@ sub loadGeneInfo {
 	my $gene = GUS::Model::DoTS::Gene->new({source_id => $entrezGeneId,
 						external_database_release_id => $geneExtDbRlsId});
 
-	if ($gene->retrieveFromDB()) {
-	  $gene->setGeneSymbol($officialSymbol);
-	  $gene->setDescription($description);
-	  $gene->setName($officialName);
-	  $gene->setSeqeunceOntologyId($soMap->{$type}) if ($soMap);
-	}
-	else {
-	  $self->log("Unable to fetch record for gene: $entrezGeneId");
-	  next;
-	}
+	my $geneExists = $gene->retrieveFromDB();
 
-	my @synonyms = split /\|/, $synonyms;
-	foreach my $s (@synonyms) {
-	  my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $s});
-	  $geneSynonym->setParent($gene);
+	$self->log("$entrezGeneId does not exist") if (!$geneExists);
+
+	$gene->setGeneSymbol($officialSymbol);
+	$gene->setDescription($description) if $description ne '-';
+	$gene->setName($officialName) if $officialName ne '-';
+	$gene->setSequenceOntologyId($soMap->{$type}) if ($soMap);
+
+	if ($synonyms ne '-') {
+	  my @synonyms = split /\|/, $synonyms;
+	  foreach my $s (@synonyms) {
+	    my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $s});
+	    $geneSynonym->setParent($gene);
+	  }
 	}
+	if ($mapLocation ne '-') {
+	  $chr = 23 if ($chr eq 'X');
+	  $chr = 24 if ($chr eq 'Y');
+	  $chr = 25 if ($chr eq 'M' or $chr eq 'MT');
+	  $chr = 26 if ($chr eq 'X|Y');
 
-	my $geneChromosomalLocation = GUS::Model::DoTS::GeneChromosomalLocation->new({chromosome => 'chr'.$chr,
-										      cytogenetic => $mapLocation});
-
-	$geneChromosomalLocation->setParent($gene);
+	  my $geneChromosomalLocation = GUS::Model::DoTS::GeneChromosomalLocation->new({cytogenetic => $mapLocation
+											  , chromosome=> $chr});
+	  $geneChromosomalLocation->setParent($gene);
+	}
 
 	$gene->submit();
 
-	my $geneInstance = GUS::Model::DoTS::GeneInstance->new({gene_id => $gene->getGeneId()});
-	$geneInstance->retrieveFromDB();
-	my $naFeatureId = $geneInstance->getNaFeatureId();
-
-	my @dbRefs = split /\|/, $dbXrefs;
-	foreach my $d (@dbRefs) {
-	  my ($db, $id)  = split /:/, $d;
-	  my $dbRef = GUS::Model::SRes::DbRef->new({external_database_release_id => $geneInfoExtDbRlsId,
-						    primary_identifier => $id,
-						    remark => $db});
-	  my $dbRefNaFeature = GUS::Model::DoTS::DbRefNaFeature->new({na_feature_id => $naFeatureId});
-	  $dbRefNaFeature->setParent($dbRef);
-	  $dbRef->submit();
+	if ($geneExists) { # no gene instance/nafeature associated with newly entered genes
+	    my $geneInstance = GUS::Model::DoTS::GeneInstance->new({gene_id => $gene->getGeneId()});
+	    $geneInstance->retrieveFromDB();
+	    my $naFeatureId = $geneInstance->getNaFeatureId();
+	    
+	    my @dbRefs = split /\|/, $dbXrefs;
+	    foreach my $d (@dbRefs) {
+		my ($db, $id)  = split /:/, $d;
+		$self->log("$db - $id") if ($self->getArg('veryVerbose'));
+		my $dbRef = GUS::Model::SRes::DbRef->new({external_database_release_id => $geneInfoExtDbRlsId,
+							  primary_identifier => $gene->getGeneId(),
+							  secondary_identifier => $id,
+							  gene_symbol => $gene->getGeneSymbol(),
+							  remark => $db});
+		$dbRef->submit();
+	    }
 	}
-      
 	$self->undefPointerCache();
     }
 
