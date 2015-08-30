@@ -4,7 +4,7 @@
 ## updates records in DoTS.Gene from the NCBI gene info file,
 ## overwriting stored information
 ##
-## $Id: LoadNcbiGeneInfo.pm 16595 2015-08-29 11:51:34Z allenem $
+## $Id: LoadNcbiGeneInfo.pm 16596 2015-08-29 11:51:34Z allenem $
 ##
 #######################################################################
 
@@ -127,7 +127,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16595 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16596 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -232,7 +232,7 @@ sub loadGeneInfo {
 
 	$self->log("$entrezGeneId does not exist") if (!$geneExists);
 
-	$gene->setGeneSymbol($officialSymbol) if $officialSymbol ne '-';
+	$gene->setGeneSymbol(substr($officialSymbol, 0, 30)) if $officialSymbol ne '-';
 	$gene->setDescription($description) if $description ne '-';
 	$gene->setName($officialName) if $officialName ne '-';
 	$gene->setSequenceOntologyId($soMap->{$type}) if ($soMap);
