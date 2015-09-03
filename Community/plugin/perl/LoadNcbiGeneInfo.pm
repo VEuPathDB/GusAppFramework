@@ -4,7 +4,7 @@
 ## updates records in DoTS.Gene from the NCBI gene info file,
 ## overwriting stored information
 ##
-## $Id: LoadNcbiGeneInfo.pm 16596 2015-08-29 11:51:34Z allenem $
+## $Id: LoadNcbiGeneInfo.pm 16597 2015-08-29 11:51:34Z allenem $
 ##
 #######################################################################
 
@@ -127,7 +127,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16596 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16597 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -240,6 +240,7 @@ sub loadGeneInfo {
 	if ($synonyms ne '-') {
 	  my @synonyms = split /\|/, $synonyms;
 	  foreach my $s (@synonyms) {
+	    $s = substr($s, 0, 30);
 	    my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $s});
 	    $geneSynonym->setParent($gene);
 	  }
