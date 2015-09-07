@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16561 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16593 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -224,7 +224,7 @@ sub fetchSnpNAFeatureId {
 
   unless ($snpFeature->retrieveFromDB()) {
     if ($self->getArg('skipMissingSNPs')) {
-	$self->log("No record found for $snpId in DoTS.SnpFeature") if ($self->getArg('verbose'));
+	# $self->log("No record found for $snpId in DoTS.SnpFeature") if ($self->getArg('verbose'));
 	return undef;
     }
     else {
@@ -473,7 +473,7 @@ sub loadSegmentResult {
     $segmentResult->setCategoricalValue($fieldValues->{allele}) if (exists $fieldValues->{allele});
     $segmentResult->submit();
 
-    $self->log("Inserted result for $sourceId in Results::SegmentResult") if ($self->getArg('verbose'));
+    # $self->log("Inserted result for $sourceId in Results::SegmentResult") if ($self->getArg('verbose'));
     if (!$hasSegmentResultLink) {
       $self->link2table($protocolAppNodeId, 'Results::SegmentResult');
       $hasSegmentResultLink = 1;
