@@ -139,7 +139,7 @@ sub getMapping {
 	$locusTag =~ s/\s//g;
 	$ecNumber =~ s/\s//g;
 
-	$self->log("Processing Pfid: $locusTag, ECNumber: $ecNumber\n");
+	#$self->log("Processing Pfid: $locusTag, ECNumber: $ecNumber\n");
 
 	if ($ecNumbers{$ecNumber}){
 	  $enzymeClass = $ecNumbers{$ecNumber};
