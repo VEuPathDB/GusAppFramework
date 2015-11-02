@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16593 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 16664 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -557,10 +557,10 @@ sub loadResults {
 sub undoTables {
   my ($self) = @_;
 
-  return ('Study.ProtocolAppNode',
-          'Study.Characteristic',
-          'Results.SeqVariation',
-         );
+  return ('Results.SeqVariation',
+	  'Study.Characteristic',	  
+	  'Study.ProtocolAppNode'
+      );
 }
 
 1;
