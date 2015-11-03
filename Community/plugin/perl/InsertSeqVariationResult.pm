@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16664 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 17015 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -350,7 +350,9 @@ sub parseFieldValues { #
     $self->error("must provide a 'phenotype_xdbr' (Ontology|Version) column if providing 'phenotype' terms or source_ids in data file")
       if (!exists $fieldValues->{phenotype_xdbr});
 
-    $fieldValues->{phenotype_id} = $self->fetchOntologyTermId($fieldValues->{phenotype}, $fieldValues->{phenotype_xdbr});
+    if ($fieldValues->{phenotype}) { # if a value is present
+      $fieldValues->{phenotype_id} = $self->fetchOntologyTermId($fieldValues->{phenotype}, $fieldValues->{phenotype_xdbr});
+    }
     delete $fieldValues->{phenotype}; # remove phenotype/phenotype_xdbr b/c they are not fields in SeqVariation 
     delete $fieldValues->{phenotype_xdbr};
   }
