@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 17015 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 17017 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -199,6 +199,7 @@ sub new {
 
 my %naSequenceMap = undef;
 my $snpExternalDbRlsId;
+my %ontologyTermMap = undef;
 
 #######################################################################
 # Main Routine
@@ -268,33 +269,38 @@ SQL
 sub fetchOntologyTermId {
     my ($self, $term, $xdbr) = @_;
 
-    my $xdbrId = $self->getExtDbRlsId($xdbr);
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
-							    name => $term,
-							    external_database_release_id => $xdbrId
-							   });
+    unless (exists $ontologyTermMap{$term . '_' . $xdbr}) {
+      my $xdbrId = $self->getExtDbRlsId($xdbr);
+      my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
+							      name => $term,
+							      external_database_release_id => $xdbrId
+							     });
 
-    return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
-
-    # otherwise try source_id
-    $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ 
-							 source_id => $term,
-							 external_database_release_id => $xdbrId
+      
+      if (!$ontologyTerm->retrieveFromDB()) {
+	# try source_id
+	$ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ 
+							     source_id => $term,
+							     external_database_release_id => $xdbrId
 							});
+      }
 
-    return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
+      if (!$ontologyTerm->retrieveFromDB()) { # if still not found
+	# try synonym
+	$ontologyTerm = GUS::Model::SRes::OntologySynonym->new({
+								      ontology_synonym => $term,
+								      external_database_release_id => $xdbrId
+								     });
+      }
 
+      if (!$ontologyTerm->retrieveFromDB()) { # if still not found
+	$self->error("Ontology Term: $term ($xdbr) not found in SRes.OntologyTerm or SRes.OntologySynonym");
+      }
 
-    # otherwise try synonym
-    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({
-								  ontology_synonym => $term,
-								  external_database_release_id => $xdbrId
-								   });
-
-    return $ontologySynonym->getOntologyTermId() if $ontologySynonym->retrieveFromDB();
-
-    # otherwise ... not found
-    $self->error("Ontology Term: $term ($xdbr) not found in SRes.OntologyTerm or SRes.OntologySynonym");
+      # otherwise ...set map value to reduce future lookups
+      $ontologyTermMap{$term . '_' . $xdbr} = $ontologyTerm->getOntologyTermId();
+    }
+    return $ontologyTermMap{$term . '_' . $xdbr};
 }
 
 sub link2table { # create entry in SRes.Characteristic that links the protocol app node to a result table
