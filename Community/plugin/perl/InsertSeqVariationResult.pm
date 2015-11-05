@@ -188,7 +188,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 17017 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 17018 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -506,6 +506,9 @@ sub loadResults {
 
     my $recordCount = 0;
     my $hasSegmentResultLink = 0;
+    my $currentSnp = undef;
+    my $naFeatureId = undef;
+
     while(<$fh>) {
 	my ($sourceId, @values) = split /\t/;
 
@@ -520,7 +523,9 @@ sub loadResults {
 	# and fetch ontology_term_ids for phenotypes
 	%fieldValues = $self->parseFieldValues(\%fieldValues);
 
-	my $naFeatureId = $self->fetchSnpNAFeatureId($sourceId);
+	# reduce lookups b/c sometimes multiple annotations for single SNP
+	$naFeatureId = ($currentSnp ne $sourceId) ? $self->fetchSnpNAFeatureId($sourceId) : $naFeatureId;
+	$currentSnp = $sourceId;
 	
 	if (!$naFeatureId) {
 	  if ($self->getArg('loadSegmentResults') and $sourceId !~ 'rs') {
