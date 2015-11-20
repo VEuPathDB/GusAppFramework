@@ -267,20 +267,21 @@ sub insertRelationships {
     }
 
     my $relationshipType;
-    if($relationshipTypeId) {
-
-      my $relTypeExtDbRls = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
-      $relationshipType = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $relTypeExtDbRls, source_id => $relationshipTypeId});
-      if(!$relationshipType->retrieveFromDB()) {
-        $self->userError("Failure retrieving relationshipType ontology term \"$relationshipTypeId\"");
-      }
-    }
 
     my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new();   
     $ontologyRelationship->setSubjectTermId($subject->getId());
     $ontologyRelationship->setPredicateTermId($predicate->getId()) if($predicate); 
     $ontologyRelationship->setObjectTermId($object->getId());
-    $ontologyRelationship->setOntologyRelationshipTypeId($relationshipType->getId());
+
+    if($relationshipTypeId) {
+      my $relTypeExtDbRls = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
+      $relationshipType = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $relTypeExtDbRls, source_id => $relationshipTypeId});
+      if(!$relationshipType->retrieveFromDB()) {
+        $self->userError("Failure retrieving relationshipType ontology term \"$relationshipTypeId\"");
+      }
+
+      $ontologyRelationship->setOntologyRelationshipTypeId($relationshipType->getId());
+    }
 
     if (!$ontologyRelationship->retrieveFromDB()) {
       $countRels++;
