@@ -29,6 +29,11 @@ my $argsDeclaration =
 	  constraintFunc => undef,
 	  isList         => 0, 
 	 }),
+stringArg({ name  => 'extDbRlsSpec',
+		  descr => "The ExternalDBRelease specifier for this Ontology Synonym. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		  constraintFunc => undef,
+		  reqd           => 1,
+		  isList         => 0 }),
 ];
 
 my $purpose = <<PURPOSE;
@@ -103,15 +108,12 @@ B<Return type:>
 sub run {
   my ($self) = @_;
 
+  my $extDbRlsSpec = $self->getArg('extDbRlsSpec');
+  my $extDbRlsId = $self->getExtDbRlsId( $extDbRlsSpec );
   my $file = $self->getArg('inFile');
-  my $synonymLines = $self->readFile($file);
-  my $synCount = scalar (@$synonymLines);
-  my $synonyms = $self->doSynonyms($synonymLines);
-  $self->submitObjectList($synonyms);
+  my $synonymsCount = $self->loadSynonyms($file,$extDbRlsId);
 
-  my $synonymsCount = scalar(@$synonyms);
-	print STDERR "Inserted $synCount SRes::OntologySynonyms\n";
-  return "Inserted $synCount SRes::OntologySynonyms";
+  return "Inserted $synonymsCount SRes::OntologySynonyms";
 }
 
 #--------------------------------------------------------------------------------
@@ -130,37 +132,50 @@ B<Return Type:>
 
 =cut
 
-sub readFile {
-  my ($self, $fn) = @_;
+sub loadSynonyms {
+  my ($self, $fn,$extDbRlsId) = @_;
 
-  
-  my $isHeader = 1;
-  my $headerSize = 0;
-  my @Header;
-  my $lines;
+  my $count = 0;
 
-  my $validHeader = 2;
+  my $externalDatabaseSpecs = {};
 
   open(FILE, "< $fn") or $self->error("Could Not open file $fn for reading: $!");
+  <FILE>; #removing header
   foreach my $row (<FILE>){
-	chomp $row;
-	next unless $row;
-	my %hash;
+    chomp $row;
+    next unless $row;
+    my %hash;
+    
 
-  
-	if ($isHeader) {
-	  @Header = split ("\t" , $row);
-	  $isHeader=0;
-	  $validHeader = 1;
-	  next;
-	}
-    push (@$lines,$row);
-	
+    my @values = split ("\t" , $row);
+    my $ontologyTermSourceId = $values[0];
+    my $synonym = $values[2];
+    my $termExtDbRlsId = $self->handleExtDbRlsSpec($values[1],$externalDatabaseSpecs);
 
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
+      new({
+           source_id =>  $ontologyTermSourceId,
+           external_database_release_id => $termExtDbRlsId,
+          });
+
+    my $ontologyTermId = $ontologyTerm->getId();
+    
+    my $synonym = GUS::Model::SRes::OntologySynonym->
+      new({ontology_term_id => $ontologyTermId,
+           external_database_release_id => $extDbRlsId,
+           ontology_synonym => $synonym,
+          });
+
+    $synonym->submit();
+    $count++;
+    if($count % 100 == 0) {
+      $self->log("Inserted $count SRes::OntologySynonyms");
+      $self->undefPointerCache();
+    }
   }
-  close FILE;  
 
-  return $lines;
+  close FILE;
+  return $count;
 }
 
 #--------------------------------------------------------------------------------
@@ -181,39 +196,6 @@ B<Return Type:>
 
 =cut
 
-sub doSynonyms {
-  my ($self, $lines) = @_;
-
-  my @synonyms;
-  my $count = 0;
-
-    my $externalDatabaseSpecs = {};
-  
-  foreach my $line (@$lines) {
-  	my $values = [split ("\t" , $line)];
-	my $ontologyTerm = $values->[0];
-	my $synonymTerm = $values->[2];
-	my $EDRId = $self->handleExtDbRlsSpec($values->[1],$externalDatabaseSpecs);
-	
-	my $ontologyTerm = $self->getTermId($ontologyTerm,$EDRId) or $self->error("Could not retrieve id for ontology Term $ontologyTerm : $!");
-	my $synonym;
-	if (scalar (@$values) == 3) {
-          $synonym = GUS::Model::SRes::OntologySynonym->
-            new({ontology_term_id => $ontologyTerm,
-                 external_database_release_id => $EDRId,
-                 ontology_synonym => $synonymTerm,
-                });
-	}
-
-	push(@synonyms, $synonym);
-      $count++;
-      if($count % 100 == 0) {
-        $self->log("Inserted $count SRes::OntologySynonyms");
-      }
-	}
-  return \@synonyms;
-}
-
 sub handleExtDbRlsSpec {
 	my ($self,$spec,$extDbRlsSpecs) = @_;
 	my $ext_db_rls_id;
@@ -224,37 +206,7 @@ sub handleExtDbRlsSpec {
 		$ext_db_rls_id = $self->getExtDbRlsId( $spec ) or $self->error("Could not get external database release id for spec $spec : $!");
 	}
 	return $ext_db_rls_id;
-
 }
-sub getTermId {
-	my ($self,$term,$ext_db_rls_id) = @_;
-	print STDERR $term."\n";
-	my $lcTerm =  lc($term);
-	my $dbh = $self->getQueryHandle();
-	my $sql = "select ontology_term_id 
-	             from sres.ontologyTerm 
-	            where lower(name) = ?
-				  and external_database_release_id =?
-	                                                ";
-	my $sh = $dbh->prepare($sql);
-	$sh->execute($lcTerm,$ext_db_rls_id);
-	my $id = $sh->fetchrow();
-
-	return $id;
-}
-
-#--------------------------------------------------------------------------------
-
-sub submitObjectList {
-  my ($self, $list) = @_;
-
-  foreach my $gusObj (@$list) {
-    $gusObj->submit();
-  }
-
-}
-
-#--------------------------------------------------------------------------------
 
 sub undoTables {
   my ($self) = @_;
