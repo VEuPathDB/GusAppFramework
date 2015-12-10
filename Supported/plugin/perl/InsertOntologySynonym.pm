@@ -157,15 +157,18 @@ sub loadSynonyms {
            source_id =>  $ontologyTermSourceId,
            external_database_release_id => $termExtDbRlsId,
           });
-
-    my $ontologyTermId = $ontologyTerm->getId();
+    unless ( $ontologyTerm->retrieveFromDB()) {
+      $self->error("unable to find ontology term $ontologyTermSourceId with external database spec $termExtDbRlsId");
+    }
+ 
     
     my $synonym = GUS::Model::SRes::OntologySynonym->
-      new({ontology_term_id => $ontologyTermId,
+      new({
            external_database_release_id => $extDbRlsId,
            ontology_synonym => $synonym,
           });
 
+    $synonym->setParent($ontologyTerm);
     $synonym->submit();
     $count++;
     if($count % 100 == 0) {
