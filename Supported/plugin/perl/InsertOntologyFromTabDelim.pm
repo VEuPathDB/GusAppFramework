@@ -238,6 +238,20 @@ sub insertTerms {
   return ($resultDescr);
 }
 
+sub getOntologyTermExtDbRlsId {
+  my ($self, $extDbRls, $spec) = @_;  
+
+  return $extDbRls unless($spec);
+
+  if(my $id = $self->{_ext_db_rls_ids}->{$spec}) {
+    return $id;
+  }
+
+  my $id = $self->getExtDbRlsId($self->getArg($spec));
+  $self->{_ext_db_rls_ids}->{$spec} = $id;
+  return $id;
+}
+
 sub insertRelationships {
   my ($self, $file, $extDbRls) = @_;  
   my $fh = IO::File->new("<$file");
@@ -246,7 +260,13 @@ sub insertRelationships {
   my $line = <$fh>  if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
     chomp($line);
-    my ($subjectId, $predicateId, $objectId, $relationshipTypeId) = split(/\t/, $line);
+    my ($subjectId, $predicateId, $objectId, $relationshipTypeId, $subjectExtDbRlsSpec, $predicateExtDbRlsSpec, $objectExtDbRlsSpec, $relationshipTypeExtDbRlsSpec) = split(/\t/, $line);
+
+    my $subjectExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $subjectExtDbRlsSpec);
+    my $predicateExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $predicateExtDbRlsSpec);
+    my $objectExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $objectExtDbRlsSpec);
+    my $relationshipTypeExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $relationshipTypeExtDbRlsSpec);
+
     
     my $subject = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $subjectId});    
     if(!$subject->retrieveFromDB()) {
