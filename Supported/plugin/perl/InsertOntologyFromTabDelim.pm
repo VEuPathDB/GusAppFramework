@@ -241,13 +241,13 @@ sub insertTerms {
 sub getOntologyTermExtDbRlsId {
   my ($self, $extDbRls, $spec) = @_;  
 
-  return $extDbRls unless($spec);
+  return $extDbRls unless ($spec=~/\w/);
 
   if(my $id = $self->{_ext_db_rls_ids}->{$spec}) {
     return $id;
   }
 
-  my $id = $self->getExtDbRlsId($self->getArg($spec));
+  my $id = $self->getExtDbRlsId($spec);
   $self->{_ext_db_rls_ids}->{$spec} = $id;
   return $id;
 }
