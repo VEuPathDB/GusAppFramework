@@ -307,7 +307,7 @@ sub doRelationships {
       my $relationship = GUS::Model::SRes::OntologyRelationship->
           new({subject_term_id => $subjectTermId,
                object_term_id => $objectTermId,
-               predicate_id => $relationshipTypeId,
+               predicate_term_id => $relationshipTypeId,
               });
 
       push(@relationships, $relationship);
