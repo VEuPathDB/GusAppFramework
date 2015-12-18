@@ -246,9 +246,9 @@ sub doTerms {
 
     my $length =length($definition);
  
-    if ($length > 4000) {
-      $definition = substr($definition,0,4000);
-      print STDERR "Definiton for term $name was $length chars, trucated to 4000\n";
+    if ($length > 2000) {
+      $definition = substr($definition,0,2000) . " ...";
+      print STDERR "Definiton for term $name was $length chars, trucated to 2000\n";
     }
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
