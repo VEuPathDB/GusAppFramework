@@ -215,11 +215,22 @@ sub insertTerms {
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete eq 'false' ? 0 : 1;
 
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete, ontology_term_type_id => $ontologyTermType, ancestor_term_id => $category, });
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $id });
 
-    if (!$ontologyTerm->retrieveFromDB()) {
+    if($ontologyTerm->retrieveFromDB()) {
+      my $dbName = $ontologyTerm->getName();
+      $self->error("Accession $sourceId has different name existing in OntologyTerm [$dbName] than in this ontology $name") unless($dbName eq $name);
+    }
+    else {
+      $ontologyTerm->setName($name);
+      $ontologyTerm->setUri($uri);
+      $ontologyTerm->setDefinition($def);
+      $ontologyTerm->setIsObsolete($isObsolete);
+      $ontologyTerm->setOntologyTermTypeId($ontologyTermType);
+      $ontologyTerm->setAncestorTermId($category);
       $countTerms++;
     }
+
     my @synArr = split(/,/, $synonyms);
     for (my $i=0; $i<@synArr; $i++) {
       $synArr[$i] =~ s/^\s+|\s+$//g;
@@ -238,20 +249,6 @@ sub insertTerms {
   return ($resultDescr);
 }
 
-sub getOntologyTermExtDbRlsId {
-  my ($self, $extDbRls, $spec) = @_;  
-
-  return $extDbRls unless ($spec=~/\w/);
-
-  if(my $id = $self->{_ext_db_rls_ids}->{$spec}) {
-    return $id;
-  }
-
-  my $id = $self->getExtDbRlsId($spec);
-  $self->{_ext_db_rls_ids}->{$spec} = $id;
-  return $id;
-}
-
 sub insertRelationships {
   my ($self, $file, $extDbRls) = @_;  
   my $fh = IO::File->new("<$file");
@@ -260,28 +257,22 @@ sub insertRelationships {
   my $line = <$fh>  if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
     chomp($line);
-    my ($subjectId, $predicateId, $objectId, $relationshipTypeId, $subjectExtDbRlsSpec, $predicateExtDbRlsSpec, $objectExtDbRlsSpec, $relationshipTypeExtDbRlsSpec) = split(/\t/, $line);
+    my ($subjectId, $predicateId, $objectId, $relationshipTypeId) = split(/\t/, $line);
 
-    my $subjectExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $subjectExtDbRlsSpec);
-    my $predicateExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $predicateExtDbRlsSpec);
-    my $objectExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $objectExtDbRlsSpec);
-    my $relationshipTypeExtDbRlsId = $self->getOntologyTermExtDbRlsId($extDbRls, $relationshipTypeExtDbRlsSpec);
-
-    
-    my $subject = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $subjectId});    
+    my $subject = GUS::Model::SRes::OntologyTerm->new({source_id => $subjectId});    
     if(!$subject->retrieveFromDB()) {
       $self->userError("Failure retrieving subject ontology term \"$subjectId\"");
     }
 
     my $predicate;
     if($predicateId) {
-      $predicate = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $predicateId});
+      $predicate = GUS::Model::SRes::OntologyTerm->new({source_id => $predicateId});
       if(!$predicate->retrieveFromDB()) {
         $self->userError("Failure retrieving predicate ontology term \"$predicateId\"");
       }
     }
 
-    my $object = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $objectId});
+    my $object = GUS::Model::SRes::OntologyTerm->new({source_id => $objectId});
     if(!$object->retrieveFromDB()) {
       $self->userError("Failure retrieving object ontology term \"$objectId\"");
     }
@@ -292,6 +283,7 @@ sub insertRelationships {
     $ontologyRelationship->setSubjectTermId($subject->getId());
     $ontologyRelationship->setPredicateTermId($predicate->getId()) if($predicate); 
     $ontologyRelationship->setObjectTermId($object->getId());
+    $ontologyRelationship->setExternalDatabaseReleaseId($extDbRls);
 
     if($relationshipTypeId) {
       my $relTypeExtDbRls = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
@@ -303,9 +295,8 @@ sub insertRelationships {
       $ontologyRelationship->setOntologyRelationshipTypeId($relationshipType->getId());
     }
 
-    if (!$ontologyRelationship->retrieveFromDB()) {
-      $countRels++;
-    }
+    $countRels++;
+
     $ontologyRelationship->submit();
     $self->undefPointerCache();
   }
