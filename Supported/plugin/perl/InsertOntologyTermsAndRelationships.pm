@@ -252,13 +252,18 @@ sub doTerms {
     }
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-      new({name => $name,
-           source_id => $sourceId,
-           external_database_release_id => $extDbRlsId,
-           uri => $uri,
-           definition => $definition,
+      new({           source_id => $sourceId,
           });
 
+    if($ontologyTerm->retrieveFromDB()) {
+      my $dbName = $ontologyTerm->getName();
+      $self->error("Accession $sourceId has different name existing in OntologyTerm [$dbName] than in this ontology $name") unless($dbName eq $name);
+    }
+    else {
+      $ontologyTerm->setName($name);
+      $ontologyTerm->setUri($uri);
+      $ontologyTerm->setDefinition($definition);
+    }
     push(@ontologyTerms, $ontologyTerm);
     $self->undefPointerCache();
   }
@@ -292,6 +297,8 @@ sub doRelationships {
   my @relationships;
   my $count = 0;
 
+  my $extDbRlsId = $self->getExtDbRls();
+
   foreach my $line (@$lines) {
     my ($subject, $type, $object) = split(/\t/, $line);
 
@@ -308,6 +315,7 @@ sub doRelationships {
           new({subject_term_id => $subjectTermId,
                object_term_id => $objectTermId,
                predicate_term_id => $relationshipTypeId,
+               external_database_release_id => $extDbRlsId
               });
 
       push(@relationships, $relationship);
