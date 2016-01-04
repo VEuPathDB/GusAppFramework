@@ -219,7 +219,12 @@ sub insertTerms {
 
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
-      $self->log("Accession [$id] with name [$name] has previously been loaded with a different name:  $dbName") unless($dbName eq $name);
+      unless($dbName eq $name) {
+        $self->log("Accession [$id] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
+        my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRls});  
+        $ontologySynonym->setParent($ontologyTerm);
+        $ontologySynonym->retrieveFromDB();
+      }
     }
     else {
       $ontologyTerm->setName($name);
