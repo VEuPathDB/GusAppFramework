@@ -15,6 +15,7 @@ use FileHandle;
 
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologyRelationship;
+use GUS::Model::SRes::OntologySynonym;
 
 use Data::Dumper;
 
@@ -154,7 +155,6 @@ sub run {
   my $relationshipLines = $self->readFile($file . "_isA.txt");
 
   my $terms = $self->doTerms($termLines);
-  $self->submitObjectList($terms);
   $self->undefPointerCache();
   $self->log("Inserted ", scalar(@$terms), " SRes::OntologyTerms");
 
@@ -257,7 +257,12 @@ sub doTerms {
 
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
-      $self->log("Accession [$sourceId] with name [$name] has previously been loaded with a different name:  $dbName") unless($dbName eq $name);
+      unless($dbName eq $name) {
+        $self->log("Accession [$sourceId] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
+        my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRlsId});  
+        $ontologySynonym->setParent($ontologyTerm);
+        $ontologySynonym->retrieveFromDB();
+      }
     }
     else {
       $ontologyTerm->setName($name);
@@ -265,6 +270,7 @@ sub doTerms {
       $ontologyTerm->setDefinition($definition);
     }
     push(@ontologyTerms, $ontologyTerm);
+    $ontologyTerm->submit();
     $self->undefPointerCache();
   }
 
@@ -418,7 +424,7 @@ sub submitObjectList {
 sub undoTables {
   my ($self) = @_;
 
-  return ('SRes.OntologyRelationship','SRes.OntologyTerm');
+  return ('SRes.OntologyRelationship', 'SRes.OntologySynonym', 'SRes.OntologyTerm');
 }
 
 1;
