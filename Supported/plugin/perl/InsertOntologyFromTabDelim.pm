@@ -219,7 +219,7 @@ sub insertTerms {
 
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
-      $self->error("Accession $sourceId has different name existing in OntologyTerm [$dbName] than in this ontology $name") unless($dbName eq $name);
+      $self->error("Accession $id has different name existing in OntologyTerm [$dbName] than in this ontology $name") unless($dbName eq $name);
     }
     else {
       $ontologyTerm->setName($name);
