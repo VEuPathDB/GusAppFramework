@@ -233,6 +233,7 @@ sub insertTerms {
       $ontologyTerm->setIsObsolete($isObsolete);
       $ontologyTerm->setOntologyTermTypeId($ontologyTermType);
       $ontologyTerm->setAncestorTermId($category);
+      $ontologyTerm->setExternalDatabaseReleaseId($extDbRls);
       $countTerms++;
     }
 
