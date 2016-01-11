@@ -18,6 +18,9 @@ use GUS::Model::SRes::OntologySynonym;
 
 use Data::Dumper;
 
+use File::Basename;
+
+
 my $argsDeclaration =
 [
 
@@ -148,8 +151,10 @@ sub loadSynonyms {
     
 
     my @values = split ("\t" , $row);
-    my $ontologyTermSourceId = $values[0];
-    my $synonym = $values[2];
+    my $ontologyTermSource = $values[1];
+    my $synonym = $values[0];
+
+    my $ontologyTermSourceId = basename $ontologyTermSource;
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
       new({
