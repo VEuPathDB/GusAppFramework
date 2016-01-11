@@ -150,14 +150,13 @@ sub loadSynonyms {
     my @values = split ("\t" , $row);
     my $ontologyTermSourceId = $values[0];
     my $synonym = $values[2];
-    my $termExtDbRlsId = $self->handleExtDbRlsSpec($values[1],$externalDatabaseSpecs);
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
       new({
            source_id =>  $ontologyTermSourceId,
           });
     unless ( $ontologyTerm->retrieveFromDB()) {
-      $self->error("unable to find ontology term $ontologyTermSourceId with external database spec $termExtDbRlsId");
+      $self->error("unable to find ontology term $ontologyTermSourceId");
     }
  
     
