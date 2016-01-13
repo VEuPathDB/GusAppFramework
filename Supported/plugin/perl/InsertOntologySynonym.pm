@@ -13,6 +13,8 @@ use UNIVERSAL qw(isa);
 
 use FileHandle;
 
+use GUS::Model::SRes::Taxon;
+use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologySynonym;
 
@@ -151,32 +153,47 @@ sub loadSynonyms {
     
 
     my @values = split ("\t" , $row);
-    my $ontologyTermSource = $values[1];
-	$ontologyTermSource =~ s/^\s+|\s+$//g;
-    my $synonym = $values[0];
-	next unless($ontologyTermSource);
-    my $ontologyTermSourceId = basename $ontologyTermSource;
 
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-      new({
+    my $ontologyTermSource = $values[1];
+    my $synonym = $values[0];
+
+	next unless($ontologyTermSource);
+
+    my $ontologyTermSourceId = basename $ontologyTermSource;
+    $ontologyTermSourceId =~ s/^\s+|\s+$//g;
+    if(lc($ontologyTermSourceId) =~ m/^ncbitaxon_(\d+)$/){
+		my $ncbi_tax_id = $1;
+		my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id => $ncbi_tax_id });
+		unless ($taxon->retrieveFromDB()){
+			$self->error("unable to find ncbi_tax_id  $ncbi_tax_id ");
+		}
+		my $newTaxonName = GUS::Model::SRes::TaxonName->new({name_class => "synonym", name => $synonym });									
+		$newTaxonName->setParent($taxon);
+		$newTaxonName->submit();	
+	}else{
+	    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
+     	new({
            source_id =>  $ontologyTermSourceId,
           });
-    unless ( $ontologyTerm->retrieveFromDB()) {
-      $self->error("unable to find ontology term $ontologyTermSourceId");
-    }
- 
-    
-    my $synonym = GUS::Model::SRes::OntologySynonym->
-      new({
-           external_database_release_id => $extDbRlsId,
-           ontology_synonym => $synonym,
-          });
+    	unless ( $ontologyTerm->retrieveFromDB()) {
+      		$self->error("unable to find ontology term $ontologyTermSourceId");
 
-    $synonym->setParent($ontologyTerm);
-    $synonym->submit();
+    	}
+
+    	my $synonym = GUS::Model::SRes::OntologySynonym->
+      	new({
+           	external_database_release_id => $extDbRlsId,
+           	ontology_synonym => $synonym,
+          	});
+
+    	$synonym->setParent($ontologyTerm);
+    	$synonym->submit();
+	
+	} 
+
     $count++;
     if($count % 100 == 0) {
-      $self->log("Inserted $count SRes::OntologySynonyms");
+      $self->log("Processed and inserted $count rows.");
       $self->undefPointerCache();
     }
   }
@@ -218,7 +235,9 @@ sub handleExtDbRlsSpec {
 sub undoTables {
   my ($self) = @_;
 
-  return ('SRes.OntologySynonym');
+  return ('SRes.OntologySynonym',
+		  'SRes.TaxonName',
+         );
 }
 
 1;
