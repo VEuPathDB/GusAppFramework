@@ -152,8 +152,9 @@ sub loadSynonyms {
 
     my @values = split ("\t" , $row);
     my $ontologyTermSource = $values[1];
+	$ontologyTermSource =~ s/^\s+|\s+$//g;
     my $synonym = $values[0];
-
+	next unless($ontologyTermSource);
     my $ontologyTermSourceId = basename $ontologyTermSource;
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
