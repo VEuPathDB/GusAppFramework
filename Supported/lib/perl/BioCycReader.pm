@@ -41,7 +41,7 @@ sub read {
         $pathway->{'Description'} = $rdf->{'Pathway'}->{$pathwayId}->{'standardName'};
         foreach my $xref (@{$rdf->{'Pathway'}->{$pathwayId}->{'xref'}}) {
             $xref =~ s/^#//;
-            if ($rdf->{'UnificationXref'}->{$xref}->{'db'} =~ /Cyc/) {
+            if (defined($rdf->{'UnificationXref'}->{$xref}->{'db'}) && $rdf->{'UnificationXref'}->{$xref}->{'db'} =~ /Cyc/) {
                 $pathway->{'SourceId'} = $rdf->{'UnificationXref'}->{$xref}->{'id'};
             }
         }
