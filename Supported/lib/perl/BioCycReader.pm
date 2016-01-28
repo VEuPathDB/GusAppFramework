@@ -66,10 +66,24 @@ sub read {
                 $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'SourceId'} = $rdf->{'UnificationXref'}->{$xref}->{'id'};
 
                 #Data for node table
-                $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'ecNumber'} = $biochemicalReaction->{'eCNumber'}; #use this for display name and soft link
-                $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'NodeType'} = 'enzyme';
-
-                $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'UniqueId'} = "$pathwayStep.$reaction";
+                $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'uniqueId'} = "$pathwayStep.$reaction";
+                print Dumper ($biochemicalReaction->{'eCNumber'});
+                if (exists ($biochemicalReaction->{'eCNumber'})) {
+                    foreach my $ecNumber (@{$biochemicalReaction->{'eCNumber'}}) {
+                        my $reactionNode = {'ecNumber' => $ecNumber,
+                                            'NodeType' => 'enzyme',
+                                            'UniqueId' =>  "$pathwayStep.$reaction.$ecNumber"
+                                            };
+                        push (@{$pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'reactionNodes'}}, $reactionNode);
+                    }
+                }else {
+                    my $reactionNode = {'ecNumber' => undef,
+                                       'NodeType' => 'enzyme',
+                                       'UniqueId' => "$pathwayStep.$reaction"
+                                       };
+                    push (@{$pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'reactionNodes'}}, $reactionNode);
+                }
+ 
 
                 #Get all compounds
                 getCompounds ($pathway, $rdf, $pathwayStep, $biochemicalReaction, "left");
@@ -78,10 +92,12 @@ sub read {
 
             }
             #Make edges
-            my @reactionNode = (keys(%{$pathway->{$pathwayStep}->{'Reactions'}}));
-            die "Pathway step $pathwayStep has more than one reaction\n" unless scalar(@reactionNode) == 1;
-            my $reactionUniqueId = $pathway->{$pathwayStep}->{'Reactions'}->{$reactionNode[0]}->{'UniqueId'};
-            $count = makeEdges ($pathway, $pathwayStep, $reactionUniqueId, $count);
+            my @reactions = (keys(%{$pathway->{$pathwayStep}->{'Reactions'}}));
+            die "Pathway step $pathwayStep has more than one reaction\n" unless scalar(@reactions) == 1;
+            foreach my $reactionNode (@{$pathway->{$pathwayStep}->{'Reactions'}->{$reactions[0]}->{'reactionNodes'}}) {
+                my $reactionNodeId = $reactionNode->{'UniqueId'};
+                $count = makeEdges ($pathway, $pathwayStep, $reactionNodeId, $count);
+            }
         }
     }
 
@@ -292,7 +308,8 @@ sub makeRdfHash {
             }elsif ($class eq 'BiochemicalReaction' || $class eq 'TransportWithBiochemicalReaction' || $class eq 'Transport') {
                 $attributes->[0] = 'BiochemicalReaction';
                 if ($property eq 'eCNumber') {
-                    addPropToRdf($rdf, $attributes, $propertyValue);
+                    pushPropToRdfArray($rdf, $attributes, $propertyValue);
+              #      addPropToRdf($rdf, $attributes, $propertyValue);
                 }elsif ($property eq 'left' || $property eq 'right') {
                     pushPropToRdfArray($rdf, $attributes, $propertyAttrVal);
                 }elsif ($property eq 'name') {
