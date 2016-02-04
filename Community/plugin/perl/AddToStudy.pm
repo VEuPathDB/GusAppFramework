@@ -258,7 +258,10 @@ sub getOntologyTerm {
       my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $term, external_database_release_id => $extDbRlsId});
       
       if (!$ontologyTerm->retrieveFromDB()) {
+        $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $term, external_database_release_id => $extDbRlsId});
+        if (!$ontologyTerm->retrieveFromDB()) {        
 	  $self->userError("Missing entry for term=$term and ext_db_rls_id=$extDbRlsId in SRes.OntologyTerm");
+        }
       }
       elsif ($ontologyTerm->getIsObsolete()==1) {
 	  $self->userError("Term $term is obsolete in ext_db_rls_id=$extDbRlsId");
@@ -268,6 +271,10 @@ sub getOntologyTerm {
   return($self->{'ontologyTermCache'}->{$term}->{$extDbRlsId});
 }
 
+sub getCharacteristicOntologyTerm {
+  my ($self, $ontologyTermNode, $extDbRlsId) = @_;
+  return($self->getOntologyTerm($ontologyTermNode, $extDbRlsId));
+}
 sub addStudyDesigns {
   my ($self, $doc, $studyId) = @_;
   
@@ -662,12 +669,12 @@ sub addProtocolAppNodes {
     my $name = $protocolAppNodes[$i]->findvalue('./name');
     my $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({name => $name});
     my $typeNode = $protocolAppNodes[$i]->findvalue('./type');
+    my $typeExtDbRlsId = $protocolAppNodes[$i]->findvalue('./type_ext_db_rls_id');
     if (defined($typeNode) && $typeNode !~ /^\s*$/) {
-	my $node = $protocolAppNodes[$i];
-      my $extDbRlsId = $self->setExtDbSpec($node);
+      my $node = $protocolAppNodes[$i];
      
       
-      my $type = $self->getOntologyTerm($typeNode, $extDbRlsId);
+      my $type = $self->getOntologyTerm($typeNode, $typeExtDbRlsId);
       my $typeId = $type->getId();
       $protocolAppNode->setTypeId($typeId);
     }
@@ -746,7 +753,7 @@ sub addProtocolAppNodes {
 	if (!$extDbRlsId || !defined($extDbRlsId)) {
 	  $self->userError("Must provide a valid external database release for Characteristic $ontologyTermNode");
 	}
-	my $ontologyTerm = $self->getOntologyTerm($ontologyTermNode, $extDbRlsId);
+	my $ontologyTerm = $self->getCharacteristicOntologyTerm($ontologyTermNode, $extDbRlsId);
 	$characteristic->setParent($ontologyTerm);
       }
     }
