@@ -67,7 +67,6 @@ sub read {
 
                 #Data for node table
                 $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'uniqueId'} = "$pathwayStep.$reaction";
-                print Dumper ($biochemicalReaction->{'eCNumber'});
                 if (exists ($biochemicalReaction->{'eCNumber'})) {
                     foreach my $ecNumber (@{$biochemicalReaction->{'eCNumber'}}) {
                         my $reactionNode = {'ecNumber' => $ecNumber,
@@ -305,17 +304,16 @@ sub makeRdfHash {
                     addPropToRdf($rdf, $attributes, $propertyValue);
                 }
             
-            }elsif ($class eq 'BiochemicalReaction' || $class eq 'TransportWithBiochemicalReaction' || $class eq 'Transport') {
+            }elsif ($class eq 'BiochemicalReaction' || $class eq 'TransportWithBiochemicalReaction' || $class eq 'Transport' || $class eq 'ComplexAssembly') {
                 $attributes->[0] = 'BiochemicalReaction';
                 if ($property eq 'eCNumber') {
                     pushPropToRdfArray($rdf, $attributes, $propertyValue);
-              #      addPropToRdf($rdf, $attributes, $propertyValue);
                 }elsif ($property eq 'left' || $property eq 'right') {
                     pushPropToRdfArray($rdf, $attributes, $propertyAttrVal);
                 }elsif ($property eq 'name') {
                     pushPropToRdfArray($rdf, $attributes, $propertyValue);
                 }elsif ($property eq 'standardName') {
-                    $rdf->{$class}->{$id}->{'equation'} = $propertyValue;
+                    $rdf->{'BiochemicalReaction'}->{$id}->{'equation'} = $propertyValue;
                 }elsif ($property eq 'xref' && $propertyAttrVal =~ /^#UnificationXref/) {
                     addPropToRdf($rdf, $attributes, $propertyAttrVal);
                 }
