@@ -423,7 +423,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                  'start' => $geneLocation->start,
                                  'end' => $geneLocation->end,
                                  'strand' => $geneLocation->strand,
-                                       
+                                 'sequence_is_piece' => $geneLocation->{_sequence_is_piece},
       };
 
 
@@ -457,6 +457,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                                     'strand' => $exonLocation->strand,
                                                     'sequence_source_id' => $exonLocation->seq_id,
                                                     'na_sequence_id' => $naSequenceId,
+                                                    'sequence_is_piece' => $exonLocation->{_sequence_is_piece},
       };
 
       $seenExons{$exonSourceId} = 1;
@@ -508,6 +509,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                  cds_start => defined($isAllUtr) ? undef : $cdsLocation->start,
                  cds_end => defined($isAllUtr) ? undef : $cdsLocation->end,
                  is_all_utr => $isAllUtr,
+                  sequence_is_piece => $cdsLocation->{_sequence_is_piece},
       };
 
 
