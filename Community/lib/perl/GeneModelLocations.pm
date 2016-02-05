@@ -22,9 +22,9 @@ sub new {
   }, $class;
 
   my $agpMap = {};
-  if($wantTopLevel) {
-    $agpMap = &queryForAgpMap($dbh);
-  }
+
+  $agpMap = &queryForAgpMap($dbh);
+
 
 
 
@@ -67,6 +67,12 @@ sub bioperlFeaturesFromGeneSourceId {
   my @rv;
 
   my $sourceTag = 'GUS';
+
+  my %modToPhase = (0 => 0,
+                    1 => 2,
+                    2 => 1
+      );
+
 
   my $geneModelHash = $self->getGeneModelHashFromGeneSourceId($geneSourceId);
 
@@ -118,13 +124,26 @@ sub bioperlFeaturesFromGeneSourceId {
     foreach my $proteinSourceId (keys %{$transcriptHash->{proteins}}) {
       my $proteinHash = $transcriptHash->{proteins}->{$proteinSourceId};
 
-      foreach my $pExon (@{$proteinHash->{exons}}) {
+      my $prevCdsLength;
+      foreach my $pExon (sort { $a->{exon_start} * $a->{strand} <=> $b->{exon_start} * $b->{strand}} @{$proteinHash->{exons}}) {
         next if($pExon->{is_all_utr});
+
+        my $phase;
+        if($prevCdsLength) {
+          my $mod = $prevCdsLength % 3;
+          $phase = $modToPhase{$mod};
+        }
+        else {
+          $phase = 0;
+        }
+
+        $prevCdsLength += $pExon->{strand} * ($pExon->{cds_end} - $pExon->{cds_start}) + 1;
 
         my $cdsFeature = new Bio::SeqFeature::Generic ( -start => $pExon->{cds_start},
                                                         -end => $pExon->{cds_end}, 
                                                         -seq_id => $geneModelHash->{sequence_source_id},
                                                         -strand => $pExon->{strand},
+                                                        -frame => $phase,
                                                         -primary => 'CDS',
                                                         -source_tag => $sourceTag, 
                                                         -tag    => { ID => $proteinSourceId,
@@ -280,6 +299,7 @@ sub _getAllModelsHash { $_[0]->{_all_models_hash}}
 sub _initAllModelsHash { 
   my ($self) = @_;
 
+  my $wantTopLevel = $self->getWantTopLevel();
 
   my $dbh = $self->getDatabaseHandle();
   my $extDbRlsId = $self->getGeneExternalDatabaseReleaseId();
@@ -394,7 +414,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
       next if($soTerm && $gfSoTerm ne $soTerm && !$soExclude); # only rows for this so term
       next if($soTerm && $gfSoTerm eq $soTerm && $soExclude); # only rows which are not this so term
 
-      my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
+      my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand, $wantTopLevel);
 
       $geneModels->{$geneSourceId} = { 'source_id' => $geneSourceId,
                                  'na_feature_id' => $geneNaFeatureId,
@@ -428,7 +448,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
 
     unless($seenExon) {
-      my $exonLocation = &mapLocation($agpMap, $sequenceSourceId, $exonStart, $exonEnd, $strand);
+      my $exonLocation = &mapLocation($agpMap, $sequenceSourceId, $exonStart, $exonEnd, $strand, $wantTopLevel);
 
       $geneModels->{$geneSourceId}->{exons}->{$exonSourceId} = {'source_id' => $exonSourceId,
                                                     'na_feature_id' => $exonNaFeatureId,
@@ -478,7 +498,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
       my $cdsEnd = $sortedCds[1];
 
       my $cdsLocation;
-      $cdsLocation= &mapLocation($agpMap, $sequenceSourceId, $cdsStart, $cdsEnd, $strand) unless($isAllUtr);
+      $cdsLocation= &mapLocation($agpMap, $sequenceSourceId, $cdsStart, $cdsEnd, $strand, $wantTopLevel) unless($isAllUtr);
 
       my $exon = {source_id => $exonSourceId,
                  na_feature_id => $exonNaFeatureId,
@@ -560,14 +580,22 @@ sub queryForAgpMap {
 
 
 sub mapLocation {
-  my ($agpMap, $pieceSourceId, $start, $end, $strand) = @_;
+  my ($agpMap, $pieceSourceId, $start, $end, $strand, $wantTopLevel) = @_;
 
   my $match = Bio::Location::Simple->
     new( -seq_id => $pieceSourceId, -start =>   $start, -end =>  $end, -strand => $strand );
 
   my $agp = $agpMap->{$pieceSourceId};
 
-  return $match unless($agp);
+  if($agp) {
+    $match->{_sequence_is_piece} = 1;
+  }
+  else {
+    $match->{_sequence_is_piece} = 0;
+    return $match;
+  }
+
+  return $match unless($wantTopLevel);
 
   my $result = $agp->map($match);
 
@@ -575,7 +603,7 @@ sub mapLocation {
 
   return $result if($match->seq_id eq $result->seq_id || !$resultIsPiece);
 
-  &mapLocation($agpMap, $result->seq_id, $result->start, $result->end, $result->strand);
+  &mapLocation($agpMap, $result->seq_id, $result->start, $result->end, $result->strand,  $wantTopLevel);
 }
  
 
