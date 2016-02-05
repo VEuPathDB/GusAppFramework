@@ -213,7 +213,7 @@ sub insertTerms {
   while ($line=<$fh>) {
     chomp($line);
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
-    $isObsolete = $isObsolete eq 'false' ? 0 : 1;
+    $isObsolete = $isObsolete =~/^false$/i ? 0 : 1;
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $id });
 
