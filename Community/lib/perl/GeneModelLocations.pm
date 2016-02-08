@@ -357,7 +357,8 @@ and ef.na_feature_id = l.na_feature_id
 and t.na_feature_id = rfe.rna_feature_id
 and rfe.exon_feature_id = ef.na_feature_id
 and t.parent_id = gf.na_feature_id
-and ef.na_feature_id = p.exon_feature_id (+)
+and rfe.exon_feature_id = p.exon_feature_id (+)
+and rfe.rna_feature_id = p.na_feature_id (+)
 and gf.external_database_release_id = ?
 and gf.sequence_ontology_id = so.ontology_term_id
 order by gf.na_feature_id, t.na_feature_id, l.start_min
