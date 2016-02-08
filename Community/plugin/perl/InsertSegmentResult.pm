@@ -93,6 +93,12 @@ my $argsDeclaration =
 		reqd           => 0,
 		isList         => 0 }),
 
+ booleanArg({ name  => 'isZeroBased',
+		descr => "coordinate system is zero-based; when specified adds 1 to start",
+		constraintFunc => undef,
+		reqd           => 0,
+		isList         => 0 }),
+
    integerArg({name=>'protocolAppNodeId',
 	       descr => 'protocol app node id for resume or linking to exisiting protocol app node',
 	       constraintFunc => undef,
@@ -262,11 +268,17 @@ sub parseFieldValues { #
   while (my ($key, $value) = each %$fieldValues) {
     $fieldValues->{$key} = undef if $value eq '';
   }
-  
-  $fieldValues->{p_value} = $self->negLog10($fieldValues->{p_value}) if ($self->getArg('negLogP'));
+
+  if (exists $fieldValues->{p_value}) {
+    $fieldValues->{p_value} = $self->negLog10($fieldValues->{p_value}) if ($self->getArg('negLogP'));
+  }
+
+  if (exists $fieldValues->{segment_start}) {
+    $fieldValues->{segment_start} = $fieldValues->{segment_start} + 1 if ($self->getArg('isZeroBased'));
+  }
 
   # map sequence source id to na sequence
-  $self->error("Must specify a sequence_source_id for each row in the input file") 
+  $self->error("Must specify a sequence_source_id for each row in the input file")
     if (!exists $fieldValues->{sequence_source_id});
   $fieldValues->{na_sequence_id} = $self->fetchNaSequenceId($fieldValues->{sequence_source_id});
   delete $fieldValues->{sequence_source_id};
@@ -371,7 +383,7 @@ sub loadResults {
 	$fieldValues{protocol_app_node_id} = $protocolAppNode->getProtocolAppNodeId();
 
 	$self->log(Dumper(\%fieldValues)) if ($self->getArg('veryVerbose'));
-
+	
 	my $segmentResult = GUS::Model::Results::SegmentResult->new(\%fieldValues);
 	$segmentResult->submit(undef, 1); # noTran = 1 --> do not commit at this point
 
