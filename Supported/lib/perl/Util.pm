@@ -314,6 +314,34 @@ AND taf.na_feature_id = t.na_feature_id
     return $aaFeatId;
 }
 
+sub getTranslatedAAFeatureIdListFromGeneSourceId {
+    my ($plugin, $sourceId, $geneExtDbRlsId, $optionalOrganismAbbrev) = @_;
+
+    my $geneFeatId;
+    my @aaFeatIdList;
+      if($optionalOrganismAbbrev){  
+	  $geneFeatId = getGeneFeatureId($plugin, $sourceId, $geneExtDbRlsId,$optionalOrganismAbbrev);
+      }else{
+	  $geneFeatId = getGeneFeatureId($plugin, $sourceId);
+      }
+
+    my $sql = "
+SELECT taf.aa_feature_id
+FROM Dots.Transcript t, Dots.TranslatedAAFeature taf
+WHERE t.parent_id = '$geneFeatId'
+AND taf.na_feature_id = t.na_feature_id
+";
+    my $stmt = $plugin->prepareAndExecute($sql);
+
+  while(my $aaFeatId = $stmt->fetchrow_array()){
+    push(@aaFeatIdList, $aaFeatId);
+  }
+
+    return \@aaFeatIdList;
+}
+
+
+
 # returns null if not found
 # warning: this method issues a query each time it is called, ie, it is
 #          slow when used repeatedly.  should be rewritten to do a batch
