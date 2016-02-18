@@ -61,12 +61,17 @@ sub read {
                 #Data for reaction table
                 $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'Description'} = $biochemicalReaction->{'name'}[0];
                 $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'Equation'} = $biochemicalReaction->{'equation'};
-                my $xref = $biochemicalReaction->{'xref'};
-                $xref =~ s/^#//;
-                $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'SourceId'} = $rdf->{'UnificationXref'}->{$xref}->{'id'};
+                foreach my $xref (@{$biochemicalReaction->{'xref'}}) {
+                    $xref =~ s/^#//;
+                    if ($xref =~ /UnificationXref/) {
+                        if ($rdf->{'UnificationXref'}->{$xref}->{'db'} =~ /Cyc/)  {
+                            $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'SourceId'} = $rdf->{'UnificationXref'}->{$xref}->{'id'};
+                        }
+                    }
+                }
 
                 #Data for node table
-                $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'uniqueId'} = "$pathwayStep.$reaction";
+                $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'UniqueId'} = "$pathwayStep.$reaction";
                 if (exists ($biochemicalReaction->{'eCNumber'})) {
                     foreach my $ecNumber (@{$biochemicalReaction->{'eCNumber'}}) {
                         my $reactionNode = {'ecNumber' => $ecNumber,
@@ -315,7 +320,7 @@ sub makeRdfHash {
                 }elsif ($property eq 'standardName') {
                     $rdf->{'BiochemicalReaction'}->{$id}->{'equation'} = $propertyValue;
                 }elsif ($property eq 'xref' && $propertyAttrVal =~ /^#UnificationXref/) {
-                    addPropToRdf($rdf, $attributes, $propertyAttrVal);
+                    pushPropToRdfArray($rdf, $attributes, $propertyAttrVal);
                 }
             
             }elsif ($class eq 'SmallMolecule' || $class eq 'Protein' || $class eq 'Complex' || $class eq 'Rna') {
