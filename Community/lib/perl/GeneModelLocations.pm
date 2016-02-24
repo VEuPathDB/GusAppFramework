@@ -31,6 +31,7 @@ sub new {
   $self->setAgpMap($agpMap);
 
   $self->_initAllModelsHash();
+  $self->_setTranscriptLocations();
 
   return $self;
 }
@@ -94,23 +95,23 @@ sub bioperlFeaturesFromGeneSourceId {
   foreach my $transcriptSourceId (keys %{$geneModelHash->{transcripts}}) {
     my $transcriptHash = $geneModelHash->{transcripts}->{$transcriptSourceId};
 
-    my $exonSourceIds = $transcriptHash->{exonSourceIds};
+#    my $exonSourceIds = $transcriptHash->{exonSourceIds};
 
-    my $transcriptStart = $geneModelHash->{end};
-    my $transcriptEnd = $geneModelHash->{start};
+#    my $transcriptStart = $geneModelHash->{end};
+ #   my $transcriptEnd = $geneModelHash->{start};
 
-    foreach my $exonSourceId (@$exonSourceIds) {
-      my $exonStart = $geneModelHash->{exons}->{$exonSourceId}->{start};
-      my $exonEnd = $geneModelHash->{exons}->{$exonSourceId}->{end};
-      $transcriptStart =  $exonStart if($exonStart < $transcriptStart);
-      $transcriptEnd =  $exonEnd if($exonEnd > $transcriptEnd);
-    }
+ #   foreach my $exonSourceId (@$exonSourceIds) {
+ #     my $exonStart = $geneModelHash->{exons}->{$exonSourceId}->{start};
+ #     my $exonEnd = $geneModelHash->{exons}->{$exonSourceId}->{end};
+ #     $transcriptStart =  $exonStart if($exonStart < $transcriptStart);
+ #     $transcriptEnd =  $exonEnd if($exonEnd > $transcriptEnd);
+ #   }
 
-    my $transcriptFeature = new Bio::SeqFeature::Generic ( -start => $transcriptStart,
-                                                   -end => $transcriptEnd, 
+    my $transcriptFeature = new Bio::SeqFeature::Generic ( -start => $transcriptHash->{start},
+                                                           -end => $transcriptHash->{end},
                                                    -seq_id => $geneModelHash->{sequence_source_id},
-                                                   -strand => $geneModelHash->{strand}, 
-                                                   -primary => 'mRNA',
+                                                   -strand => $transcriptHash->{gene_strand}, 
+                                                   -primary => 'RNA',
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $transcriptSourceId,
                                                                 NA_FEATURE_ID => $transcriptHash->{na_feature_id},
@@ -290,6 +291,36 @@ sub getProteinToGenomicCoordMapper {
 #--------------------------------------------------------------------------------
 # private methods
 #--------------------------------------------------------------------------------
+
+sub _setTranscriptLocations {
+  my ($self) = @_;
+
+  my $geneIds = $self->getAllGeneIds();
+
+  foreach my $geneSourceId (@$geneIds) {
+    my $geneModelHash = $self->getGeneModelHashFromGeneSourceId($geneSourceId);
+
+    foreach my $transcriptSourceId (keys %{$geneModelHash->{transcripts}}) {
+      my $transcriptHash = $geneModelHash->{transcripts}->{$transcriptSourceId};
+
+      my $exonSourceIds = $transcriptHash->{exonSourceIds};
+
+      my $transcriptStart = $geneModelHash->{end};
+      my $transcriptEnd = $geneModelHash->{start};
+
+      foreach my $exonSourceId (@$exonSourceIds) {
+        my $exonStart = $geneModelHash->{exons}->{$exonSourceId}->{start};
+        my $exonEnd = $geneModelHash->{exons}->{$exonSourceId}->{end};
+        $transcriptStart =  $exonStart if($exonStart < $transcriptStart);
+        $transcriptEnd =  $exonEnd if($exonEnd > $transcriptEnd);
+      }
+
+      $geneModelHash->{transcripts}->{$transcriptSourceId}->{start} = $transcriptStart;
+      $geneModelHash->{transcripts}->{$transcriptSourceId}->{end} = $transcriptEnd;
+      $geneModelHash->{transcripts}->{$transcriptSourceId}->{gene_strand} = $geneModelHash->{strand};
+    }
+  }
+}
 
 
 sub _getTranscriptToGeneMap { $_[0]->{_transcript_to_gene_map} }
