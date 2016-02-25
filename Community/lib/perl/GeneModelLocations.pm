@@ -8,6 +8,10 @@ use Bio::Coordinate::GeneMapper;
 
 use Bio::SeqFeature::Generic;
 
+use Bio::SeqFeature::Gene::UTR;
+use Bio::SeqFeature::Gene::Exon;
+use Bio::SeqFeature::Gene::Transcript;
+
 use Data::Dumper;
 
 
@@ -91,6 +95,9 @@ sub bioperlFeaturesFromGeneSourceId {
   push @rv, $geneFeature;
 
   my @cdsFeatures;
+  my @utrFeatures;
+
+  my %transcriptMap = ();
 
   foreach my $transcriptSourceId (keys %{$geneModelHash->{transcripts}}) {
     my $transcriptHash = $geneModelHash->{transcripts}->{$transcriptSourceId};
@@ -107,11 +114,11 @@ sub bioperlFeaturesFromGeneSourceId {
  #     $transcriptEnd =  $exonEnd if($exonEnd > $transcriptEnd);
  #   }
 
-    my $transcriptFeature = new Bio::SeqFeature::Generic ( -start => $transcriptHash->{start},
+    my $transcriptFeature = new Bio::SeqFeature::Gene::Transcript ( -start => $transcriptHash->{start},
                                                            -end => $transcriptHash->{end},
                                                    -seq_id => $geneModelHash->{sequence_source_id},
                                                    -strand => $transcriptHash->{gene_strand}, 
-                                                   -primary => 'RNA',
+                                                   -primary => 'transcript',
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $transcriptSourceId,
                                                                 NA_FEATURE_ID => $transcriptHash->{na_feature_id},
@@ -120,14 +127,21 @@ sub bioperlFeaturesFromGeneSourceId {
                                                                 NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                    });
 
+    $transcriptMap{$transcriptSourceId} = $transcriptFeature;
+
     push @rv, $transcriptFeature;
 
+    my $utrCount;
+    my @utrs = ();
     foreach my $proteinSourceId (keys %{$transcriptHash->{proteins}}) {
       my $proteinHash = $transcriptHash->{proteins}->{$proteinSourceId};
 
       my $prevCdsLength;
       foreach my $pExon (sort { $a->{exon_start} * $a->{strand} <=> $b->{exon_start} * $b->{strand}} @{$proteinHash->{exons}}) {
-        next if($pExon->{is_all_utr});
+        if($pExon->{is_all_utr}) {
+          push @utrs, [$pExon->{exon_start}, $pExon->{exon_end}, $pExon->{strand}];
+          next;
+        }
 
         my $phase;
         if($prevCdsLength) {
@@ -154,7 +168,33 @@ sub bioperlFeaturesFromGeneSourceId {
                                                                      NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                         });
 
+
+        if($pExon->{cds_start} > $pExon->{exon_start}) {
+          push @utrs, [$pExon->{exon_start}, $pExon->{cds_start} - 1, $pExon->{strand}];
+        }
+        if($pExon->{cds_end} < $pExon->{exon_end}) {
+          push @utrs, [$pExon->{cds_end} + 1, $pExon->{exon_end}, $pExon->{strand}];
+        }
+
+
         push @cdsFeatures, $cdsFeature;
+      }
+
+      foreach my $utr (@utrs) {
+        $utrCount++;
+        my $utrId = "utr_${transcriptSourceId}_$utrCount";
+        my $utrFeature = new Bio::SeqFeature::Gene::UTR ( -start => $utr->[0],
+                                                          -end => $utr->[1],
+                                                          -strand => $utr->[2],
+                                                          -source_tag => $sourceTag,
+                                                          -primary => 'utr',
+                                                          -seq_id => $geneModelHash->{sequence_source_id},
+                                                          -tag    => { ID => $utrId,
+                                                                       PARENT => $transcriptSourceId,
+                                                                       PARENT_NA_FEATURE_ID => $transcriptHash->{na_feature_id},
+                                                                       NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
+                                                          });
+        push @utrFeatures, $utrFeature;
       }
     }
   }
@@ -167,7 +207,7 @@ sub bioperlFeaturesFromGeneSourceId {
     my $parent = join(",", @{$exonHash->{transcripts}});
 
 
-    my $exonFeature = new Bio::SeqFeature::Generic ( -start => $exonHash->{start}, 
+    my $exonFeature = new Bio::SeqFeature::Gene::Exon ( -start => $exonHash->{start}, 
                                                    -end => $exonHash->{end}, 
                                                    -seq_id => $exonHash->{sequence_source_id},
                                                    -strand => $exonHash->{strand}, 
@@ -179,6 +219,12 @@ sub bioperlFeaturesFromGeneSourceId {
                                                                 NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                    });
 
+
+    foreach my $transcriptId (@{$exonHash->{transcripts}}) {
+      my $transcriptFeature = $transcriptMap{$transcriptId};
+      $transcriptFeature->add_exon($exonFeature);
+    }
+
     push @exonFeatures, $exonFeature
   }
 
@@ -187,6 +233,9 @@ sub bioperlFeaturesFromGeneSourceId {
 
   my @sortedCdsFeatures = sort { $a->start <=> $b->start} @cdsFeatures;
   push @rv, @sortedCdsFeatures;
+
+  my @sortedUtrFeatures = sort { $a->start <=> $b->start} @utrFeatures;
+  push @rv, @sortedUtrFeatures;
 
 
   return \@rv;
