@@ -667,12 +667,13 @@ sub addProtocolAppNodes {
     }
     
     my $name = $protocolAppNodes[$i]->findvalue('./name');
+    my $extDbRlsSpec = $protocolAppNodes[$i]->findvalue('./ext_db_rls');
     my $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({name => $name});
     my $typeNode = $protocolAppNodes[$i]->findvalue('./type');
     my $typeExtDbRlsId = $protocolAppNodes[$i]->findvalue('./type_ext_db_rls_id');
+
     if (defined($typeNode) && $typeNode !~ /^\s*$/) {
       my $node = $protocolAppNodes[$i];
-     
       
       my $type = $self->getOntologyTerm($typeNode, $typeExtDbRlsId);
       my $typeId = $type->getId();
@@ -683,11 +684,9 @@ sub addProtocolAppNodes {
     if (defined($description) && $description !~ /^\s*$/) {
       $protocolAppNode->setDescription($description);
     }
-    
-    my $extDbRls = $protocolAppNodes[$i]->findvalue('./external_database_release');
     my $sourceId = $protocolAppNodes[$i]->findvalue('./source_id');
-    if (defined($extDbRls) && $extDbRls !~ /^\s*$/ && defined($sourceId) && $sourceId !~ /^\s*$/) {
-      $self->setExtDbRlsSourceId($extDbRls, $sourceId, $protocolAppNode);     
+    if (defined($extDbRlsSpec) && $extDbRlsSpec !~ /^\s*$/ && defined($sourceId) && $sourceId !~ /^\s*$/) {
+      $self->setExtDbRlsSourceId($extDbRlsSpec, $sourceId, $protocolAppNode);     
     }
     
     my $uri = $protocolAppNodes[$i]->findvalue('./uri');
