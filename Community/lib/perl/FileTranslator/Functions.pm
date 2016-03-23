@@ -205,6 +205,7 @@ sub makeCompositeId {
     my $valuesString = shift;
     my ($parent,$month, $year) = split("\t",$valuesString);
     my $id = $parent.$year.$month;
+    $id =~ s/\W//g;
     return $id;
   };
   return $makeCompositeId;
