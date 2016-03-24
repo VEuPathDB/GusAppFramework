@@ -27,9 +27,7 @@ sub new {
 
   my $agpMap = {};
 
-  $agpMap = &queryForAgpMap($dbh);
-
-
+  $agpMap = $self->queryForAgpMap($dbh);
 
 
   $self->setAgpMap($agpMap);
@@ -503,6 +501,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
   my $agpMap = $self->getAgpMap();
 
+  my $virtualSequenceIds = $self->{_virtual_sequence_ids};
+
   my $soTerm = $self->getSequenceOntologyTerm();
   my $soExclude = $self->getSequenceOntologyExclude();
 
@@ -542,7 +542,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
       $geneModels->{$geneSourceId} = { 'source_id' => $geneSourceId,
                                  'na_feature_id' => $geneNaFeatureId,
-                                 'na_sequence_id' => $naSequenceId,
+                                 'na_sequence_id' => $virtualSequenceIds->{$geneLocation->seq_id()} ? $virtualSequenceIds->{$geneLocation->seq_id()} : $naSequenceId,
                                  'sequence_source_id' => $geneLocation->seq_id,
                                  'start' => $geneLocation->start,
                                  'end' => $geneLocation->end,
@@ -561,8 +561,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     unless($seenTranscript) {
       $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId} = {'source_id' => $transcriptSourceId,
                                                                             'na_feature_id' => $transcriptNaFeatureId,
-                                                                            'na_sequence_id' => $naSequenceId,
-                                                                            'sequence_source_id' => $sequenceSourceId,
+                                                                            'na_sequence_id' => $geneModels->{$geneSourceId}->{na_sequence_id}, # GET FROM THE GENE
+                                                                            'sequence_source_id' => $geneModels->{$geneSourceId}->{sequence_source_id}, # GET FROM THE GENE
       };
 
       $transcriptToGeneMap->{$transcriptSourceId} = $geneSourceId;
@@ -580,7 +580,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                                     'end' => $exonLocation->end,
                                                     'strand' => $exonLocation->strand,
                                                     'sequence_source_id' => $exonLocation->seq_id,
-                                                    'na_sequence_id' => $naSequenceId,
+                                                    'na_sequence_id' => $virtualSequenceIds->{$exonLocation->seq_id()} ? $virtualSequenceIds->{$exonLocation->seq_id()} : $naSequenceId,
                                                     'sequence_is_piece' => $exonLocation->{_sequence_is_piece},
       };
 
@@ -602,7 +602,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                                                                                             'translation_start' => $translationStart,
                                                                                                             'translation_end' =>  $translationStop,
                                                                                                             'na_sequence_source_id' => $geneModels->{$geneSourceId}->{sequence_source_id},
-                                                                                                            'na_sequence_id' => $naSequenceId,
+                                                                                                            'na_sequence_id' => $geneModels->{$geneSourceId}->{na_sequence_id},
       };
 
       $proteinToTranscriptMap->{$proteinSourceId} = $transcriptSourceId;
@@ -653,7 +653,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 #--------------------------------------------------------------------------------
 
 sub queryForAgpMap {
-  my ($dbh) = @_;
+  my ($self, $dbh) = @_;
 
   my %agpMap;
 
@@ -679,6 +679,12 @@ sub queryForAgpMap {
 
   while(my $hash = $sh->fetchrow_hashref()) {
 
+    my $virtualSequenceSourceId = $hash->{VIRTUAL_SOURCE_ID};
+    my $virtualSequenceNaSequenceId = $hash->{VIRTUAL_NA_SEQUENCE_ID};
+
+    # NEED to map the virtual sequence source_ids to na_sequence_ids
+    $self->{_virtual_sequence_ids}->{$virtualSequenceSourceId} = $virtualSequenceNaSequenceId;
+
     my $ctg = Bio::Location::Simple->new( -seq_id => $hash->{PIECE_SOURCE_ID}, 
                                           -start => 1, 
                                           -end =>  $hash->{PIECE_LENGTH}, 
@@ -688,6 +694,7 @@ sub queryForAgpMap {
                                                  -start => $hash->{VIRTUAL_START_MIN},
                                                  -end =>  $hash->{VIRTUAL_END_MAX} , 
                                                  -strand => $hash->{PIECE_STRAND} );
+
 
     my $agp = Bio::Coordinate::Pair->new( -in  => $ctg, -out => $ctg_on_chr );
     my $pieceSourceId = $hash->{PIECE_SOURCE_ID};
