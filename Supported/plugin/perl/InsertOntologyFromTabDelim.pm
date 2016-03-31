@@ -289,7 +289,7 @@ sub insertRelationships {
     $ontologyRelationship->setSubjectTermId($subject->getId());
     $ontologyRelationship->setPredicateTermId($predicate->getId()) if($predicate); 
     $ontologyRelationship->setObjectTermId($object->getId());
-    $ontologyRelationship->setExternalDatabaseReleaseId($extDbRls);
+#    $ontologyRelationship->setExternalDatabaseReleaseId($extDbRls);
 
     if($relationshipTypeId) {
       my $relTypeExtDbRls = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
