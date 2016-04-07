@@ -228,7 +228,6 @@ sub insertTerms {
       }
     }
     else {
-      print STDERR " name is : $category : $name \n";
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($def);
