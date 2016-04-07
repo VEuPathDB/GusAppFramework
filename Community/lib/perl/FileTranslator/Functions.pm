@@ -44,6 +44,51 @@ return $formatDate;
 
 #--------------------------------------------------------------------------------
 
+sub formatTranslateDate {
+  my ($self,$hash) = @_;
+  my $formatTranslateDate; $formatTranslateDate = sub {
+    my $valuesString = shift;
+    my ($date,$char) = split("\t",$valuesString);
+    return undef unless $date;
+    my ($day, $span_month, $month, $year);
+    if ($date =~/-/) {
+      ($day, $span_month, $year) = split('-',$date);
+      my %month_map = ( 'ene' => 1,
+                                          'feb'  => 2,
+                                          'mar' => 3,
+                                           'abr' => 4,
+                                           'may' => 5,
+                                           'jun' => 6,
+                                           'jul' => 7,
+                                           'ago' => 8,
+                                           'sep' => 9,
+                                           'oct' => 10,
+                                           'nov' => 11,
+                                           'dic' => 12
+                      );
+      my $l_month = lc($span_month); 
+      $month = $month_map{$l_month};
+    }
+    else {
+      my  ($junk1,$junk2,$junk3);
+      ($junk1,$junk2,$junk3, $day,$month,$year) = strptime($date);
+      $month += 1;
+    }
+    print stderr $day; 
+    die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
+    die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
+    $day = "0".$day if length($day) == 1;
+    $month = "0".$month if $month <10;
+    $year = $year < 16 ? $year +2000 : $year+1900;
+    my $formatted_date = $year.$month.$day;
+    die "date is messed up $formatted_date"  unless (length($year.$month.$day) == 8);
+    return $formatted_date;
+  };
+return $formatTranslateDate;
+}
+
+#--------------------------------------------------------------------------------
+
 sub formatEuroDate {
   my ($self,$hash) = @_;
   my $formatEuroDate; $formatEuroDate = sub {
