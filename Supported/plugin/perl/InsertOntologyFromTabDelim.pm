@@ -12,8 +12,9 @@ use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
 
 use Encode qw( encode decode );
-
-
+use Encode::Guess;
+Encode::Guess->set_suspects(qw/utf8 cp1252/);
+use Data::Dumper;
 
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologySynonym;
@@ -222,6 +223,7 @@ sub insertTerms {
   my $encodingSpec = $self->getArg('encodingSpec');
   my $encodingSwap = defined $encodingSpec ? 1 : undef;
   my ($decodeSet,$encodeSet) = undef;
+
   ($decodeSet,$encodeSet) = split(/\|/,$encodingSpec);
   print STDERR "encoding spec : $encodingSpec, decode : $decodeSet, encode : $encodeSet\n"; 
 
@@ -232,6 +234,8 @@ sub insertTerms {
     if (defined $encodingSwap) {
       my $temp_line = decode($decodeSet, $line);
       $line = encode($encodeSet, $temp_line);
+
+      
     }
 
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
@@ -249,6 +253,9 @@ sub insertTerms {
       }
     }
     else {
+      my $guesser = guess_encoding($name, qw/utf8 cp1252/);
+      ref($guesser) or die "Can't guess: $guesser";
+      print STDERR "$name is encoded in " . $guesser->name ," \n";
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($def);
