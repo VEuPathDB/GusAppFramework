@@ -219,8 +219,8 @@ sub insertTerms {
 
   my $category = $self->category();
   my $ontologyTermType = $self->ontologyTermType();
-  my $encodingSpec = $self->getArgs('encodingSpec');
-  my $encodingSwap = defined $self->getArgs('encodingSpec') ? 1 : undef;
+  my $encodingSpec = $self->getArg('encodingSpec');
+  my $encodingSwap = defined $encodingSpec ? 1 : undef;
   my ($decodeSet,$encodeSet) = undef;
   ($decodeSet,$encodeSet) = split("|",$encodingSpec);
 
