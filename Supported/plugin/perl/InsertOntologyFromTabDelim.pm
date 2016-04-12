@@ -222,7 +222,7 @@ sub insertTerms {
   my $encodingSpec = $self->getArg('encodingSpec');
   my $encodingSwap = defined $encodingSpec ? 1 : undef;
   my ($decodeSet,$encodeSet) = undef;
-  ($decodeSet,$encodeSet) = split("|",$encodingSpec);
+  ($decodeSet,$encodeSet) = split(/|/,$encodingSpec);
 
   my $line = <$fh> if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
