@@ -253,9 +253,6 @@ sub insertTerms {
       }
     }
     else {
-      my $guesser = guess_encoding($name, qw/utf8 cp1252/);
-      ref($guesser) or die "Can't guess: $guesser";
-      print STDERR "$name is encoded in " . $guesser->name ," \n";
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($def);
