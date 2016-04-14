@@ -4,6 +4,7 @@ package GUS::Model::DoTS::TranslatedAAFeature; # table name
 use strict;
 use GUS::Model::DoTS::TranslatedAAFeature_Row;
 use CBIL::Bio::SequenceUtils;
+use GUS::Model::SRes::GeneticCode;
 
 my $debug = 0;
 
@@ -12,11 +13,38 @@ use vars qw (@ISA);
 
 sub translateFeatureSequenceFromNASequence {
   my($self,$codon_table) = @_;
-  my $ct = $codon_table ? $codon_table : 0;
+  my $ct;
   if (!exists $self->{'transSeq'}){
+    if(!defined($codon_table)){  ##test to see if is null
+      ##need to figure out codon_table;
+      ##first get the NASequence object
+      my $naseq = $self->getParent('DoTS::Transcript',1)->getParent('DoTS::GeneFeature',1)->getParent('DoTS::NASequence',1);
+      ##getTaxonobject
+      my $taxon = $naseq->getParent('SRES::Taxon',1);
+      ##test to see if mito vs. chromosomal
+      ##get SO object
+      my $so = $naseq->getParent('SRes::SequenceOntology',1);
+      if($so->getTermName() eq 'mitochondrial_chromosome'){
+        ##create codontable object
+        my $cod = GUS::Model::SRes::GeneticCode->new({'genetic_code_id' => $taxon->getMitochondrialGeneticCodeId()});
+        $cod->retrieveFromDB();
+        $ct = $cod->getNcbiGeneticCodeId();  
+#     }elsif(){  ##test to see if apicoplast but then what???      
+#       ##if all apicoplast use same table then can hard code the number here
+      }else{  ##must be chromosomal
+        ##create codontable object
+        my $cod = GUS::Model::SRes::GeneticCode->new({'genetic_code_id' => $taxon->getGeneticCodeId()});
+        $cod->retrieveFromDB();
+        $ct = $cod->getNcbiGeneticCodeId();  
+      }
+    }else{
+      $ct = $codon_table;
+    }
+#    $ct = defined($codon_table) ? $codon_table : 0;  ##comment this out when uncommenting rest!!!
     my $seq = CBIL::Bio::SequenceUtils::translateSequence($self->getFeatureNASequence(),$ct);
     $seq =~ s/\*+$//;
     $self->{'transSeq'} = $seq;
+#	print STDERR "\$ct = $ct\n";
   }
   return $self->{'transSeq'};
 }
