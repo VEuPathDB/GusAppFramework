@@ -418,10 +418,8 @@ sub getCodingSequenceFromExons {
   return($codingSequence);
 }
 
-sub getCodingSequenceFromExonsFeat {
-  my ($$plugin,$gusExons) = @_;
-
-  die "wrong way to cds";
+sub getTranscriptSeqFromExons {
+  my ($gusExons) = @_;
 
   die "No Exons found" unless(scalar(@$gusExons) > 0);
 
@@ -430,43 +428,30 @@ sub getCodingSequenceFromExonsFeat {
       unless(UNIVERSAL::isa($_, 'GUS::Model::DoTS::ExonFeature'));
   }
 
+  # this code gets the feature locations of the exons and puts them in order
+  my @exons = map { $_->[0] }
+    sort { $a->[3] ? $b->[1] <=> $a->[1] : $a->[1] <=> $b->[1] }
+      map { [ $_, $_->getFeatureLocation ]}
+	@$gusExons;
+
   my $codingSequence;
-  my %codingTrunksWithOrder;
 
-  for my $exonsFeature (@$gusExons){
+  for my $exon (@exons) {
+    my $chunk = $exon->getFeatureSequence();
 
-      my $exonsFeatureId = $exonsFeature->getNaFeatureId();
-      my $exonNaSeqId = $exonsFeature->getNaSequenceId();
-      my $exonOrderNum = $exonsFeature->getOrderNumber();
+    my ($exonStart, $exonEnd, $exonIsReversed) = $exon->getFeatureLocation();
 
-      my $gusNASequence = GUS::Model::DoTS::NASequence->new( { 'na_sequence_id' => $exonNaSeqId, } );
-      $gusNASequence->retrieveFromDB()  or die "can not find gusNASequence: $exonNaSeqId\n";
-      my $chunk = $gusNASequence->getSequence(); 
+    my $codingStart = $exon->getCodingStart();
+    my $codingEnd = $exon->getCodingEnd();
 
-      # not sure about the one to many relationship between exonFeature and AAFeatureExon, not to ask in data meeting?
-      #my $sql = "SELECT DISTINCT coding_start, coding_end FROM Dots.AAFeatureExon where exon_feature_id = $exonsFeatureId";
-      #my $stmt = $plugin->prepareAndExecute($sql);
-      #while ( my($codingStart, $codingEnd) = $stmt->fetchrow_array()) {
-      #get and sort all coding start/end. concatnate them as one trunk.
-      #}
+    next unless ($codingStart && $codingEnd);
 
-      my $gusAAFeatureExon = GUS::Model::DoTS::AAFeatureExon->new( { 'exon_feature_id' => $exonsFeatureId, } );
-      $gusAAFeatureExon->retrieveFromDB()  or die "can not find AAFeatureExon: $exonsFeatureId\n";
-      my $codingStart = $gusAAFeatureExon->getCodingStart();
-      my $codingEnd = $gusAAFeatureExon->getCodingEnd();
-      die "Can not find coding start and end of AAFeatureExon with exon_feature_id= $exonsFeatureId\n" unless ($codingStart && $codingEnd);
-
-      #how to determin exonIsReversed or not?
-      substr($chunk, $codingStart, ($codingEnd - $codingStart) + 1, "");
-      $codingTrunksWithOrder{$exonOrderNum}=$chunk; 
+    $codingSequence .= $chunk;
   }
-
-    foreach my $order (sort keys %codingTrunksWithOrder) {
-             $codingSequence .= $codingTrunksWithOrder{$order};
-    }
 
   return($codingSequence);
 }
+
 
 sub getExtDbRlsVerFromExtDbRlsName {
   my ($plugin, $extDbRlsName) = @_;
