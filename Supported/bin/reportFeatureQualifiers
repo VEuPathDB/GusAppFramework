@@ -246,14 +246,16 @@ sub convertGFFStreamToSeqIO {
 	  }
 
 	  # make the association:
+	my ($pId) = $parent->get_tag_values('ID') if ($parent->has_tag('ID'));
+	my ($cId) = $child->get_tag_values('ID') if ($child->has_tag('ID'));
 	  if($parent->location->start() > $child->location->start()){
-	      warn "Child feature $child_id does not lie within parent boundaries.\n";
+	      warn "Child feature $child_id $cId does not lie within parent $pId boundaries.\n";
 
 	      $parent->location->start($child->location->start());
 	  }
 
 	  if($parent->location->end() < $child->location->end()){
-	      warn "Child feature $child_id does not lie within parent boundaries.\n";
+	      warn "Child feature $child_id $cId does not lie within parent $pId boundaries.\n";
 
 	      $parent->location->end($child->location->end());
 	  }
