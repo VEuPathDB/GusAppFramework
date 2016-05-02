@@ -434,22 +434,14 @@ sub getTranscriptSeqFromExons {
       map { [ $_, $_->getFeatureLocation ]}
 	@$gusExons;
 
-  my $codingSequence;
+  my $transcriptSequence;
 
   for my $exon (@exons) {
     my $chunk = $exon->getFeatureSequence();
-
-    my ($exonStart, $exonEnd, $exonIsReversed) = $exon->getFeatureLocation();
-
-    my $codingStart = $exon->getCodingStart();
-    my $codingEnd = $exon->getCodingEnd();
-
-    next unless ($codingStart && $codingEnd);
-
-    $codingSequence .= $chunk;
+    $transcriptSequence .= $chunk;
   }
 
-  return($codingSequence);
+  return($transcriptSequence);
 }
 
 
