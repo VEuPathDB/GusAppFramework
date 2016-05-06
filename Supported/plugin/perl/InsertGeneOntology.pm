@@ -287,6 +287,8 @@ sub _retrieveOntologyTerm {
 
   my ($self, $id, $name, $def, $comment, $synonyms, $isObsolete, $extDbRlsId) = @_;
 
+  $id =~ s/GO:/GO_/;
+
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
     source_id                    => $id,
     ontology_term_type_id        => $self->_getOntologyTermTypeId('class'),
@@ -441,8 +443,12 @@ sub _updateAncestors {
   }
 
   foreach my $goId (keys %{$ancestors}) {
+
+    my $sourceId = $goId;
+    $sourceId =~ s/GO:/GO_/;
+
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
-       source_id                        => $goId,
+       source_id                        => $sourceId,
        external_database_release_id => $extDbRlsId
     });
     if ($ontologyTerm->retrieveFromDB()) {
