@@ -832,37 +832,39 @@ B<Return type:> C<integer>
 
 =cut
 sub getExtDbRlsId {
-    my ($self, $dbNameOrSpecifier, $dbVersion) = @_;
+  my ($self, $dbNameOrSpecifier, $dbVersion) = @_;
 
-    my $dbName;
-    if ($dbNameOrSpecifier =~ /(.+)\|(.+)/) {
-      die "Can't provide a dbSpecifier and a dbVersion" if $dbVersion;
-      $dbName = $1;
-      $dbVersion = $2
-    } else {
-      die "Database specifier '$dbNameOrSpecifier' is not in 'name|version' format" unless $dbVersion;
-      $dbName = $dbNameOrSpecifier;
-    }
-
+  my $dbName;
+  if ($dbNameOrSpecifier =~ /(.+)\|(.+)/) {
+    die "Can't provide a dbSpecifier and a dbVersion" if $dbVersion;
+    $dbName = $1;
+    $dbVersion = $2
+  } else {
+    die "Database specifier '$dbNameOrSpecifier' is not in 'name|version' format" unless $dbVersion;
+    $dbName = $dbNameOrSpecifier;
+  }
+  
+  if(!$self->{_extDbRelIdCache}->{$dbName}->{$dbVersion}){
     my $lcName = lc($dbName);
     my $sql = "select ex.external_database_release_id
                from sres.externaldatabaserelease ex, sres.externaldatabase e
                where e.external_database_id = ex.external_database_id
                and ex.version like '$dbVersion'
                and lower(e.name) = '$lcName'";
-
+      
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-
+    
     my ($releaseId, $count);
     while(my $id = $sth->fetchrow_array()) {
       $releaseId = $id;
       $count++;
     }
     $sth->finish();
-
+    
     die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'.  Use the plugins InsertExternalDatabase and InsertExternalDatabaseRls to insert this information into the database" unless($count == 1);
-
-    return $releaseId;
+    $self->{_extDbRelIdCache}->{$dbName}->{$dbVersion} = $releaseId;
+  }
+  return $self->{_extDbRelIdCache}->{$dbName}->{$dbVersion};
 }
 
 =item C<getOntologyTermId($ontologyName, $termId)>
