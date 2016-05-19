@@ -3,6 +3,8 @@
 ##
 ## Loads results from tab-delimited file into Results.SeqVariation
 ## also links results to annotations via the Study.ProtocolAppNode
+## and (optional) the ProtocolAppNode to an existing Study (in 
+## Study.Study via Study.StudyLink)
 ##
 ## Also includes option to load results associated with markers 
 ## identified by position (e.g., 1-1239341 or 1:12313) into 
@@ -23,6 +25,8 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 
 use GUS::Model::Study::ProtocolAppNode;
 use GUS::Model::Study::Characteristic;
+use GUS::Model::Study::Study;
+use GUS::Model::Study::StudyLink;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologySynonym;
 use GUS::Model::Results::SeqVariation;
@@ -54,19 +58,21 @@ my $argsDeclaration =
 	     constraintFunc => undef,
 	     isList         => 0,
 	   }),
-
+   stringArg({name          => 'characteristics',
+	      descr         => "comma separated list of ontology terms source ids;external database release specifier pairs that can be provided as an alternative to a text file (using the --characteristicFile option).  For example: EFO_0002692;Experimental Factor Ontology|2.72.  The external database release specifier must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+	      reqd          => 0,
+	      constraintFunc => undef,
+	      isList        => 1}),
    stringArg({ name  => 'extDbRlsSpec',
 	       descr => "The ExternalDBRelease specifier for the result. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 	       constraintFunc => undef,
 	       reqd           => 0,
 	       isList         => 0 }),
-
    stringArg({ name  => 'sequenceExtDbRlsSpec',
 	       descr => "The ExternalDBRelease specifier for the sequence (for SegmentResults). Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 	       constraintFunc => undef,
 	       reqd           => 0,
 	       isList         => 0 }),
-
  stringArg({ name  => 'snpExtDbRlsSpec',
 	       descr => "The ExternalDBRelease specifier for the referenced SNPs. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 	       constraintFunc => undef,
@@ -103,12 +109,12 @@ my $argsDeclaration =
 		reqd           => 0,
 		isList         => 0 }),
   booleanArg({ name  => 'negLogP',
-		descr => "transform pvalues using -log10",
+		descr => "transform p-values using -log10?",
 		constraintFunc => undef,
 		reqd           => 0,
 		isList         => 0 }),
   booleanArg({ name  => 'loadSegmentResults',
-		descr => "load results associated with missing SNPs or positional ids into segment result",
+		descr => "load results associated with missing SNPs or positional ids into segment result?",
 		constraintFunc => undef,
 		reqd           => 0,
 		isList         => 0 }),
@@ -118,33 +124,50 @@ my $argsDeclaration =
 	       constraintFunc => undef,
 	       reqd => 0,
 	       isList => 0}),
-  
+
+   integerArg({name=>'studyId',
+	       descr => 'Study.Study study_id to which the ProtocolAppNode associated with the result shoudl be linked',
+	       constraintFunc => undef,
+	       reqd => 0,
+	       isList => 0}),
   ];
 
 
 my $purposeBrief = <<PURPOSEBRIEF;
-Loads snp results in Results.SeqVariation
+Loads SNP results in Results.SeqVariation
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Loads snp results in Results.SeqVariation and links to meta-data via a Study.ProtocolAppNode
-If flag --loadSegmentResults is specified, will load data that cannot be linked to a dbSNP rs Id 
+Loads SNP results in Results.SeqVariation.
+
+If flag --loadSegmentResults is specified, will load results
+that cannot be linked to a SNP identifier (in DoTS.SnpFeature)
 into Results.SegmentResult
+
+Can link the results to an existing Study.ProtocolAppnode or create
+a new one.  Will also populate the characteristics associated
+with the ProtocolAppNode (Study.Characteristics) if a provided.
+
+Will also create a link between the ProtocolAppNode and an 
+existing study in Study.Study via Study.StudyLink if the 
+--studyId flag is provided.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
                       ['Study::ProtocolAppNode', 'Each dataset is represented by one record.'],
                       ['Study::Characteristic', 'Each record links a dataset to an ontology term.'],
+		      ['Study::StudyLink', 'Each record stores a link between a protocol_app_node_id and a study_id.'],
                       ['Results::SeqVariation', 'Each record stores one pvalue/allele frequence for a snp.'],
                       ['Results::SegmentResult', 'Each records stores a pvalue for an unmapped location.']
                      ];
 
 my $tablesDependedOn = [
-                        ['DoTS.SnpFeature', 'Lookups of SNP source_ids to match to na_feature_ids'],
-                        ['SRes.OntologyTerm', 'Lookups of characteristics'],
-                        ['SRes.OntologySynonym', 'Lookups of characteristics'],
-                        ['SRes.ExternalDatabase', 'Lookups of external database specifications'],
-                        ['SRes.ExternalDatabaseRelease', 'Lookups of external database specifications']
+                        ['DoTS::SnpFeature', 'Lookups of SNP source_ids to match to na_feature_ids'],
+                        ['SRes::OntologyTerm', 'Lookups of characteristics'],
+                        ['SRes::OntologySynonym', 'Lookups of characteristics'],
+                        ['SRes::ExternalDatabase', 'Lookups of external database specifications'],
+                        ['SRes::ExternalDatabaseRelease', 'Lookups of external database specifications'],
+			['Study::Study', 'Lookups of study_ids for linking.']
  
 ];
 
@@ -161,8 +184,8 @@ remaining columns should be named for fields in the Results.SeqVariation table,
 
 except for 'phenotype_id' and 'sequence_ontology_id', which should be specificed as a two-column pair: 
 'phenotype' (or 'sequence_ontology') providing a term or source_id 
-and 'phenotype_xdbr' (or 'sequence_ontology_xdbr') specifying the ontology and version (Ontology|Version).  
-Alternatively, 'phenotype_id' or 'sequence_ontology_id' may be directly provided, as long as values map 
+and 'phenotype_xdbr' (or 'sequence_ontology_xdbr') specifying the ontology and version (Ontology|Version).
+Alternatively, 'phenotype_id' or 'sequence_ontology_id' may be directly provided, as long as values map
 to an existing 'ontology_term_id' in SRes::OntologyTerm.
 
 CHARACTERISTIC FILE is a two column tab-delimited file
@@ -188,7 +211,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 17018 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 17041 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -212,10 +235,26 @@ sub run {
   $snpExternalDbRlsId = $self->getExtDbRlsId($self->getArg('snpExtDbRlsSpec'));
   my $protocolAppNode = $self->loadProtocolAppNode();
   $self->loadCharacteristics($protocolAppNode);
-  
+  $self->linkStudy($protocolAppNode) if ($self->getArg('studyId'));
   $self->loadResults($protocolAppNode);
-
 }
+
+sub linkStudy {
+  my ($self, $protocolAppNode) = @_;
+  my $studyId = $self->getArg('studyId');
+  my $study = GUS::Model::Study::Study->new({study_id => $studyId});
+  if ($study->retrieveFromDB()) {
+    my $studyLink = GUS::Model::Study::StudyLink->new({study_id => studyId,
+						       protocol_app_node_id => $protocolAppNode->getProtocolAppNodeId()
+						      });
+
+    $studyLink->submit() unless ($studyLink->retrieveFromDB());
+  }
+  else {
+    $self->error("No record for study_id $studyId found in Study.Study.");
+  }
+}
+
 
 sub fetchSnpNAFeatureId {
   my ($self, $snpId, $mergeFeatureRelationTypeId) = @_;
@@ -413,13 +452,21 @@ sub loadProtocolAppNode {
 								  });
       $protocolAppNode->submit();
     }
-     
+
     $self->link2table($protocolAppNode->getProtocolAppNodeId(), 'Results::SeqVariation');
 
     return $protocolAppNode;
 }
 
-sub loadCharacteristics {
+sub insertCharacteristic {
+  my ($self, $protocolAppNode, $term, $xdbr) = @_;
+  my $ontologyTermId = $self->fetchOntologyTermId($term, $xdbr);
+  my $characteristic = GUS::Model::Study::Characteristic->new({ontology_term_id => $ontologyTermId});
+  $characteristic->setParent($protocolAppNode);
+  $characteristic->submit();
+}
+
+sub loadCharacteristicsFromFile {
     my ($self, $protocolAppNode) = @_;
 
     my $cfName = $self->getArg('characteristicFile');
@@ -429,13 +476,23 @@ sub loadCharacteristics {
       while(<$fh>) {
 	chomp;
 	my ($term, $xdbr) = split /\t/;
-	my $ontologyTermId =$self->fetchOntologyTermId($term, $xdbr);
-	my $characteristic = GUS::Model::Study::Characteristic->new({ontology_term_id => $ontologyTermId});
-	$characteristic->setParent($protocolAppNode);
-	$characteristic->submit();
+	$self->insertCharacteristic($protocolAppNode, $term, $xdbr);
       }
       $fh->close();
     }
+}
+
+sub loadCharacteristics {
+  my ($self, $protocolAppNode) = @_;
+  # load from file
+  $self->loadCharacteristicsFromFile($protocolAppNode);
+
+  # load from list
+  my $characteristics = $self->getArg('characteristics');
+  foreach my $characteristic (@{$characteristics}) {
+    my ($term, $xdbr) = split ';', $characteristic;
+    $self->insertCharacteristic($protocolAppNode, $term, $xdbr);
+  }
 }
 
 sub fetchNaSequenceId {
