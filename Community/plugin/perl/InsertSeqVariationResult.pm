@@ -211,7 +211,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 17041 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 18471 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -244,7 +244,7 @@ sub linkStudy {
   my $studyId = $self->getArg('studyId');
   my $study = GUS::Model::Study::Study->new({study_id => $studyId});
   if ($study->retrieveFromDB()) {
-    my $studyLink = GUS::Model::Study::StudyLink->new({study_id => studyId,
+    my $studyLink = GUS::Model::Study::StudyLink->new({study_id => $studyId,
 						       protocol_app_node_id => $protocolAppNode->getProtocolAppNodeId()
 						      });
 
