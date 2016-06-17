@@ -11,11 +11,6 @@ use IO::File;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
 
-use Encode qw( encode decode );
-use Encode::Guess;
-Encode::Guess->set_suspects(qw/utf8 cp1252/);
-use Data::Dumper;
-
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologySynonym;
 use GUS::Model::SRes::OntologyRelationship;
@@ -65,17 +60,10 @@ sub getArgumentsDeclaration {
 		  reqd           => 0,
 		  isList         => 0 }),
      booleanArg({name => 'hasHeader',
-                 descr => 'do the input files have a header row?',
-                 reqd => 0
-                }),
-     stringArg({name => 'encodingSpec',
-                descr => 'optional parameter which allows encoding of file to be swap to match database value is of the format (inputEncoding|outputEncoding)',
-                reqd => 0,
-                constraintFunc => undef,
-                isList         => 0 
-               }),
-              
-     
+             descr => 'do the input files have a header row?',
+reqd => 0
+            }),
+
 
 
     ];
@@ -220,26 +208,12 @@ sub insertTerms {
 
   my $category = $self->category();
   my $ontologyTermType = $self->ontologyTermType();
-  my $encodingSpec = $self->getArg('encodingSpec');
-  my $encodingSwap = defined $encodingSpec ? 1 : undef;
-  my ($decodeSet,$encodeSet) = undef;
-
-  ($decodeSet,$encodeSet) = split(/\|/,$encodingSpec);
-  print STDERR "encoding spec : $encodingSpec, decode : $decodeSet, encode : $encodeSet\n"; 
 
   my $line = <$fh> if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
-    chomp($line); 
-    next if $line =~/^\W$/;
-    if (defined $encodingSwap) {
-      my $temp_line = decode($decodeSet, $line);
-      $line = encode($encodeSet, $temp_line);
-
-      
-    }
-
+    chomp($line);
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
-    $isObsolete = $isObsolete =~/^true|1$/i ? 1 : 0;
+    $isObsolete = $isObsolete =~/^false$/i ? 0 : 1;
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $id });
 
@@ -315,7 +289,7 @@ sub insertRelationships {
     $ontologyRelationship->setSubjectTermId($subject->getId());
     $ontologyRelationship->setPredicateTermId($predicate->getId()) if($predicate); 
     $ontologyRelationship->setObjectTermId($object->getId());
-#    $ontologyRelationship->setExternalDatabaseReleaseId($extDbRls);
+    $ontologyRelationship->setExternalDatabaseReleaseId($extDbRls);
 
     if($relationshipTypeId) {
       my $relTypeExtDbRls = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
