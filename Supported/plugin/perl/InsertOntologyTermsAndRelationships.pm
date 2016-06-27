@@ -424,7 +424,7 @@ sub submitObjectList {
 sub undoTables {
   my ($self) = @_;
 
-  return ('SRes.OntologyRelationship', 'SRes.OntologySynonym', 'SRes.OntologyTerm');
+  return ('SRes.OntologyRelationship', 'SRes.OntologySynonym');
 }
 
 1;
