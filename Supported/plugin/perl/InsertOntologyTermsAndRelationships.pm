@@ -396,7 +396,7 @@ sub getRelationshipTypes {
 
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
 
-  my $sql = "select name, ontology_term_id from SRes.ONTOLOGYTERM where external_database_release_id = $extDbRlsId";
+  my $sql = "select name, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf')";
   my $sh = $self->getQueryHandle()->prepare($sql);
   $sh->execute();
 
