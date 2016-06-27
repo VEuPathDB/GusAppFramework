@@ -1360,7 +1360,7 @@ sub defaultPrintFeatureTree {
   my $type = $bioperlFeatureTree->primary_tag();
   $btFh->print("$indent< $type >\n");
 
-  if ($type =~ /coding_gene/ || $type =~ /RNA_gene/ || $type =~ /transcript/) {
+  if ($type =~ /coding_gene/ || $type =~ /RNA/ || $type =~ /transcript/) {
     my $cid = $bioperlFeatureTree->{gusFeature}->getSourceId();
     $btFh->print("$indent$type gus source_id: '$cid'\n");
   }
