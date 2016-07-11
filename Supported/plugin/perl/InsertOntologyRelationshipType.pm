@@ -116,7 +116,7 @@ sub run {
 	my $is_native = $data[1];
 	
 	my $relType = $self->makeOntologyRelType($term,$is_native);
-	$relType->submit() unless $relType->retrieveFromDB();
+	$relType->submit();
 	
 	undef $term;
 	undef $is_native;
@@ -130,9 +130,14 @@ sub makeOntologyRelType {
    my $extDbRls = $self->getExtDbRls();
 
    my $term = GUS::Model::SRes::OntologyTerm->new({
-       'name' => $term,
        'source_id' => $term,
-       'external_database_release_id' => $extDbRls });
+                                                  });
+
+   $term->retrieveFromDB();
+
+   $term->setName($term);
+   $term->setExternalDatabaseReleaseId($extDbRls);
+
    
    return $term;
 }
