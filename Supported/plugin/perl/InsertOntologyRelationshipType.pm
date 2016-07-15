@@ -129,17 +129,17 @@ sub makeOntologyRelType {
    my ($self, $term, $is_native) = @_;
    my $extDbRls = $self->getExtDbRls();
 
-   my $term = GUS::Model::SRes::OntologyTerm->new({
+   my $termObj = GUS::Model::SRes::OntologyTerm->new({
        'source_id' => $term,
                                                   });
 
-   $term->retrieveFromDB();
+   $termObj->retrieveFromDB();
 
-   $term->setName($term);
-   $term->setExternalDatabaseReleaseId($extDbRls);
+   $termObj->setName($term);
+   $termObj->setExternalDatabaseReleaseId($extDbRls);
 
    
-   return $term;
+   return $termObj;
 }
 
 sub undoTables {
