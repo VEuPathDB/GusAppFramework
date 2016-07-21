@@ -333,11 +333,26 @@ sub getProteinHashFromProteinId {
 sub getProteinToGenomicCoordMapper {
   my ($self, $proteinId) = @_;
 
+  my ($exonLocs, $cdsRange, $exonRange) = $self->getExonLocsAndCdsRangeFromProteinId($proteinId);
+
+  my $mapper = Bio::Coordinate::GeneMapper->new(
+    -in    => 'peptide',
+    -out   => 'chr',
+    -exons => $exonLocs,
+    -cds => $cdsRange
+      );
+
+  return $mapper;
+}
+
+sub getExonLocsAndCdsRangeFromProteinId {
+  my ($self, $proteinId) = @_;
+
   my $proteinHash = $self->getProteinHashFromProteinId($proteinId);
 
   my $naSequenceSourceId = $proteinHash->{na_sequence_source_id};
 
-  my ($minCds, $maxCds, $strand);
+  my ($minCds, $maxCds, $minExon, $maxExon, $strand);
 
   my @exonLocs;
 
@@ -346,10 +361,20 @@ sub getProteinToGenomicCoordMapper {
     $minCds = $exon->{cds_start} unless($minCds);
     $maxCds = $exon->{cds_start} unless($maxCds);
 
+    $minExon = $exon->{exon_start} unless($minExon);
+    $maxExon = $exon->{exon_start} unless($maxExon);
+
+
     my ($min, $max) = sort {$a <=> $b} ($exon->{cds_start}, $exon->{cds_end});
+
+    my ($minE, $maxE) = sort {$a <=> $b} ($exon->{exon_start}, $exon->{exon_end});
 
     $minCds = $min if($min < $minCds);
     $maxCds = $max if($max > $maxCds);
+
+    $minExon = $minE if($minE < $minExon);
+    $maxExon = $maxE if($maxE > $maxExon);
+
 
     #used for exon and cds
     $strand = $exon->{strand};
@@ -362,21 +387,74 @@ sub getProteinToGenomicCoordMapper {
     push @exonLocs, $exonLoc;
   }
 
-    my $cdsRange = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, 
-                                               -start => $minCds, 
-                                               -end => $maxCds, 
-                                               -strand => $strand);  
+  my $cdsRange = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, 
+                                             -start => $minCds, 
+                                             -end => $maxCds, 
+                                             -strand => $strand);  
 
+
+  my $exonRange = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, 
+                                              -start => $minExon, 
+                                              -end => $maxExon, 
+                                              -strand => $strand);  
+
+
+
+  return(\@exonLocs, $cdsRange, $exonRange);
+}
+
+sub getCdsToGenomicCoordMapper {
+  my ($self, $proteinId) = @_;
+
+  my ($exonLocs, $cdsRange, $exonRange) = $self->getExonLocsAndCdsRangeFromProteinId($proteinId);
 
   my $mapper = Bio::Coordinate::GeneMapper->new(
-    -in    => 'peptide',
+    -in    => 'cds',
     -out   => 'chr',
-    -exons => \@exonLocs,
+    -exons => $exonLocs,
     -cds => $cdsRange
       );
 
   return $mapper;
 }
+
+
+
+sub getTranscriptToGenomicCoordMapper {
+  my ($self, $proteinId) = @_;
+
+  my ($exonLocs, $cdsRange, $exonRange) = $self->getExonLocsAndCdsRangeFromProteinId($proteinId);
+
+  my $mapper = Bio::Coordinate::GeneMapper->new(
+    -in    => 'cds',
+    -out   => 'chr',
+    -exons => $exonLocs,
+    -cds => $exonRange
+      );
+
+  return $mapper;
+}
+
+sub getGenomicToTranscriptCoordMapper {
+  my ($self, $proteinId) = @_;
+
+  my ($exonLocs, $cdsRange, $exonRange) = $self->getExonLocsAndCdsRangeFromProteinId($proteinId);
+
+  my $mapper = Bio::Coordinate::GeneMapper->new(
+    -in    => 'chr',
+    -out   => 'cds',
+    -exons => $exonLocs,
+    -cds => $exonRange
+      );
+
+  return $mapper;
+}
+
+
+
+
+
+
 
 #--------------------------------------------------------------------------------
 # private methods
@@ -499,6 +577,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   my %seenExons;
   my %seenTranscriptExons;
 
+  my %seenGenomicSequences;
+
   my $agpMap = $self->getAgpMap();
 
   my $virtualSequenceIds = $self->{_virtual_sequence_ids};
@@ -532,6 +612,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $taxonId = $arr->[22];
 
     my $strand = $geneIsReversed ? -1 : 1;
+
+    $seenGenomicSequences{$sequenceSourceId}++;
 
     unless($seenGenes{$geneSourceId}) {
 
@@ -641,12 +723,66 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     }
   }
 
+  my @sortedGenes = map { [$_->{sequence_source_id}, $_->{source_id}, $_->{start}, $_->{end}] } sort {$a->{sequence_source_id} cmp $b->{sequence_source_id} || $a->{start} <=> $b->{start} } values %{$geneModels};;
+
+  my @distinctSequenceSourceIds = keys %seenGenomicSequences;
+  my $sequenceLengths = $self->getSequenceLengths(\@distinctSequenceSourceIds, $dbh);
+
+  for(my $i = 0; $i < scalar @sortedGenes; $i++) {
+    my $geneSourceId = $sortedGenes[$i]->[1];
+    my $sequenceSourceId = $sortedGenes[$i]->[0];
+    
+    my ($lastGeneEndOrSeqStart, $nextGeneStartOrSeqEnd);
+
+    if($i == 0 || $sortedGenes[$i-1]->[0] ne $sequenceSourceId) {
+      $lastGeneEndOrSeqStart = 1;
+    }
+    else {
+      $lastGeneEndOrSeqStart = $sortedGenes[$i-1]->[3];
+    }
+
+    if($i == scalar @sortedGenes - 1 || $sortedGenes[$i+1]->[0] ne $sequenceSourceId) {
+      $nextGeneStartOrSeqEnd = $sequenceLengths->{$sequenceSourceId};
+    }
+    else {
+      $nextGeneStartOrSeqEnd = $sortedGenes[$i+1]->[2];
+    }
+
+    $geneModels->{$geneSourceId}->{last_gene_end_or_seq_start} = $lastGeneEndOrSeqStart;
+    $geneModels->{$geneSourceId}->{next_gene_start_or_seq_end} = $nextGeneStartOrSeqEnd;
+  }
 
   $self->{_all_models_hash} = $geneModels;
   $self->{_transcript_to_gene_map} = $transcriptToGeneMap;
   $self->{_protein_to_transcript_map} = $proteinToTranscriptMap;
 
 }
+
+
+
+sub getSequenceLengths {
+  my ($self, $sequenceIds, $dbh) = @_;
+
+  my @sequenceIdsStrings = map { "'$_'" } @$sequenceIds;
+
+  my $sequenceString = join(',', @sequenceIdsStrings);
+
+  my $sql = "select source_id, length from dots.nasequence where source_id in ($sequenceString)";
+
+  my $sh = $dbh->prepare($sql);
+  $sh->execute();
+
+  my $rv = {};
+
+  while(my ($id, $len) = $sh->fetchrow_array()) {
+    $rv->{$id} = $len;
+  }
+  $sh->finish();
+
+  return $rv;
+}
+
+
 
 #--------------------------------------------------------------------------------
 # Static Methods Start
@@ -660,9 +796,10 @@ sub queryForAgpMap {
   my $sql = "select sp.virtual_na_sequence_id
                                 , p.na_sequence_id as piece_na_sequence_id
                                , decode(sp.strand_orientation, '+', '+1', '-', '-1', '+1') as piece_strand
-                               , p.length as piece_length
+                               , sp.start_position as piece_start
+                               , sp.end_position as piece_end
                                , sp.distance_from_left + 1 as virtual_start_min
-                               , sp.distance_from_left + p.length as virtual_end_max
+                               , sp.distance_from_left + sp.end_position - sp.start_position + 1 as virtual_end_max
                                , p.source_id as piece_source_id
                                , vs.source_id as virtual_source_id
                    from dots.sequencepiece sp
@@ -673,6 +810,7 @@ sub queryForAgpMap {
                     and p.sequence_ontology_id = o.ontology_term_id
                     and sp.virtual_na_sequence_id = vs.na_sequence_id
                     and o.name not in ('gap')";
+
 
   my $sh = $dbh->prepare($sql);
   $sh->execute();
@@ -686,8 +824,8 @@ sub queryForAgpMap {
     $self->{_virtual_sequence_ids}->{$virtualSequenceSourceId} = $virtualSequenceNaSequenceId;
 
     my $ctg = Bio::Location::Simple->new( -seq_id => $hash->{PIECE_SOURCE_ID}, 
-                                          -start => 1, 
-                                          -end =>  $hash->{PIECE_LENGTH}, 
+                                          -start => $hash->{PIECE_START}, 
+                                          -end =>  $hash->{PIECE_END}, 
                                           -strand => '+1' );
 
     my $ctg_on_chr = Bio::Location::Simple->new( -seq_id =>  $hash->{VIRTUAL_SOURCE_ID}, 
@@ -699,11 +837,7 @@ sub queryForAgpMap {
     my $agp = Bio::Coordinate::Pair->new( -in  => $ctg, -out => $ctg_on_chr );
     my $pieceSourceId = $hash->{PIECE_SOURCE_ID};
  
-    if($agpMap{$pieceSourceId}) {
-      die "Piece $pieceSourceId can only map to one virtual sequence";
-    }
-
-    $agpMap{$pieceSourceId} = $agp;
+    push @{$agpMap{$pieceSourceId}},$agp;
   }
 
   $sh->finish();
@@ -718,9 +852,9 @@ sub mapLocation {
   my $match = Bio::Location::Simple->
     new( -seq_id => $pieceSourceId, -start =>   $start, -end =>  $end, -strand => $strand );
 
-  my $agp = $agpMap->{$pieceSourceId};
+  my $agpArray = $agpMap->{$pieceSourceId};
 
-  if($agp) {
+  if($agpArray) {
     $match->{_sequence_is_piece} = 1;
   }
   else {
@@ -729,6 +863,9 @@ sub mapLocation {
   }
 
   return $match unless($wantTopLevel);
+
+
+  my $agp = &findAgpFromPieceLocation($agpArray, $start, $end, $pieceSourceId);
 
   my $result = $agp->map($match);
 
@@ -739,5 +876,18 @@ sub mapLocation {
   &mapLocation($agpMap, $result->seq_id, $result->start, $result->end, $result->strand,  $wantTopLevel);
 }
  
+
+sub findAgpFromPieceLocation {
+  my ($agpArray, $start, $end, $sourceId) = @_;
+
+  foreach my $agp (@$agpArray) {
+    my $in = $agp->in();
+    if($start >= $in->start() && $end <= $in->end()) {
+      return $agp;
+    }
+  }
+  
+  die "Could not find a virtual sequence for piece $sourceId w/ start=$start and end=$end";
+}
 
 1;
