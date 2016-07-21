@@ -257,20 +257,27 @@ sub doTerms {
 
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
+
       unless($dbName eq $name) {
         $self->log("Accession [$sourceId] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
         my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRlsId});  
         $ontologySynonym->setParent($ontologyTerm);
-        $ontologySynonym->retrieveFromDB();
+
+        unless($ontologySynonym->retrieveFromDB()) {
+          $ontologySynonym->submit();
+        }
       }
     }
+
     else {
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($definition);
+
+      $ontologyTerm->submit();
     }
+
     push(@ontologyTerms, $ontologyTerm);
-    $ontologyTerm->submit();
     $self->undefPointerCache();
   }
 
