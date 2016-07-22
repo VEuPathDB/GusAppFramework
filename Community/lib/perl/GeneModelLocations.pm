@@ -763,21 +763,18 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 sub getSequenceLengths {
   my ($self, $sequenceIds, $dbh) = @_;
 
-  my @sequenceIdsStrings = map { "'$_'" } @$sequenceIds;
-
-  my $sequenceString = join(',', @sequenceIdsStrings);
-
-  my $sql = "select source_id, length from dots.nasequence where source_id in ($sequenceString)";
-
+  my $sql = "select source_id, length from dots.nasequence where source_id = ?";
   my $sh = $dbh->prepare($sql);
-  $sh->execute();
 
   my $rv = {};
 
-  while(my ($id, $len) = $sh->fetchrow_array()) {
-    $rv->{$id} = $len;
+  foreach my $sequenceId (@$sequenceIds) {
+    $sh->execute($sequenceId);
+
+    while(my ($id, $len) = $sh->fetchrow_array()) {
+      $rv->{$id} = $len;
+    }
   }
-  $sh->finish();
 
   return $rv;
 }
@@ -839,8 +836,6 @@ sub queryForAgpMap {
  
     push @{$agpMap{$pieceSourceId}},$agp;
   }
-
-  $sh->finish();
 
   return \%agpMap;
 }
