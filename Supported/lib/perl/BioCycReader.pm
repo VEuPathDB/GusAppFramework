@@ -141,7 +141,7 @@ sub read {
         if ($pathwayStep =~ /^BiochemicalPathwayStep/) {
             foreach my $edge (keys(%{$pathway->{$pathwayStep}->{'Edges'}})) {
                 my $node = $pathway->{$pathwayStep}->{'Edges'}->{$edge}->{'Node'};
-                if ($node =~ /SmallMoleculeReference/ || $node =~ /ProteinReference/ || $node =~ /Complex/ || $node =~ /Rna/) {
+                if ($node =~ /SmallMoleculeReference/ || $node =~ /ProteinReference/ || $node =~ /Complex/ || $node =~ /Rna/ || $node =~ /deoxyribonucleic acid/) {
                     #incoming compounds - look in the hash for this pathway step
                     my $side = ($pathway->{$pathwayStep}->{'Direction'} eq 'LEFT-TO-RIGHT') ? 'left' : 'right';
                     if (exists $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$node}) {
