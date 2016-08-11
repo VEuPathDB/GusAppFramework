@@ -217,8 +217,9 @@ sub bioperlFeaturesFromGeneSourceId {
 
 
   my @exonFeatures;
-  foreach my $exonSourceId (keys %{$geneModelHash->{exons}}) {
-    my $exonHash = $geneModelHash->{exons}->{$exonSourceId};
+
+  foreach my $exonHash (sort { $a->{start} * $a->{strand} <=> $b->{start} * $b->{strand} } values %{$geneModelHash->{exons}}) {
+    die "exon strand cannot be set to 0" if($exonHash->{strand} == 0);
 
     my $parent = join(",", @{$exonHash->{transcripts}});
 
@@ -229,7 +230,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -strand => $exonHash->{strand}, 
                                                      -primary => 'exon',
                                                    -source_tag => $sourceTag, 
-                                                   -tag    => { ID => $exonSourceId,
+                                                   -tag    => { ID => $exonHash->{source_id},
                                                                 NA_FEATURE_ID => $exonHash->{na_feature_id},
                                                                 PARENT => $parent,
                                                                 GENE_NA_FEATURE_ID => $geneModelHash->{na_feature_id},
