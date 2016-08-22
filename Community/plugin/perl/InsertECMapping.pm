@@ -1,4 +1,4 @@
-#######################################################################
+#^^^^^^^^^^^^^^^^^^^^^^^^^ End GUS4_STATUS ^^^^^^^^^^^^^^^^^^^^
 ##                 InsertECMapping.pm
 ##
 ## Creates new entries in the table DoTS.AASequenceEnzymeClass to represent
@@ -22,7 +22,7 @@ use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::GeneFeature;
 #use GUS::Model::DoTS::NAFeatureNaGene;
 use GUS::Model::DoTS::NAGene;
-# use GUS::Supported::Util;
+
 
 my $purposeBrief = <<PURPOSEBRIEF;
 Creates new entries in table DoTS.AASequenceEnzymeClass to represent new aa sequence/enzyme class associations.
@@ -76,7 +76,7 @@ my $argsDeclaration =
 	      isList => 0,
 	     }), 
    stringArg({name => 'aaSeqLocusTagMappingSql',
-	      descr => 'sql which returns the aa_sequence_id for a given locus tag. Use a question mark as a macro for where the locus tag should be interpolated into the sql string',
+              descr => 'sql which returns aa_sequence_id(s) for a given identifier in the EC mapping file. Use a question mark as a macro for where the id should be interpolated into the sql string.  Id will most likely be a locus tag',
 	      reqd => 1,
 	      constraintFunc => undef,
 	      isList => 0,
@@ -84,16 +84,14 @@ my $argsDeclaration =
 
   ];
 
-my $sth; # prepared SQL statement handle
-
 sub new {
     my ($class) = @_;
     my $self = {};
     bless($self,$class);
 
 
-    $self->initialize({requiredDbVersion => 3.6,
-		       cvsRevision => '$Revision: 11376 $', # cvs fills this in!
+    $self->initialize({requiredDbVersion => 4.0,
+		       cvsRevision => '$Revision: 9997 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -110,17 +108,14 @@ sub run {
   my ($self) = @_;
   my $mappingFile = $self->getArg('ECMappingFile');
 
-  my $msg = $self->getMapping($mappingFile);
+  my $sql = $self->getArg('aaSeqLocusTagMappingSql');
+  my $queryHandle = $self->getQueryHandle();
+  my $sth = $queryHandle->prepare($sql);
 
-  return $msg;
-}
-
-sub getMapping {
-  my ($self, $mappingFile) = @_;
   my %ecNumbers = ();
-  my %ids = ();
+
   my $enzymeClass;
-  my $aaSeqId;
+
   my $evidCode = $self->getArg('evidenceCode');
 
   open (ECMAP, "$mappingFile") ||
@@ -139,7 +134,7 @@ sub getMapping {
 	$locusTag =~ s/\s//g;
 	$ecNumber =~ s/\s//g;
 
-	#$self->log("Processing Pfid: $locusTag, ECNumber: $ecNumber\n");
+	$self->log("Processing Pfid: $locusTag, ECNumber: $ecNumber\n");
 
 	if ($ecNumbers{$ecNumber}){
 	  $enzymeClass = $ecNumbers{$ecNumber};
@@ -148,27 +143,29 @@ sub getMapping {
 	  $enzymeClass = $self->getEnzymeClass($ecNumber, \%ecNumbers);
 	}
 
-	if ($ids{$locusTag}){
-	  $aaSeqId = $ids{$locusTag};
+        my $aaSeqIds;
+	if ($self->{aa_sequence_ids}->{$locusTag}){
+          $aaSeqIds = $self->{aa_sequence_ids}->{$locusTag};
 	}
 	else {
-	  $aaSeqId = $self->getAASeqId($locusTag, \%ids);
+	  $aaSeqIds = $self->getAASeqIds($locusTag, $sth);
 	}
 
-	my $newAASeqEnzClass =  GUS::Model::DoTS::AASequenceEnzymeClass->new({
-					    'aa_sequence_id' => $aaSeqId,
-					    'enzyme_class_id' => $enzymeClass,
-					    'evidence_code' => $evidCode
-	});
+        next unless($enzymeClass);
 
-	unless (!$enzymeClass || !$aaSeqId){
-	  if(!$newAASeqEnzClass->retrieveFromDB()){
-	    $self->log("submitted enzyme $enzymeClass, seq $aaSeqId\n");
-	    $newAASeqEnzClass->submit();
-	  }
-	}
-	$self->undefPointerCache();
-      }
+        foreach my $aaSeqId(@$aaSeqIds) {
+          my $newAASeqEnzClass =  GUS::Model::DoTS::AASequenceEnzymeClass->new({
+            'aa_sequence_id' => $aaSeqId,
+            'enzyme_class_id' => $enzymeClass,
+            'evidence_code' => $evidCode
+                                                                               });
+            if(!$newAASeqEnzClass->retrieveFromDB()){
+              $self->log("submitted enzyme $enzymeClass, seq $aaSeqId\n");
+              $newAASeqEnzClass->submit();
+            }
+          $self->undefPointerCache();
+        }
+    }
 
   my $msg = "Finished processing EC Mapping file\n";
 
@@ -196,28 +193,17 @@ return $enzymeClass;
 
 ###### FETCH THE AA SEQUNCE ID FOR A GIVEN ALIAS ######
 
-sub getAASeqId {
-  my ($self, $locusTag, $aaIdHash) = @_;
+sub getAASeqIds {
+  my ($self, $locusTag, $sth) = @_;
 
-
-  unless ($sth) {
-    my $sql = $self->getArg('aaSeqLocusTagMappingSql');
-    print "SQL: $sql\n";
-    my $queryHandle = $self->getQueryHandle();
-    $sth = $queryHandle->prepare($sql);
-  }
-
-  # my $naFeatureId =  GUS::Supported::Util::getGeneFeatureId($self, $locusTag) ;
-  # $sth->execute($naFeatureId);
   $sth->execute($locusTag);
-  my $aaSequenceId = $sth->fetchrow_array();
+
+  while(my $aaSequenceId = $sth->fetchrow_array()) {
+    push @{$self->{aa_sequence_ids}->{$locusTag}}, $aaSequenceId; 
+  }
   $sth->finish();
 
-  $$aaIdHash{$locusTag} = $aaSequenceId;
-
-print "AA SEQ ID: $aaSequenceId\n";
-
-  return $aaSequenceId;
+  return $self->{aa_sequence_ids}->{$locusTag};
 }
 
 sub undoTables {

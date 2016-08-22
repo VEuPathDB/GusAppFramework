@@ -95,7 +95,7 @@ my $argsDeclaration =
 ];
 
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4.0,
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
@@ -459,11 +459,9 @@ sub deleteTaxonName {
 }
 
 sub undoTables {
-   qw(
-   SRes.TaxonName
-   SRes.Taxon
-   SRes.GeneticCode
-   );
+  my ($self) = @_;
+
+   return('SRes.TaxonName', 'SRes.Taxon', 'SRes.GeneticCode');
 }
 
 

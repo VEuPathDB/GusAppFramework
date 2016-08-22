@@ -148,7 +148,7 @@ sub new {
   my $self    = {};
   bless($self,$class);
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4.0,
                      cvsRevision       => '$Revision$',
                      name              => ref($self),
                      argsDeclaration   => $argsDeclaration,
@@ -340,10 +340,10 @@ sub loadMutualInformationFile {
     }
 
     my $primaryNaFeatureId =
-      GUS::Supported::Util::getGeneFeatureId($self, $primarySourceId, 0, $self->getArg('organismAbbrev'));
+    GUS::Supported::Util::getGeneFeatureId($self, $primarySourceId, 0, $self->getArg('organismAbbrev'));
 
     my $secondaryNaFeatureId = 
-      GUS::Supported::Util::getGeneFeatureId($self, $secondarySourceId, 0, $self->getArg('organismAbbrev'));
+        GUS::Supported::Util::getGeneFeatureId($self, $secondarySourceId, 0, $self->getArg('organismAbbrev'));
     my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
 
     my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};

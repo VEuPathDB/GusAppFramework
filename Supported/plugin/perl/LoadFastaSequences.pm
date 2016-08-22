@@ -76,7 +76,7 @@ stringArg({   name           => 'ncbiTaxonName',
 	       isList         => 0 }),
 
 
- integerArg({   name           => 'logFrequency',
+ integerArg({   name          => 'logFrequency',
 	       descr          => 'The frequency of logging progress, ie, after how many sequences are processed',
 	       reqd           => 0,
 		default       => 10,
@@ -95,19 +95,25 @@ stringArg({   name           => 'ncbiTaxonName',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
+  stringArg({  name           => 'SOExtDbRlsSpec',
+	       descr          => 'The External Database Release spec for SOTermName, must be in the form Name|Version',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
   stringArg({  name           => 'SOTermName',
 	       descr          => 'The Sequence Ontology term for the sequence type',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
- integerArg({   name           => 'ncbiTaxId',
+ integerArg({   name          => 'ncbiTaxId',
 	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or ncbiTaxonName or regexNcbiTaxId args.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
- fileArg({   name           => 'sequenceFile',
+ fileArg({   name             => 'sequenceFile',
 	       descr          => 'The name of the FASTA file containing the input sequences',
 	       reqd           => 0,
                mustExist => 0,
@@ -197,13 +203,13 @@ stringArg({   name           => 'ncbiTaxonName',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
- tableNameArg({   name           => 'tableName',
+ tableNameArg({   name        => 'tableName',
 	       descr          => 'Table name to insert sequences into, in schema::table format.  Chose from: DoTS::ExternalNASequence DoTS::VirtualSequence DoTS::ExternalAASequence DoTS::MotifAASequence',
 	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
- booleanArg({   name           => 'update',
+ booleanArg({   name          => 'update',
 	       descr          => 'If true, checks to see if row is updated',
 	       reqd           => 0,
 	       constraintFunc => undef,
@@ -249,7 +255,7 @@ sub new() {
   my $self = {};
   bless($self,$class);
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4.0,
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
@@ -719,14 +725,21 @@ sub fetchSequenceOntologyId {
   my ($self, $name) = @_;
 
   my $name = $self->getArg('SOTermName');
+  my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
 
-  eval ("require GUS::Model::SRes::SequenceOntology");
+  if (!defined($extDbRlsSpec)) {
+    $self->userError('When SOTermName is provided, SOExtDbRls must be specified');
+  }
 
-  my $SOTerm = GUS::Model::SRes::SequenceOntology->new({ term_name => $name });
+  my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+
+  eval ("require GUS::Model::SRes::OntologyTerm");
+
+  my $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $name, external_database_release_id => $extDbRlsId });
 
   $SOTerm->retrieveFromDB;
 
-  $self->{sequenceOntologyId} = $SOTerm->getSequenceOntologyId();
+  $self->{sequenceOntologyId} = $SOTerm->getId();
 
   $self->{sequenceOntologyId}
     || $self->userError("Can't find SO term '$name' in database");

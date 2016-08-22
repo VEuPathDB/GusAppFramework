@@ -14,7 +14,7 @@ use strict;
 
 use FileHandle;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Model::SRes::SequenceOntology;
+use GUS::Model::SRes::OntologyTerm;
 use GUS::PluginMgr::Plugin;
 
 $| = 1;
@@ -32,25 +32,13 @@ my $argsDeclaration =
 	  format => 'Text'
         }),
 
- stringArg({name => 'soExtDbRlsName',
-	    descr => 'The extDbRlsName of Sequence Ontology',
-	    constraintFunc => undef,
-	    reqd => 0,
-	    isList => 0
-	   }),
- stringArg({name => 'soVersion',
-	    descr => 'version of Sequence Ontology',
+ stringArg({name => 'extDbRlsSpec',
+	    descr => 'The extDbRlsSpec of Sequence Ontology',
 	    constraintFunc => undef,
 	    reqd => 0,
 	    isList => 0
 	   }),
 
- stringArg({name => 'soCvsVersion',
-	    descr => 'cvs version of Sequence Ontology',
-	    constraintFunc => undef,
-	    reqd => 0,
-	    isList => 0
-	   })
  ];
 
 
@@ -59,11 +47,11 @@ Inserts the Sequence Ontology from so.obo file.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Extracts the id, name, and def fields from a so.obo file and inserts new entries into into the SRes.SequenceOntology table in the form so_id, ontology_name, so_version, so_cvs_version, term_name, definition.
+Extracts the id, name, and def fields from a so.obo file and inserts new entries into into the SRes.OntologyTerm table.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
-['SRes.SequenceOntology','New SO entries are placed in this table']
+['SRes.OntologyTerm','New SO entries are placed in this table']
 ];
 
 my $tablesDependedOn = [];
@@ -95,8 +83,8 @@ sub new {
     my $self = {};
     bless($self, $class);
 
-    $self->initialize({requiredDbVersion => 3.6,
-		       cvsRevision =>  '$Revision: 10075 $',
+    $self->initialize({requiredDbVersion => 4.0,
+		       cvsRevision =>  '$Revision$',
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -114,13 +102,17 @@ sub run {
 
     my $soFile = $self->getArg('inputFile');
 
+    my $extDbRlsSpec = $self->getArg('extDbRlsSpec');
+
+    my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+
     open(SO_FILE, $soFile);
 
     while (<SO_FILE>){
 
       if (/^\n/) {
         unless ($type ne 'Term') {
-           my $soTerm = $self->makeSequenceOntology($obo);
+           my $soTerm = $self->makeSequenceOntology($obo, $extDbRlsId);
               $soTerm->submit() unless $soTerm->retrieveFromDB();
               $count++;
                   if($count % 100 == 0){
@@ -138,11 +130,11 @@ sub run {
         $obo->{$nam} = $val;
       }
    }
-   return "Inserted $count terms into SequenceOntology";
+   return "Inserted $count terms into OntologyTerm";
 }
 
 sub makeSequenceOntology {
-   my ($self, $obo) = @_;
+   my ($self, $obo, $extDbRlsId) = @_;
 
    if (!$obo->{'name'} || !$obo->{'id'}) {
       $self->error("Invalid OBO File: missing term name or so id");
@@ -156,54 +148,20 @@ sub makeSequenceOntology {
    $obo->{'id'}=~ s/\n//g;
    $obo->{'name'}=~ s/\n//g;
 
-   my $soVer = $self->getArg('soVersion');
-   
-   unless ($soVer){
 
-          my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
-	  $soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soVersion on the command line");
-	  $soVer = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
-   }
-
-
-
-   my $soTerm = GUS::Model::SRes::SequenceOntology->
-     new({'so_id' => $obo->{'id'},
-	  'ontology_name' => 'sequence',
-	  'so_version' => $soVer,
-	  'so_cvs_version' => $soVer,
-	  'term_name' => $obo->{'name'},
-	  'definition' => $definition });
+   my $soTerm = GUS::Model::SRes::OntologyTerm->
+     new({'source_id' => $obo->{'id'},
+          'external_database_release_id' => $extDbRlsId,
+	  'name' => $obo->{'name'},
+	  'definition' => $definition }
+     );
  
    return $soTerm;
 }
 
-sub getExtDbRlsVerFromExtDbRlsName {
-  my ($self, $extDbRlsName) = @_;
-
-  my $dbh = $self->getQueryHandle();
-
-  my $sql = "select version from sres.externaldatabaserelease edr, sres.externaldatabase ed
-             where ed.name = '$extDbRlsName'
-             and edr.external_database_id = ed.external_database_id";
-  my $stmt = $dbh->prepareAndExecute($sql);
-  my @verArray;
-
-  while ( my($version) = $stmt->fetchrow_array()) {
-      push @verArray, $version;
-  }
-
-  die "No ExtDbRlsVer found for '$extDbRlsName'" unless(scalar(@verArray) > 0);
-
-  die "trying to find unique ext db version for '$extDbRlsName', but more than one found" if(scalar(@verArray) > 1);
-
-  return @verArray[0];
-
-}
-
 sub undoTables {
    qw(
-   SRes.SequenceOntology
+   SRes.OntologyTerm
    );
 }
 1;

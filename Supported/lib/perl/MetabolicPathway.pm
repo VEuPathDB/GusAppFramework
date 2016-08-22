@@ -1,93 +1,134 @@
-#!/usr/bin/perl
-
-# =================================================
-# Package MetabolicPathway 
-# =================================================
-
 package GUS::Supported::MetabolicPathway;
 
-# =================================================
-# Documentation
-# =================================================
+use strict;
 
 =pod
 
 =head1 Description
 
-A class for representing and processing Metabolic Pathways (KEGG, potentially others ex BioPax)
+Superclass for specific metabolic pathway map (KEGG, MPMP, BioCyc) as GUS Model Objects.  Subclasses must implement makeGusObjects and getReaderClass methods.  
+The makeGusObjecs method can be called by a plugin to load into SRes tables
 
 =cut
 
-# =================================================
-# Pragmas
-# =================================================
+#--------------------------------------------------------------------------------
+# Abstract Object Methods
+#--------------------------------------------------------------------------------
+sub makeGusObjects {}
+sub getReaderClass {}
 
-use strict;
-
-
-# =================================================
-# Package Methods
-# =================================================
-
-
+#--------------------------------------------------------------------------------
+# Object Methods
+#--------------------------------------------------------------------------------
 sub new {
-
-  my ($class,$pathwayName) = @_;
+  my ($class, $file) = @_;
   my $self = {};  
-  bless($self,$class);
+  bless($self, $class);
+
+  my $readerClass = $self->getReaderClass();
+
+  eval "require $readerClass";
+
+  my $reader = eval {
+    $readerClass->new($file);
+  };
+
+  $reader->read();
   
-  $self->{pathwayName} = $pathwayName;
+  $self->{_reader} = $reader;
+
+  $self->{_gus_relationships} = [];
+  $self->{_gus_nodes} = {};
+
   return $self;
 }
 
-
-sub setPathwayNode {
-  my ($self,$nodeName, $node) = @_;
-  $self->{nodes}->{$nodeName} = $node;
-  #every node has a Type(Enzyme) and Name (ec:1.1.1.1)
-}
-
-sub getPathwayNode {
-  my ($self, $nodeName) = @_;
-  return $self->{nodes}->{$nodeName};
-}
-
-sub setNodeGraphics {
-  my ($self,$nodeName, $graphics) = @_;
-  $self->{graphics}->{$nodeName} = $graphics;
-}
-
-sub getNodeGraphics {
-  my ($self, $nodeName) = @_;
-  return $self->{graphics}->{$nodeName};
-}
-
-
-sub getPathwayName {
+sub getReader {
   my ($self) = @_;
-  return $self->{pathwayName};
-  #string
-}
 
-sub setPathwayNodeAssociation {
-  my ($self,$asscName,$association) = @_;
-  $self->{associations}->{$asscName} = $association;
+  return $self->{_reader};
 }
 
 
-sub getPathwayNodeAssociation {
-  my ($self,$asscName) = @_;
-  return $self->{associations}->{$asscName};
+sub addNode {
+  my ($self, $gusNode, $uniqueNodeId) = @_;
+
+  my $expected = 'GUS::Model::SRes::PathwayNode';
+  my $className = ref($gusNode);
+  &checkClass($className, $expected);
+
+  $self->{_gus_nodes}->{$uniqueNodeId} = $gusNode;
 }
 
-sub setPathwayInteractions {
-  my ($self,$interactions) = @_;
-  $self->{pathwayInteractions} = $interactions;
+sub getNodeByUniqueId {
+  my ($self, $uniqueId) = @_;
+  return $self->{_gus_nodes}->{$uniqueId};
 }
 
-sub getPathwayNodeInteractions {
+sub getNodes {
   my ($self) = @_;
-  return $self->{pathwayInteractions};
+  my @rv = values %{$self->{_gus_nodes}};
+  return \@rv;
 }
+
+sub setPathway {
+  my ($self, $gusPathway) = @_;
+
+  my $expected = 'GUS::Model::SRes::Pathway';
+  my $className = ref($gusPathway);
+  &checkClass($className, $expected);
+
+  $self->{_gus_pathway} = $gusPathway;
+}
+
+sub getPathway {
+  my ($self) = @_;
+  return $self->{_gus_pathway};;
+}
+
+
+sub addRelationship {
+  my ($self, $gusRelationship) = @_;
+
+  my $expected = 'GUS::Model::SRes::PathwayRelationship';
+  my $className = ref($gusRelationship);
+  &checkClass($className, $expected);
+
+  push @{$self->{_gus_relationships}}, $gusRelationship;
+}
+
+sub getRelationships {
+  my ($self) = @_;
+  my @rv = @{$self->{_gus_relationships}};
+  return \@rv;
+}
+
+sub getRelationshipFromGusNodes {
+  my ($self, $gusNode,  $gusAssociatedNode) = @_;
+
+  my $relationships = $self->getRelationships();
+  foreach my $relationship (@$relationships) {
+    if($relationship->getNodeId() == $gusNode->getId() && $relationship->getAssociatedNodeId == $gusAssociatedNode->getId()) {
+      print STDERR "Found Relationship!!!\n";
+      return $relationship;
+    }
+  }
+}
+
+
+#--------------------------------------------------------------------------------
+#Static Util methods
+#--------------------------------------------------------------------------------
+
+sub checkClass {
+  my ($className, $expected) = @_;
+
+  unless($className eq $expected) {
+    die "ClassName $className did not match expected $expected;";
+  }
+  
+}
+
+
 
 1; 

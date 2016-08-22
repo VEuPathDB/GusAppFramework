@@ -162,6 +162,7 @@ sub sqlExec {
 sub death {
   my ($dbh, $msg) = @_; 
   if ($exitOnFailure) {
+    $dbh->{RaiseError} = 1;
     $dbh->rollback();
     &confess("$msg");
   } else {

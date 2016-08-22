@@ -1,4 +1,3 @@
-#######################################################################
 ##                   InsertOnotolgyRelationshipType.pm
 ##
 ## Plug-in to load OntologyRelationshipType from a tab delimited file.
@@ -13,7 +12,7 @@ use strict;
 
 use FileHandle;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Model::SRes::OntologyRelationshipType;
+use GUS::Model::SRes::OntologyTerm;
 use GUS::PluginMgr::Plugin;
 
 $| = 1;
@@ -28,6 +27,14 @@ my $argsDeclaration =  [
 	  mustExist => 1,
 	  format => 'Text'
         }),
+
+ stringArg({ descr => 'Name of the External Database',
+	     name  => 'extDbRlsSpec',
+	     isList    => 0,
+	     reqd  => 1,
+	     constraintFunc => undef,
+	   }),
+
  ];
 
 
@@ -36,11 +43,11 @@ Inserts the Ontology term types, e.g. Class, Individual, etc.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Loads the term name and the description of the term into the SRes.OntologyTermType table.
+Loads the term name and the description of the term into the SRes.OntologyTerm table.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
-['SRes.OntologyRelationshipType','Ontology relationship types are loaded in this tables']
+['SRes.OntologyTerm','Ontology relationship types are loaded in this tables']
 ];
 
 my $tablesDependedOn = [];
@@ -66,12 +73,16 @@ my $documentation = {purposeBrief => $purposeBrief,
 		     notes => $notes
 		    };
 
+
+sub getExtDbRls {$_[0]->{ext_db_rls_id}}
+sub setExtDbRls {$_[0]->{ext_db_rls_id} = $_[1]}
+
 sub new {
     my ($class) = @_;
     my $self = {};
     bless($self, $class);
 
-    $self->initialize({requiredDbVersion => 3.6,
+    $self->initialize({requiredDbVersion => 4.0,
 		       cvsRevision =>  '$Revision$', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
@@ -88,6 +99,8 @@ sub run {
     my $count = 0;
 
     my $relationshipTypeFile = $self->getArg('inputFile');
+    my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
+    $self->setExtDbRls($extDbRlsId);
 
     open(RT_FILE, $relationshipTypeFile) || die "Couldn't open file '$relationshipTypeFile'\n";
 
@@ -103,7 +116,7 @@ sub run {
 	my $is_native = $data[1];
 	
 	my $relType = $self->makeOntologyRelType($term,$is_native);
-	$relType->submit() unless $relType->retrieveFromDB();
+	$relType->submit();
 	
 	undef $term;
 	undef $is_native;
@@ -114,18 +127,25 @@ sub run {
 
 sub makeOntologyRelType {
    my ($self, $term, $is_native) = @_;
+   my $extDbRls = $self->getExtDbRls();
 
-   my $term = GUS::Model::SRes::OntologyRelationshipType->new({
-       'name' => $term,
-       'is_native' => $is_native });
+   my $termObj = GUS::Model::SRes::OntologyTerm->new({
+       'source_id' => $term,
+                                                  });
+
+   $termObj->retrieveFromDB();
+
+   $termObj->setName($term);
+   $termObj->setExternalDatabaseReleaseId($extDbRls);
+
    
-   return $term;
+   return $termObj;
 }
 
 sub undoTables {
   my ($self) = @_;
 
-  return ('SRes.OntologyRelationshipType');
+  return ('SRes.OntologyTerm');
 }
 
 1;

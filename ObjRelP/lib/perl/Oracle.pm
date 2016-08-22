@@ -179,4 +179,16 @@ sub dateFormatSql{
 	return "alter session set NLS_DATE_FORMAT='$dateFormat'";
 }
 
+
+############################################################
+# limit
+#
+# Returns sql to limit number of rows
+############################################################
+sub limit {
+	my($self,$sql, $numRows)=@_;
+	return "select * from ($sql) where rownum<=$numRows";
+}
+
+
 1;
