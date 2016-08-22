@@ -26,8 +26,7 @@ The Undo plugin is very simple:
 
   - Undo also deletes from AlgorithmParam and AlgorithmInvocation.
 
-  - all deletes are performed as part of one transaction.  The deletes
-    are only committed if Undo is run with --commit
+  - For each table, if Undo is run with --commit, deletes are committed every 10,000 so not to flood the logs.
 
   - Undo does *not* write to the version tables.
 
@@ -119,6 +118,13 @@ my $argsDeclaration  =
             isList => 0,
            }),
 
+ integerArg({name => 'limit',
+            descr => 'The maximum number of rows to delete in a single transaction; currently only available for Oracle',
+            constraintFunc=> undef,
+            reqd  => 0,
+            isList => 0,
+           }),
+
 ];
 
 
@@ -128,7 +134,7 @@ sub new {
    my $self = {};
    bless($self, $class);
 
-   $self->initialize({requiredDbVersion => 3.6,
+   $self->initialize({requiredDbVersion => 4.0,
                       cvsRevision => '$Revision$',
                       name => ref($self),
                       argsDeclaration => $argsDeclaration,
@@ -164,7 +170,7 @@ sub run{
 
    foreach my $table (@tables) {
 
-      $self->deleteFromTable($table,'row_alg_invocation_id');
+      $self->deleteFromTable($table,'row_alg_invocation_id', $self->getArg('limit'));
    }
 
    if ($workflowContext) {
@@ -178,36 +184,42 @@ sub run{
 }
 
 sub deleteFromTable{
-   my ($self, $tableName, $algInvIdColumnName) = @_;
-
-   my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
-   my $sql =
-      "SELECT COUNT(*) FROM $tableName
-       WHERE $algInvIdColumnName IN ($algoInvocIds)";
-   my $stmt = $self->{dbh}->prepareAndExecute($sql);
-   if(my ($rows) = $stmt->fetchrow_array()){
-    if ($self->{commit} == 1) {
-       my $sql = 
-       "DELETE FROM $tableName
-       WHERE $algInvIdColumnName IN ($algoInvocIds)";
-       warn "\n$sql\n" if $self->getArg('verbose');       
-       if($rows > 0){
-         $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
-   
-         $self->log("Deleted $rows rows from $tableName");              
-         
-         $self->{dbh}->commit()
-         || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
-         $self->log("Committed deletions from $tableName");
-       }else{
-         $self->log("Deleted 0 rows from $tableName");
-       }
-      }else{
-         $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
-       }
-  }
+  my ($self, $tableName, $algInvIdColumnName, $limit) = @_;
   
-}
+  my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
+  my $sql1 =
+    "SELECT COUNT(*) FROM $tableName
+       WHERE $algInvIdColumnName IN ($algoInvocIds)";
+  my $stmt = $self->{dbh}->prepareAndExecute($sql1);
+  my  ($rows) = $stmt->fetchrow_array();   
+  if ($self->{commit} == 1) {
+    while ($rows) {
+      my $sql2 = 
+	"DELETE FROM $tableName
+         WHERE $algInvIdColumnName IN ($algoInvocIds)";
+      $sql2 .= " AND rownum<=$limit" if ($limit);
 
+      warn "\n$sql2\n" if $self->getArg('verbose');       
+      $self->{dbh}->do($sql2) || die "Failed running sql:\n$sql2\n";
+
+      my $numDeleted = $rows;
+
+      if ($limit) {
+	$numDeleted = $rows>10000 ? 10000 : $rows;
+      }
+
+      $self->log("Deleted $numDeleted rows from $tableName");              
+      
+      $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
+      $self->log("Committed $numDeleted deletions from $tableName");
+      $stmt = $self->{dbh}->prepareAndExecute($sql1);
+      ($rows) = $stmt->fetchrow_array();        
+    }
+  }
+      
+  else {
+    $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
+  }
+}
 
 1;

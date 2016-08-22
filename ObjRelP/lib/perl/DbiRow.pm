@@ -704,7 +704,7 @@ sub quote_and_update {
     #    if (!defined $value || ( $dbh->getNoEmptyStrings() && $value =~ /^\s*$|^"\s*"$/ ) ) { ## NULL CHECK
     #      &confess("\n$key is empty string($value) for set clause of $table update. \n");
     #    }
-    if ($value =~ /^\s*(sysdate|getdate).{0,2}\s*$/i) {
+    if ($value =~ /^\s*(sysdate|getdate|now).{0,2}\s*$/i) {
       $set_clause .= "\n\t$key = $value,";
       $cacheKey .= $key;
     } elsif ($value eq '') {

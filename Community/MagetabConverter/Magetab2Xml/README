@@ -1,0 +1,60 @@
+Checkout and build:
+
+1.  Do an svn checkout of https://www.cbil.upenn.edu/svn/cbil/MagetabConverter/
+2.  cd Magetab2Xml/resources
+3.  vi/eamcs resources and alter the properties according to platform and personal taste.
+4.  cd ..
+5.  ant jar
+N.B.  Java 7 is required to build this codebase.
+
+Run:
+
+1.  To run the Magetab2Xml converter use the following command line (using Java 7):
+
+    java -jar Magetab2Xml.jar <Excel MAGE-TAB file> -validate -html -prefix <prefix> -imageType <gif or png> -dot <dot_path> cp="."
+
+2.  All output file will be in a new directory labeled <basename> where basename is the
+    original file name without the xlsx extension.
+3.  If this directory already exists, it will be emptied first.
+
+4.  The output directory will consist of the following files:
+    The idf text file:	 idf.txt
+    The sdrf text file:	 sdrf.txt
+    The xml output:      <filename>.xml
+    The dot file:        <filename>.dot (only if the -html switch is set on the command line)
+    The image file:      <filename>.gif or .png (only if the -html switch is set on the command line)
+    The html graph file: <filename>.html (only if the -html switch is set on the command line)
+    The html zip file:   <filename>.zip (only if the -html switch is set on the command line)
+    The <filename> is set in the application.properties file by default when not set on the command line.
+
+5.  The log file will be in limpopo.log or limpopo.log.<date stamp>
+6.  The html zip makes use of pre-zipped static files in htmlResources.zip, which is rebuilt with the
+    ant build.
+7.  The xsd file is output.xsd and is applied only if the -validate switch is set on the command line
+8.  Note that limpopo sometimes throws UnsupportedOperationExceptions that don't interfere with processing.
+    Nevertheless, check output carefully when those occur.
+9.  Limpopo and consequently this software, can handle ISO-8859-1 characters.  MS Excel uses CP1252 by default.
+    Not all characters in CP1252 have representations in ISO-8859-1.  Any encoding problems that result from
+    a failure to find a CP1252 to ISO-8859-1 mapping should be apparent in the idf.txt or sdrf.txt files
+    as a question mark. 
+
+Notes about creating Excel spreadsheets with MAGE-TAB additions:
+
+1.  The spreadsheet should still show a complete MAGE-TAB.
+2.  Additions to the existing MAGE-TAB should be shown in yellow highlight.
+    a.  Do not highlight MAGE-TAB headers (1st column of IDF, 1st row of SDRF).  Otherwise, an
+        exception will be thrown.
+    b.  The study title must be appended with a database id (<id=n>).
+    c.  New study factors, protocols, contacts can be highlighted in the IDF.
+    d.  Rows representing new expts. in the SDRF may be highlighted.
+    e.  Column representing new steps in the SDRF may be highlighted.
+    f.  If one or more splits/merges are added, do not highlight in yellow the cells that are
+        common across all split/merged rows.  If this policy is not observed, no exception will
+        be thrown.  Instead multiple unmerged rows will appear because the highlighting translates
+        into a token <<add>> which will make the rows appear completely distinct to limpopo.
+    g.  Whether factor values in the SDRF are additions will be determined by whether the corresponding
+        study factors are additions.  An added factor value will not be noted as such if it is part of
+        a larger addition (i.e., part of an added protocol application node).  
+3.  The submitter is welcome to highlight other items in the spreadsheet in any color other than
+    yellow.
+    

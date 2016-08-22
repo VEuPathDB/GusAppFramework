@@ -35,8 +35,6 @@ NOTES
 
   my $tablesAffected =
   [
-   ['SRes.Reference', ''],
-   ['SRes.SequenceOntology', ''],
    ['DoTS.SequenceType', ''],
    ['DoTS.NASequence', ''],
    ['DoTS.ExternalNASequence', ''],
@@ -64,7 +62,6 @@ NOTES
   my $tablesDependedOn = 
   [
    ['SRes.TaxonName', ''],
-   ['SRes.SequenceOntology', ''],
    ['SRes.ExternalDatabase', ''],
    ['SRes.ExternalDatabaseRelease', ''],
   ];
@@ -117,7 +114,7 @@ sub new {
   my $self = {};
   bless($self, $class);
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4,
 		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,

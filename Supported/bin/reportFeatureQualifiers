@@ -82,6 +82,12 @@ sub processFeature {
     $features->{$feature}->{$parent}->{$qualifier}++;
   }
 
+  ## check if the bioperlFeature coordinates is negative 
+  if ($bioperlFeature->location->start < 0 || $bioperlFeature->location->end < 0) {
+    my ($cId) = $bioperlFeature->get_tag_values('locus_tag') if ($bioperlFeature->has_tag('locus_tag'));
+    die "Un  Unreason coordinates found at $feature $cId: " . $bioperlFeature->location->start . " : " . $bioperlFeature->location->end . "\n";
+  }
+
   for my $subFeature ($bioperlFeature->get_SeqFeatures()) {
     processFeature($subFeature, $feature);
   }
@@ -228,15 +234,28 @@ sub convertGFFStreamToSeqIO {
         foreach my $child (@children) {
 
 	  my ($child_id, $child, $parent) = @$child;
+
+	  ## check if the parent or child coordinates is negative 
+	  if ($parent->location->start < 0 || $parent->location->end < 0) {
+	    my ($cId) = $parent->get_tag_values('ID') if ($parent->has_tag('ID'));
+	    die "Unreason coordinates found at $cId: " . $parent->location->start . " : " . $parent->location->end . "\n";
+	  }
+	  if ($child->location->start < 0 || $child->location->end < 0) {
+	    my ($cId) = $child->get_tag_values('ID') if ($child->has_tag('ID'));
+	    die "Unreason coordinates found at $cId: " . $child->location->start . " : " . $child->location->end . "\n";
+	  }
+
 	  # make the association:
+	my ($pId) = $parent->get_tag_values('ID') if ($parent->has_tag('ID'));
+	my ($cId) = $child->get_tag_values('ID') if ($child->has_tag('ID'));
 	  if($parent->location->start() > $child->location->start()){
-	      warn "Child feature $child_id does not lie within parent boundaries.\n";
+	      warn "Child feature $child_id $cId does not lie within parent $pId boundaries.\n";
 
 	      $parent->location->start($child->location->start());
 	  }
 
 	  if($parent->location->end() < $child->location->end()){
-	      warn "Child feature $child_id does not lie within parent boundaries.\n";
+	      warn "Child feature $child_id $cId does not lie within parent $pId boundaries.\n";
 
 	      $parent->location->end($child->location->end());
 	  }

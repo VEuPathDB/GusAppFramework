@@ -1,10 +1,29 @@
 
+#vvvvvvvvvvvvvvvvvvvvvvvvv GUS4_STATUS vvvvvvvvvvvvvvvvvvvvvvvvv
+  # GUS4_STATUS | SRes.OntologyTerm              | auto   | absent
+  # GUS4_STATUS | SRes.SequenceOntology          | auto   | absent
+  # GUS4_STATUS | Study.OntologyEntry            | auto   | absent
+  # GUS4_STATUS | SRes.GOTerm                    | auto   | fixed
+  # GUS4_STATUS | Dots.RNAFeatureExon            | auto   | absent
+  # GUS4_STATUS | RAD.SageTag                    | auto   | absent
+  # GUS4_STATUS | RAD.Analysis                   | auto   | absent
+  # GUS4_STATUS | ApiDB.Profile                  | auto   | absent
+  # GUS4_STATUS | Study.Study                    | auto   | absent
+  # GUS4_STATUS | Dots.Isolate                   | auto   | absent
+  # GUS4_STATUS | DeprecatedTables               | auto   | absent
+  # GUS4_STATUS | Pathway                        | auto   | absent
+  # GUS4_STATUS | DoTS.SequenceVariation         | auto   | absent
+  # GUS4_STATUS | RNASeq Junctions               | auto   | absent
+  # GUS4_STATUS | Simple Rename                  | auto   | absent
+  # GUS4_STATUS | ApiDB Tuning Gene              | auto   | absent
+  # GUS4_STATUS | Rethink                        | auto   | absent
+  # GUS4_STATUS | dots.gene                      | manual | reviewed
+
+#^^^^^^^^^^^^^^^^^^^^^^^^^ End GUS4_STATUS ^^^^^^^^^^^^^^^^^^^^
 package GUS::Supported::Utility::GOAnnotater;
 
 use strict;
 
-use GUS::Model::SRes::GOEvidenceCode;
-use GUS::Model::SRes::GOTerm;
 use GUS::Model::DoTS::GOAssocInstEvidCode;
 use GUS::Model::DoTS::GOAssociationInstanceLOE;
 use GUS::Model::DoTS::GOAssociationInstance;
@@ -18,12 +37,14 @@ sub new {
                             # The name is the name of your GO database in sres.externaldatabase
                             # version is the version in sres.externaldatabaserelease
 
+   my $goEvidenceCodeRelease = shift; # format name^version
+
    my $self = {};
    bless($self, $class);
 
    $self->{plugin} = $plugin;
                                                                                                                              
-   $self->_initEvidenceCodes();
+   $self->_initEvidenceCodes($goEvidenceCodeRelease);
    $self->_initGoTermIds($goRelease);
    $self->_initGoTermNames($goRelease);
    
@@ -142,13 +163,22 @@ return $instId;
 
 sub _initEvidenceCodes {
    my $self = shift;
+   my $dbRlsId = shift;
 
-   my $sql = "select go_evidence_code_id, name from sres.goevidencecode";
-      my $stmt = $self->{plugin}->prepareAndExecute($sql);
+   my ($dbName,$dbVersion) = split(/\^/,$dbRlsId);
 
-      while (my ($id, $name) = $stmt->fetchrow_array()) { 
-        $self->{evidenceIds}->{$name} = $id;
-      }
+   my $extDbRlsId = $self->{plugin}->getExtDbRlsId($dbName,
+                                                  $dbVersion,)
+       or die "Couldn't retrieve external database!\n";
+
+
+   my $sql = "select ontology_term_id, name from sres.ontologyterm where external_database_release_id = $extDbRlsId";
+   
+   my $stmt = $self->{plugin}->prepareAndExecute($sql);
+
+   while (my ($id, $name) = $stmt->fetchrow_array()) { 
+     $self->{evidenceIds}->{$name} = $id;
+   }
 }
 
 
@@ -163,14 +193,18 @@ sub _initGoTermIds {
                                                    $dbVersion,)
               or die "Couldn't retrieve external database!\n";
 
-      my $sql = "SELECT go_term_id, 
-                     go_id FROM SRes.GOTerm WHERE 
-                     external_database_release_id = $goVersion
-                 UNION
-                 SELECT go_term_id,
-                     source_id FROM SRes.GOSynonym WHERE
-                     external_database_release_id = $goVersion
-                     AND source_id is not null";
+      my $sql = "select ontology_term_id
+     , source_id
+from sres.ontologyterm 
+where external_database_release_id = $goVersion
+union
+select o.ontology_term_id
+     , s.source_id
+from sres.ontologyterm o
+   , sres.ontologysynonym s
+where o.ONTOLOGY_TERM_ID = s.ONTOLOGY_TERM_ID
+and s.source_id is not null
+and o.external_database_release_id = $goVersion";
 
         my $stmt = $self->{plugin}->prepareAndExecute($sql);
 
@@ -191,14 +225,18 @@ sub _initGoTermNames {
                                                    $dbVersion,)
               or die "Couldn't retrieve external database!\n";
 
-      my $sql = "SELECT go_term_id, 
-                     name FROM SRes.GOTerm WHERE 
-                     external_database_release_id = $goVersion
-                 UNION
-                 SELECT go_term_id,
-                     text FROM SRes.GOSynonym WHERE
-                     external_database_release_id = $goVersion
-                     AND text is not null";
+      my $sql = "select ontology_term_id
+     , name
+from sres.ontologyterm 
+where external_database_release_id = $goVersion
+union
+select o.ontology_term_id
+     , s.ontology_synonym
+from sres.ontologyterm o
+   , sres.ontologysynonym s
+where o.ONTOLOGY_TERM_ID = s.ONTOLOGY_TERM_ID
+and s.source_id is not null
+and o.external_database_release_id = $goVersion";
 
         my $stmt = $self->{plugin}->prepareAndExecute($sql);
 

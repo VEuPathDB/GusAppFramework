@@ -832,34 +832,80 @@ B<Return type:> C<integer>
 
 =cut
 sub getExtDbRlsId {
-    my ($self, $dbNameOrSpecifier, $dbVersion) = @_;
+  my ($self, $dbNameOrSpecifier, $dbVersion) = @_;
 
-    my $dbName;
-    if ($dbNameOrSpecifier =~ /(.+)\|(.+)/) {
-      die "Can't provide a dbSpecifier and a dbVersion" if $dbVersion;
-      $dbName = $1;
-      $dbVersion = $2
-    } else {
-      die "Database specifier '$dbNameOrSpecifier' is not in 'name|version' format" unless $dbVersion;
-      $dbName = $dbNameOrSpecifier;
-    }
-
+  my $dbName;
+  if ($dbNameOrSpecifier =~ /(.+)\|(.+)/) {
+    die "Can't provide a dbSpecifier and a dbVersion" if $dbVersion;
+    $dbName = $1;
+    $dbVersion = $2
+  } else {
+    die "Database specifier '$dbNameOrSpecifier' is not in 'name|version' format" unless $dbVersion;
+    $dbName = $dbNameOrSpecifier;
+  }
+  
+  if(!$self->{_extDbRelIdCache}->{$dbName}->{$dbVersion}){
     my $lcName = lc($dbName);
     my $sql = "select ex.external_database_release_id
                from sres.externaldatabaserelease ex, sres.externaldatabase e
                where e.external_database_id = ex.external_database_id
-               and ex.version = '$dbVersion'
+               and ex.version like '$dbVersion'
                and lower(e.name) = '$lcName'";
-
+      
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-
-    my ($releaseId) = $sth->fetchrow_array();
-
-    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'.  Use the plugins InsertExternalDatabase and InsertExternalDatabaseRls to insert this information into the database" unless $releaseId;
-
-    return $releaseId;
+    
+    my ($releaseId, $count);
+    while(my $id = $sth->fetchrow_array()) {
+      $releaseId = $id;
+      $count++;
+    }
+    $sth->finish();
+    
+    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'.  Use the plugins InsertExternalDatabase and InsertExternalDatabaseRls to insert this information into the database" unless($count == 1);
+    $self->{_extDbRelIdCache}->{$dbName}->{$dbVersion} = $releaseId;
+  }
+  return $self->{_extDbRelIdCache}->{$dbName}->{$dbVersion};
 }
 
+=item C<getOntologyTermId($ontologyName, $termId)>
+
+Retrieve an ontology term id given an ontology name from SRes::ExternalDatabase.name and a corresponding term from SRes::OntologyTerm.source_id.
+
+Die if none found.  (If you just want to test for its existence, call the method in an eval{} block.)
+
+B<Parameters:>
+
+    - ontologyName (string): Name of the ontology, from ExternalDatabase
+    - termId (string): Ontology term source ID.
+
+B<Return type:> C<integer>
+
+=cut
+sub getOntologyTermId {
+    my ($self, $ontologyName, $termId) = @_;
+
+    my $sth = $self->getQueryHandle()->prepareAndExecute(<<SQL);
+      select ot.ontology_term_id
+      from sres.OntologyTerm ot,
+           sres.ExternalDatabaseRelease edr, sres.ExternalDatabase ed
+      where ot.external_database_release_id = edr.external_database_release_id
+        and edr.external_database_id = ed.external_database_id
+        and ed.name = '$ontologyName'
+        and ot.source_id = '$termId'
+SQL
+
+    my ($ontologyTermId, $count);
+
+    while (my $id = $sth->fetchrow_array()) {
+      $ontologyTermId = $id;
+      $count++;
+    }
+    $sth->finish();
+
+    die "Couldn't find an ontology term id for ontology '$ontologyName' term '$termId'." unless($count == 1);
+
+    return $ontologyTermId;
+}
 =item C<prepareAndExecute($sql)>
 
 Prepare an SQL statement and execute it.  This method is a convenience wrapper around $self->getQueryHandle()->prepareAndExecute().  In plugins, SQL is usually reserved for querying, not for writing to the database.  GUS objects do that work with better tracking and more easily.  For more complicated database operations see the file $PROJECT_HOME/OblRelP/lib/perl/DbiDbHandle.pm

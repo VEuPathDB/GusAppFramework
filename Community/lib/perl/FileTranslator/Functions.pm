@@ -4,6 +4,12 @@ package GUS::Community::FileTranslator::Functions;
 
 use strict;
 
+use lib "$ENV{GUS_HOME}/lib/perl";
+
+use Date::Parse;
+
+use Data::Dumper;
+
 sub new {
   my ($M) = @_;
   my $self = {};
@@ -12,8 +18,244 @@ sub new {
   return $self;
 }
 
+
 #--------------------------------------------------------------------------------
 
+sub formatDate {
+  my ($self,$hash) = @_;
+  my $formatDate; $formatDate = sub {
+    my $valuesString = shift;
+    my ($date,$char) = split("\t",$valuesString);
+    return undef unless $date;
+    my  ($junk1,$junk2,$junk3,$day,$month,$year) = strptime($date);
+    print stderr $day; 
+    $month += 1;
+    die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
+    die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
+    $day = "0".$day if length($day) == 1;
+    $month = "0".$month if $month <10;
+    $year = $year < 16 ? $year +2000 : $year+1900;
+    my $formatted_date = $year.$month.$day;
+    die "date is messed up $formatted_date"  unless (length($year.$month.$day) == 8);
+    return $formatted_date;
+  };
+return $formatDate;
+}
+
+#--------------------------------------------------------------------------------
+
+sub formatTranslateDate {
+  my ($self,$hash) = @_;
+  my $formatTranslateDate; $formatTranslateDate = sub {
+    my $valuesString = shift;
+    my ($date,$char) = split("\t",$valuesString);
+    return undef unless $date;
+    my ($day, $span_month, $month, $year);
+    if ($date =~/-/) {
+      ($day, $span_month, $year) = split('-',$date);
+      my %month_map = ( 'ene' => 1,
+                                          'feb'  => 2,
+                                          'mar' => 3,
+                                           'abr' => 4,
+                                           'may' => 5,
+                                           'jun' => 6,
+                                           'jul' => 7,
+                                           'ago' => 8,
+                                           'sep' => 9,
+                                           'oct' => 10,
+                                           'nov' => 11,
+                                           'dic' => 12
+                      );
+      my $l_month = lc($span_month); 
+      $month = $month_map{$l_month};
+    }
+    else {
+      my  ($junk1,$junk2,$junk3);
+      ($junk1,$junk2,$junk3, $day,$month,$year) = strptime($date);
+      $month += 1;
+    }
+    print stderr $day; 
+    die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
+    die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
+    $day = "0".$day if length($day) == 1;
+    $month = "0".$month if $month <10;
+    $year = $year < 16 ? $year +2000 : $year+1900;
+    my $formatted_date = $year.$month.$day;
+    die "date is messed up $formatted_date"  unless (length($year.$month.$day) == 8);
+    return $formatted_date;
+  };
+return $formatTranslateDate;
+}
+
+#--------------------------------------------------------------------------------
+
+sub formatEuroDate {
+  my ($self,$hash) = @_;
+  my $formatEuroDate; $formatEuroDate = sub {
+    my $valuesString = shift;
+    my ($date,$char) = split("\t",$valuesString);
+    return undef unless $date;
+    ($date) = split(' ',$date);
+    my @tokens = split ("/",$date);
+    my $token_holder = $tokens[2];
+    $tokens[2] = $tokens[0];
+    $tokens[0] = $token_holder;
+    $date = join ("-",@tokens);
+    ($date) = split(' ',$date);
+    my  ($junk1,$junk2,$junk3,$day,$month,$year) = strptime($date);
+    $month += 1;
+    die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
+    die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
+    $day = "0".$day if length($day) == 1;
+    $month = "0".$month if $month <10;
+    $year = $year < 16 ? $year +2000 : $year+1900;
+    my $formatted_date = $year.$month.$day;
+    die "date is messed up $formatted_date"  unless (length($year.$month.$day) == 8);
+    return $formatted_date;
+  };
+return $formatEuroDate;
+}
+
+#--------------------------------------------------------------------------------
+
+sub swapMappedValues {
+  my ($self,$hash) = @_;
+  my $mapHash = $hash->{'map_hash'};
+  my $swapMappedValues; $swapMappedValues = sub {
+    my $valuesString = shift;
+    my ($value,$char) = split("\t",$valuesString);
+    return undef unless defined  $value ;
+    return $value unless defined $char;
+    
+    $char = lc($char);
+    my $lv = lc($value);
+    open ( TEST, '>>', "/home/jcade/tester1.out");
+    print TEST "start point \n";
+    if (defined ($mapHash->{$char})) {
+      if (defined ($mapHash->{$char}->{$lv})) {
+        print TEST $char."\t". $value."\n";
+        $value = $mapHash->{$char}->{$lv};
+        $value = '' if $value =~/^null$/; 
+        print TEST $char."\t". $value."\n";
+      }
+    }
+    print TEST "final answer $value\n";
+    return $value;
+  };
+  return $swapMappedValues;
+}
+
+
+#--------------------------------------------------------------------------------
+
+sub swapMappedValueSet {
+  my ($self,$hash) = @_;
+  my $mapHash = $hash->{'map_hash'};
+  my $swapMappedValues; $swapMappedValues = sub {
+    my $valuesString = shift;
+    my ($valueSet,$char) = split("\t",$valuesString);
+    return undef unless defined  $valueSet;
+    return $valueSet unless defined $char;
+    
+    my @values = split(",",$valueSet);
+    $char = lc($char);
+    my @RV;
+    foreach my $value (@values) {
+      my $lv = lc($value);
+      open ( TEST, '>>', "/home/jcade/tester1.out");
+      print TEST "start point \n";
+      if (defined ($mapHash->{$char})) {
+        if (defined ($mapHash->{$char}->{$lv})) {
+          print TEST $char."\t". $value."\n";
+          $value = $mapHash->{$char}->{$lv};
+          $value = '' if $value =~/^null$/; 
+          print TEST $char."\t". $value."\n";
+        }
+      }
+      print TEST "final answer $value\n";
+      push @RV, $value;
+    }
+    @RV = sort@RV;
+    print Dumper \@RV;
+    $valueSet = join(",",@RV);
+    print STDERR $valueSet;
+    return $valueSet;
+  };
+  return $swapMappedValues;
+}
+#--------------------------------------------------------------------------------
+
+sub formatHouseholdId {
+  my ($self,$hash) = @_;
+
+  my $formatHouseholdId; $formatHouseholdId = sub {
+    my $valuesString = shift;
+    my ($value,$char) = split("\t",$valuesString);
+    if ($value=~/^HH\d+$/i) {
+      $value = uc($value);
+    }
+    else {
+      $value = "HH$value";
+    }
+    return $value;
+  };
+  return $formatHouseholdId;
+}
+
+#--------------------------------------------------------------------------------
+
+sub replaceValues {
+  my ($self,$hash) = @_;
+  my $replaceValues; $replaceValues = sub {
+    my $valuesString = shift;
+    my ($value,$replaceString) = split("\t",$valuesString);
+    $value = $replaceString if defined $value;
+    return $value;
+  };
+  return $replaceValues;
+}
+
+#--------------------------------------------------------------------------------
+
+sub stripLeadingRegex {
+  my ($self,$hash) = @_;
+  my $stripLeadingRegex; $stripLeadingRegex = sub {
+    my $valuesString = shift;
+    my ($value,$regex) = split("\t",$valuesString);
+    $value =~s/^$regex//i;
+    return $value;
+  };
+  return $stripLeadingRegex;
+}
+
+#--------------------------------------------------------------------------------
+
+
+sub stripTrailingRegex {
+  my ($self,$hash) = @_;
+  my $stripTrailingRegex; $stripTrailingRegex = sub {
+    my $valuesString = shift;
+    my ($value,$regex) = split("\t",$valuesString);
+    $value =~s/$regex$//i;
+    return $value;
+  };
+  return $stripTrailingRegex;
+}
+
+#--------------------------------------------------------------------------------
+
+sub makeCompositeId {
+  my ($self,$hash) = @_;
+  my $makeCompositeId; $makeCompositeId = sub {
+    my $valuesString = shift;
+    my ($parent,$month, $year) = split("\t",$valuesString);
+    my $id = $parent.$year.$month;
+    $id =~ s/\W//g;
+    return $id;
+  };
+  return $makeCompositeId;
+}
+#--------------------------------------------------------------------------------
 sub qPercentToConfidence {
 
   my $qPercent2Conf; $qPercent2Conf = sub {

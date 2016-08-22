@@ -185,4 +185,16 @@ sub dateFormatSql{
 	}
 }
 
+
+
+############################################################
+# limit
+#
+# Returns sql to limit number of rows
+############################################################
+sub limit{
+	my($self,$sql,$numRows)=@_;
+	return "select * from ($sql)s limit $numRows";
+}
+
 1;

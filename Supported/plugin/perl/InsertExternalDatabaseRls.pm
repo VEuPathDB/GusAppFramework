@@ -29,7 +29,7 @@ my $argsDeclaration =
 		}),
 
 	 stringArg ({name=> 'releaseDate',
-		     descr => 'release date; format appropriate for the DBMS, oracle = yyyy-mm-dd',
+                     descr => 'release date; format appropriate for the DBMS, oracle = yyyy-mm-dd',
 		     reqd => 0,
 		     constraintFunc => undef,
 		     isList =>0,
@@ -149,7 +149,7 @@ sub new {
   my $self = {};
   bless($self,$class);
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4.0,
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
@@ -223,7 +223,7 @@ sub makeNewReleaseId{
 	download_url => $self->getArg('downloadUrl'),
 	id_type => $self->getArg('idType'),
 	id_url => $self->getArg('idUrl'),
-	release_date => $self->getArg('releaseDate'),
+        release_date => $self->getArg('releaseDate'),
 	id_is_alias => $self->getArg('idIsAlias'),
 	secondary_id_type => $self->getArg('secondaryIdType'),
 	secondary_id_url => $self->getArg('secondaryIdUrl'),

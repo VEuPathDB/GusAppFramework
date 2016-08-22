@@ -1,0 +1,24 @@
+package GUS::Model::SRes::PathwayRelationship;
+use strict;
+use GUS::Model::SRes::PathwayRelationship_Row;
+
+
+use vars qw (@ISA);
+@ISA = qw (GUS::Model::SRes::PathwayRelationship_Row);
+
+my $debug = 0;
+
+sub setParent {
+        my ($self, $obj, $field) = @_;
+
+        unless($field) {
+                return $self->SUPER::setParent($obj);
+        }
+
+        $self->addToSubmitList($obj);
+        $obj->submit();
+        $self->set($field, $obj->getId());
+}
+
+1;
+

@@ -1,4 +1,24 @@
 package GUS::Supported::Plugin::InsertSequenceFeatures;
+#vvvvvvvvvvvvvvvvvvvvvvvvv GUS4_STATUS vvvvvvvvvvvvvvvvvvvvvvvvv
+  # GUS4_STATUS | SRes.OntologyTerm              | auto   | absent
+  # GUS4_STATUS | SRes.SequenceOntology          | auto   | fixed
+  # GUS4_STATUS | Study.OntologyEntry            | auto   | absent
+  # GUS4_STATUS | SRes.GOTerm                    | auto   | absent
+  # GUS4_STATUS | Dots.RNAFeatureExon            | auto   | absent
+  # GUS4_STATUS | RAD.SageTag                    | auto   | absent
+  # GUS4_STATUS | RAD.Analysis                   | auto   | absent
+  # GUS4_STATUS | ApiDB.Profile                  | auto   | absent
+  # GUS4_STATUS | Study.Study                    | auto   | absent
+  # GUS4_STATUS | Dots.Isolate                   | auto   | absent
+  # GUS4_STATUS | DeprecatedTables               | auto   | broken
+  # GUS4_STATUS | Pathway                        | auto   | absent
+  # GUS4_STATUS | DoTS.SequenceVariation         | auto   | absent
+  # GUS4_STATUS | RNASeq Junctions               | auto   | absent
+  # GUS4_STATUS | Simple Rename                  | auto   | absent
+  # GUS4_STATUS | ApiDB Tuning Gene              | auto   | absent
+  # GUS4_STATUS | Rethink                        | auto   | absent
+  # GUS4_STATUS | dots.gene                      | manual | reviewed
+#^^^^^^^^^^^^^^^^^^^^^^^^^ End GUS4_STATUS ^^^^^^^^^^^^^^^^^^^^
 
 # todo:
 #  - handle seqVersion more robustly
@@ -24,12 +44,12 @@ use GUS::Supported::SequenceIterator;
 #GENERAL USAGE TABLES
 use GUS::Model::SRes::ExternalDatabase;
 use GUS::Model::SRes::ExternalDatabaseRelease;
-use GUS::Model::SRes::Reference;
+#use GUS::Model::SRes::Reference;
 use GUS::Model::SRes::Taxon;
 
 #USED IN LOADING NASEQUENCE
 use GUS::Model::SRes::TaxonName;
-use GUS::Model::SRes::SequenceOntology;
+use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::DoTS::SequenceType;
 use GUS::Model::DoTS::NASequence;
 use GUS::Model::DoTS::ExternalNASequence;
@@ -104,7 +124,7 @@ NOTES
   my $tablesAffected =
   [
    ['SRes.Reference', ''],
-   ['SRes.SequenceOntology', ''],
+   ['SRes.OntologyTerm', ''],
    ['DoTS.SequenceType', ''],
    ['DoTS.NASequence', ''],
    ['DoTS.ExternalNASequence', ''],
@@ -132,7 +152,7 @@ NOTES
   my $tablesDependedOn = 
   [
    ['SRes.TaxonName', ''],
-   ['SRes.SequenceOntology', ''],
+   ['SRes.OntologyTerm', ''],
    ['SRes.ExternalDatabase', ''],
    ['SRes.ExternalDatabaseRelease', ''],
   ];
@@ -212,15 +232,22 @@ my $argsDeclaration  =
 	      isList => 0,
 	     }),
 
-   stringArg({name => 'soCvsVersion',
-	      descr => 'The CVS version of the Sequence Ontology to use',
+   stringArg({name => 'soExtDbName',
+	      descr => 'The extDbName for Sequence Ontology',
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 0,
 	     }),
 
-   stringArg({name => 'soExtDbRlsName',
-	      descr => 'The extDbRlsName of Sequence Ontology',
+   stringArg({name => 'soExtDbVersion',
+	      descr => 'The extDbVersion for Sequence Ontology',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0,
+	     }),
+
+   stringArg({name => 'soExtDbSpec',
+	      descr => 'The extDbSpec for Sequence Ontology (name|version format)',
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 0,
@@ -347,6 +374,29 @@ my $argsDeclaration  =
 	    format=>'Text'
 	   }),
 
+  fileArg({name => 'postprocessingDir',
+	    descr => "If postprocessing is specified, the postprocessing will use this directory to read and/or write its files",
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	    mustExist => 1,
+	    format=>'Text'
+	   }),
+
+   stringArg({name => 'postprocessingDirective',
+	    descr => 'An arbitrary string to pass as a directive to the feature tree postprocessing.  This postprocessing happens just before the feature tree is written to the database.  It calls the postprocessFeatureTree() method of the gus skeleton maker, and passes that method the postprocessingDir and the directive.  That method decides what kind of postprocessing to do based on the directive',
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	   }),
+
+   booleanArg({name => 'doNotSubmit',
+	    descr => 'If provided, then do not write to the database. This is mostly intended to support doing feature postprocessing without writing to the database.  For example, if the postprocessing writes out a file that is needed without writing to the db.',
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	   }),
+
   ];
 
 
@@ -355,7 +405,7 @@ sub new {
   my $self = {};
   bless($self, $class);
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4,
 		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
@@ -412,7 +462,8 @@ sub run {
    if($self->getArg('seqSoTerm') eq 'chromosome'){
        $self->{chromMap} = $self->getChromosomeMapping();
   }
-  
+
+  my $doNotSubmit = $self->getArg('doNotSubmit');
 
   foreach my $inputFile (@inputFiles) {
     $self->{fileFeatureCount} = 0;
@@ -434,13 +485,13 @@ sub run {
 	}
 	if(!($seqType =~ /rna/i)){
 	    # use id instead of object because object is zapped by undefPointerCache
-	    my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId);
+	    my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId, $doNotSubmit);
 	    
 	    $seqCount++;
 	  #  print STDERR Dumper $bioperlSeq;
 	    $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
-	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted);
+	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $self->getArg('postprocessingDir'), $self->getArg('postprocessingDirective'));
 
 	    $self->undefPointerCache();
 
@@ -711,14 +762,14 @@ sub makeAggregators {
 ###########################################################################
 
 sub processSequence {
-  my ($self, $bioperlSeq, $dbRlsId) = @_;
+  my ($self, $bioperlSeq, $dbRlsId, $doNotSubmit) = @_;
 
   my $naSequence;
   if ($self->getArg('naSequenceSubclass')) {
     $naSequence = $self->retrieveNASequence($bioperlSeq, $dbRlsId);
   } else {
-    $naSequence = $self->bioperl2NASequence($bioperlSeq, $dbRlsId);
-    $naSequence->submit();
+    $naSequence = $self->bioperl2NASequence($bioperlSeq, $dbRlsId, $doNotSubmit);
+    $naSequence->submit() unless $doNotSubmit;
   }
 
   return $naSequence->getNaSequenceId();
@@ -749,17 +800,17 @@ sub retrieveNASequence {
 
 # if the input does include sequence, make GUS NASequence from bioperlSeq
 sub bioperl2NASequence {
-  my ($self, $bioperlSeq, $dbRlsId) = @_;
+  my ($self, $bioperlSeq, $dbRlsId, $doNotSubmit) = @_;
 
   my $naSequence = $self->constructNASequence($bioperlSeq, $dbRlsId);
 
   $self->addSecondaryAccs($bioperlSeq, $dbRlsId);
 
-  $self->addReferences($bioperlSeq, $naSequence);
+  $self->addReferences($bioperlSeq, $naSequence, $doNotSubmit);
 
   $self->addComments($bioperlSeq, $naSequence);
 
-  $self->addKeywords($bioperlSeq, $naSequence);
+  $self->addKeywords($bioperlSeq, $naSequence, $doNotSubmit);
 
   #Annotations we haven't used yet
   #   SEGMENT      segment             SimpleValue e.g. "1 of 2"
@@ -855,28 +906,28 @@ sub addSecondaryAccs{
 }
 
 sub addReferences {
-  my ($self, $bioperlSeq, $naSequence,) = @_;
+  my ($self, $bioperlSeq, $naSequence, $doNotSubmit) = @_;
 
   my $bioperlAnnotation = $bioperlSeq->annotation();
 
   my @bioperlReferences = $bioperlAnnotation->get_Annotations('reference');
 
-  foreach my $bioperlReference (@bioperlReferences) {
-    my $reference = GUS::Model::SRes::Reference->new() ;
-    $reference->setAuthor($bioperlReference->authors());
-    $reference->setTitle($bioperlReference->title());
-    $reference->setJournalOrBookName($bioperlReference->location());
+#  foreach my $bioperlReference (@bioperlReferences) {
+#    my $reference = GUS::Model::SRes::Reference->new() ;
+#    $reference->setAuthor($bioperlReference->authors());
+#    $reference->setTitle($bioperlReference->title());
+#    $reference->setJournalOrBookName($bioperlReference->location());
 
-    unless ($reference->retrieveFromDB())  {
-      $reference->submit();
-    }
+#    unless ($reference->retrieveFromDB())  {
+#      $reference->submit() unless $doNotSubmit;
+#    }
 
-    my $refId = $reference->getId();
-    my $naSequenceRef = 
-      GUS::Model::DoTS::NASequenceRef->new({'reference_id'=>$refId});
+#    my $refId = $reference->getId();
+#    my $naSequenceRef = 
+#      GUS::Model::DoTS::NASequenceRef->new({'reference_id'=>$refId});
 
-    $naSequence->addChild($naSequenceRef);
-  }
+#    $naSequence->addChild($naSequenceRef);
+#  }
 }
 
 sub addComments {
@@ -893,7 +944,7 @@ sub addComments {
 }
 
 sub addKeywords {
-  my ($self, $bioperlSeq, $naSequence) = @_;
+  my ($self, $bioperlSeq, $naSequence, $doNotSubmit) = @_;
 
   my $bioperlAnnotation = $bioperlSeq->annotation();
 
@@ -904,7 +955,7 @@ sub addKeywords {
 	GUS::Model::DoTS::Keyword->new({'keyword'=>$bioperlKeyword->value()});
 
       unless ($keyword->retrieveFromDB())  {
-	$keyword->submit();
+	$keyword->submit() unless $doNotSubmit;
       }
 
       my $keyId = $keyword->getId();
@@ -924,11 +975,10 @@ sub addKeywords {
 ###########################################################################
 
 sub processFeatureTrees {
-  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted) = @_;
+  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $postprocessDir, $postprocessDirective) = @_;
   
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
     undef $self->{validationErrors};
-    $self->defaultPrintFeatureTree($btFh, $bioperlFeatureTree, "");
 
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
     my $NAFeature =
@@ -943,7 +993,14 @@ sub processFeatureTrees {
     next if $ignoreFeature;
     
     if($self->validateFeatureTree($bioperlFeatureTree) == 1){
-       $NAFeature->submit();
+
+      # if configured to do post processing, do it here.  the postprocessingDataStore holds whatever the postprocessor
+      # needs, as provided by itself.  we need to hold on to it, on its behalf, because it is stateless.
+      $self->{postprocessingDataStore} =
+	$self->postprocessFeatureTree($NAFeature, $postprocessDirective, $postprocessDir, $self->{postprocessingDataStore});
+
+      $NAFeature->submit() unless $doNotSubmit;
+
        $self->{fileFeatureTreeCount}++;
        $self->{totalFeatureTreeCount}++;
    }else{
@@ -960,6 +1017,8 @@ sub processFeatureTrees {
 	$self->log("$self->{brokenFeatureTreeCount} feature trees could not be validated. Pleased check validation log for errors.\n");
 	last;
     }
+
+    $self->defaultPrintFeatureTree($btFh, $bioperlFeatureTree, "");
 
     last if $self->checkTestNum();
 
@@ -1300,6 +1359,11 @@ sub defaultPrintFeatureTree {
   $btFh->print("\n") unless $indent;
   my $type = $bioperlFeatureTree->primary_tag();
   $btFh->print("$indent< $type >\n");
+
+  if ($type =~ /coding_gene/ || $type =~ /RNA/ || $type =~ /transcript/) {
+    my $cid = $bioperlFeatureTree->{gusFeature}->getSourceId();
+    $btFh->print("$indent$type gus source_id: '$cid'\n");
+  }
   my @locations = $bioperlFeatureTree->location()->each_Location();
   foreach my $location (@locations) {
     my $seqId =  $location->seq_id();
@@ -1312,9 +1376,9 @@ sub defaultPrintFeatureTree {
   foreach my $tag (@tags) {
     my @annotations = $bioperlFeatureTree->get_tag_values($tag);
     foreach my $annotation (@annotations) {
-      if (length($annotation) > 50) {
-	$annotation = substr($annotation, 0, 50) . "...";
-      }
+      #if (length($annotation) > 50) {
+	#$annotation = substr($annotation, 0, 50) . "...";
+      #}
       $btFh->print("$indent$tag: $annotation\n");
     }
   }
@@ -1322,6 +1386,25 @@ sub defaultPrintFeatureTree {
   foreach my $bioperlChildFeature ($bioperlFeatureTree->get_SeqFeatures()) {
     $self->defaultPrintFeatureTree($btFh, $bioperlChildFeature, "  $indent");
   }
+}
+
+sub postprocessFeatureTree {
+  my ($self, $gusFeatureTree, $postprocessDirective, $postprocessDir) = @_;
+
+  return unless $postprocessDirective;
+
+  my $gusSkeletonMakerClassName = $self->{mapperSet}->getGusSkeletonMakerClassName();
+
+  die "ISF cannot be called with --postprocessingDirective unless a GUS skeleton maker class is provided in the mapping file." unless $gusSkeletonMakerClassName;
+
+  eval {
+    no strict "refs";
+    eval "require $gusSkeletonMakerClassName";
+    my $method = "${gusSkeletonMakerClassName}::postprocessFeatureTree";
+    $self->{postprocessDataStore} = &$method($gusFeatureTree, $postprocessDirective, $postprocessDir, $self->{postprocessDataStore});
+  };
+  my $err = $@;
+  if ($err) { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::postprocessFeatureTree'.  Error:\n $err\n"; }
 }
 
 ##############################################################################
@@ -1373,18 +1456,28 @@ sub getSOPrimaryKey {
 
   if (!$self->{soPrimaryKeys}) {
 
-    my $soCvsVersion = $self->getArg('soCvsVersion');
-
-    unless ($soCvsVersion){ 
-	my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
-	$soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soCvsVersion on the command line");
-	$soCvsVersion = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
+    my ($soExtDbName, $soExtDbVersion);
+    if ($self->getArg('soExtDbSpec')) {
+      ($soExtDbName, $soExtDbVersion) = split (/\|/, $self->getArg('soExtDbSpec') );
+    } elsif ($self->getArg('soExtDbName') &&  $self->getArg('soExtDbVersion') ){
+      $soExtDbName = $self->getArg('soExtDbName');
+      $soExtDbVersion = $self->getArg('soExtDbVersion');
+    } else {
+      $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
     }
+    my $soExtDbRlsId= $self->getExtDbRlsId($soExtDbName, $soExtDbVersion);
+
+    #$soExtDbName = $self->getArg('soExtDbName') if ($self->getArg('soExtDbName'));
+    #($soExtDbName) = split (/\|/, $self->getArg('soExtDbSpec') ) if ($self->getArg('soExtDbSpec'));
+    #if (!$soExtDbName) {
+      #$self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
+    #}
+    #my $soExtDbRlsId = $self->getExtDbRlsIdFromExtDbName($soExtDbName);
+
     my $dbh = $self->getQueryHandle();
     my $sql = "
-select term_name, sequence_ontology_id
-from sres.SequenceOntology
-where so_cvs_version = '$soCvsVersion'
+select name, ontology_term_id from SRES.ontologyterm
+ where external_database_release_id=$soExtDbRlsId
 ";
     my $stmt = $dbh->prepareAndExecute($sql);
     while (my ($term, $pk) = $stmt->fetchrow_array()){
@@ -1397,7 +1490,7 @@ where so_cvs_version = '$soCvsVersion'
     }
 
     my $mappingFile = $self->getArg('mapFile');
-    (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database for SO CVS version '$soCvsVersion': " . join(", ", @badSoTerms));
+    (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database '$soExtDbName': " . join(", ", @badSoTerms));
   }
   $self->error("Can't find primary key for SO term '$soTerm'")
     unless $self->{soPrimaryKeys}->{$soTerm};
@@ -1424,6 +1517,29 @@ sub getExtDbRlsVerFromExtDbRlsName {
   die "trying to find unique ext db version for '$extDbRlsName', but more than one found" if(scalar(@verArray) > 1);
 
   return @verArray[0];
+
+}
+
+sub getExtDbRlsIdFromExtDbName {
+  my ($self, $extDbRlsName) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $sql = "select edr.external_database_release_id from sres.externaldatabaserelease edr, sres.externaldatabase ed
+             where ed.name = '$extDbRlsName'
+             and edr.external_database_id = ed.external_database_id";
+  my $stmt = $dbh->prepareAndExecute($sql);
+  my @rlsIdArray;
+
+  while ( my($extDbRlsId) = $stmt->fetchrow_array()) {
+      push @rlsIdArray, $extDbRlsId;
+  }
+
+  die "No extDbRlsId found for '$extDbRlsName'" unless(scalar(@rlsIdArray) > 0);
+
+  die "trying to find unique extDbRlsId for '$extDbRlsName', but more than one found" if(scalar(@rlsIdArray) > 1);
+
+  return @rlsIdArray[0];
 
 }
 

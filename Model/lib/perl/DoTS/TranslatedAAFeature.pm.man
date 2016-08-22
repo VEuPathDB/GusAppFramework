@@ -23,8 +23,8 @@ sub translateFeatureSequenceFromNASequence {
       my $taxon = $naseq->getParent('SRES::Taxon',1);
       ##test to see if mito vs. chromosomal
       ##get SO object
-      my $so = $naseq->getParent('SRes::SequenceOntology',1);
-      if($so->getTermName() eq 'mitochondrial_chromosome'){
+      my $so = $naseq->getParent('SRes::OntologyTerm',1);
+      if($so->getName() eq 'mitochondrial_chromosome'){
         ##create codontable object
         my $cod = GUS::Model::SRes::GeneticCode->new({'genetic_code_id' => $taxon->getMitochondrialGeneticCodeId()});
         $cod->retrieveFromDB();

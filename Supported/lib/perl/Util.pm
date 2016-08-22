@@ -124,7 +124,7 @@ sub getNaFeatureIdsFromSourceId {
 
     my $stmt = $plugin->prepareAndExecute($sql);
     while ( my($source_id, $na_feature_id) = $stmt->fetchrow_array()) {
-      push @{$plugin->{_sourceIdNaFeatureIdMap}->{$source_id}}, $na_feature_id;
+      $plugin->{_sourceIdNaFeatureIdMap}->{$source_id}=$na_feature_id;
     }
     $stmt->finish();
   }
@@ -216,10 +216,8 @@ sub getAASeqIdFromFeatId {
 }
 
 
-# get an aa seq id from a source_id or source_id alias.
-# warning: this method issues a query each time it is called, ie, it is
-#          slow when used repeatedly.  should be rewritten to do a batch
-sub getAASeqIdFromGeneId {
+# get aa seq ids from a gene source_id or source_id alias.
+sub getAASeqIdsFromGeneId {
   my ($plugin, $geneSourceId, $geneExtDbRlsId, $optionalOrganismAbbrev) = @_;
   
   my $geneFeatId;
@@ -229,56 +227,67 @@ sub getAASeqIdFromGeneId {
        $geneFeatId = getGeneFeatureId($plugin, $geneSourceId, $geneExtDbRlsId);
   }
 
-
-
   return undef unless $geneFeatId;
+
+  my $sth = $plugin->{_aaSeqIdsFromGeneIdSth};
+  unless($sth) {
 
     my $sql = "
 SELECT taf.aa_sequence_id
 FROM Dots.Transcript t, Dots.TranslatedAAFeature taf
-WHERE t.parent_id = '$geneFeatId'
+WHERE t.parent_id = ?
 AND taf.na_feature_id = t.na_feature_id
 ";
-  my $stmt = $plugin->prepareAndExecute($sql);
-  my ($aaSeqId) = $stmt->fetchrow_array();
-  my ($tooMany) = $stmt->fetchrow_array();
-  $plugin->error("trying to map gene source id '$geneSourceId' to a single aa_sequence_id, but found more than one aa_sequence_id: ") if $tooMany;
-  return $aaSeqId;
-}
 
-# get an aa seq id from a source_id or source_id alias.
-# only gets one protein per source_id (arbitrarily chosen)
-sub getOneAASeqIdFromGeneId {
-  my ($plugin, $geneSourceId) = @_;
-
-
-  if (!$plugin->{_sourceIdOneAaSeqIdMap}) {
-
-    $plugin->{_sourceIdOneAaSeqIdMap} = {};
-
-my $sql ="
-SELECT srcIdNaFeatId.source_id, taf.aa_sequence_id
-FROM Dots.Transcript t, Dots.TranslatedAAFeature taf,
-   (
-     SELECT source_id, na_feature_id
-     FROM Dots.GeneFeature
-     UNION
-     SELECT g.name, gf.na_feature_id
-     FROM Dots.GeneFeature gf, Dots.NAFeatureNAGene nfng, Dots.NAGene g
-     WHERE nfng.na_feature_id = gf.na_feature_id
-     AND nfng.na_gene_id = g.na_gene_id
-   ) srcIdNaFeatId
-WHERE t.parent_id = srcIdNaFeatId.na_feature_id
-AND taf.na_feature_id = t.na_feature_id
-";
-    my $stmt = $plugin->prepareAndExecute($sql);
-    while ( my($source_id, $aa_sequence_id) = $stmt->fetchrow_array()) {
-      $plugin->{_sourceIdOneAaSeqIdMap}->{$source_id} = $aa_sequence_id;
-    }
+    $sth = $plugin->getQueryHandle()->prepare($sql);
+    $plugin->{_aaSeqIdsFromGeneIdSth} = $sth;
   }
 
-  return $plugin->{_sourceIdOneAaSeqIdMap}->{$geneSourceId};
+  $sth->execute($geneFeatId);
+
+  my @aaSeqIds;
+  while(my ($aaSeqId) = $sth->fetchrow_array()) {
+    push @aaSeqIds, $aaSeqId;
+  }
+  $sth->finish();
+
+  return \@aaSeqIds;
 }
+
+
+
+sub getTranscriptIdsFromGeneId {
+  my ($plugin, $geneSourceId, $geneExtDbRlsId) = @_;
+  
+  my $geneFeatId = getGeneFeatureId($plugin, $geneSourceId, $geneExtDbRlsId);
+
+  return undef unless $geneFeatId;
+
+  my $sth = $plugin->{_transcriptIdsFromGeneIdSth};
+  unless($sth) {
+
+    my $sql = "SELECT t.na_feature_id
+FROM Dots.Transcript t
+WHERE t.parent_id = ?
+";
+
+    $sth = $plugin->getQueryHandle()->prepare($sql);
+    $plugin->{_transcriptIdsFromGeneIdSth} = $sth;
+  }
+
+  $sth->execute($geneFeatId);
+
+  my @transcriptIds;
+  while(my ($transcriptId) = $sth->fetchrow_array()) {
+    push @transcriptIds, $transcriptId;
+  }
+  $sth->finish();
+
+  return \@transcriptIds;
+}
+
+
+
 
 # warning: this method issues a query each time it is called, ie, it is
 #          slow when used repeatedly.  should be rewritten to do a batch
@@ -304,6 +313,34 @@ AND taf.na_feature_id = t.na_feature_id
     $plugin->error("trying to map gene source id '$sourceId' to a single aa_sequence_id, but found more than one aa_sequence_id: ") if $tooMany;
     return $aaFeatId;
 }
+
+sub getTranslatedAAFeatureIdListFromGeneSourceId {
+    my ($plugin, $sourceId, $geneExtDbRlsId, $optionalOrganismAbbrev) = @_;
+
+    my $geneFeatId;
+    my @aaFeatIdList;
+      if($optionalOrganismAbbrev){  
+	  $geneFeatId = getGeneFeatureId($plugin, $sourceId, $geneExtDbRlsId,$optionalOrganismAbbrev);
+      }else{
+	  $geneFeatId = getGeneFeatureId($plugin, $sourceId);
+      }
+
+    my $sql = "
+SELECT taf.aa_feature_id
+FROM Dots.Transcript t, Dots.TranslatedAAFeature taf
+WHERE t.parent_id = '$geneFeatId'
+AND taf.na_feature_id = t.na_feature_id
+";
+    my $stmt = $plugin->prepareAndExecute($sql);
+
+  while(my $aaFeatId = $stmt->fetchrow_array()){
+    push(@aaFeatIdList, $aaFeatId);
+  }
+
+    return \@aaFeatIdList;
+}
+
+
 
 # returns null if not found
 # warning: this method issues a query each time it is called, ie, it is
@@ -342,6 +379,8 @@ sub getGeneFeatureIdFromSourceId {
 sub getCodingSequenceFromExons {
   my ($gusExons) = @_;
 
+  die "wrong way to cds";
+
   die "No Exons found" unless(scalar(@$gusExons) > 0);
 
   foreach (@$gusExons) {
@@ -379,6 +418,33 @@ sub getCodingSequenceFromExons {
   return($codingSequence);
 }
 
+sub getTranscriptSeqFromExons {
+  my ($gusExons) = @_;
+
+  die "No Exons found" unless(scalar(@$gusExons) > 0);
+
+  foreach (@$gusExons) {
+    die "Expected DoTS Exon... found " . ref($_)
+      unless(UNIVERSAL::isa($_, 'GUS::Model::DoTS::ExonFeature'));
+  }
+
+  # this code gets the feature locations of the exons and puts them in order
+  my @exons = map { $_->[0] }
+    sort { $a->[3] ? $b->[1] <=> $a->[1] : $a->[1] <=> $b->[1] }
+      map { [ $_, $_->getFeatureLocation ]}
+	@$gusExons;
+
+  my $transcriptSequence;
+
+  for my $exon (@exons) {
+    my $chunk = $exon->getFeatureSequence();
+    $transcriptSequence .= $chunk;
+  }
+
+  return($transcriptSequence);
+}
+
+
 sub getExtDbRlsVerFromExtDbRlsName {
   my ($plugin, $extDbRlsName) = @_;
 
@@ -403,30 +469,6 @@ sub getExtDbRlsVerFromExtDbRlsName {
 
 }
 
-sub addGffFeatures {
-  my ($allFeatureLocations, $gffFile, $gffVersion) = @_;
-
-  die "HASHREF expected but not found" unless(ref($allFeatureLocations) eq 'HASH');
-
-  my $gffIO = Bio::Tools::GFF->new(-gff_version => $gffVersion,
-                                   -file => $gffFile
-                                  );
-
-  while (my $feature = $gffIO->next_feature()) {
-    my $seqId = $feature->seq_id();
-    my ($gene) = $feature->get_tag_values('parent');
-
-    my $location = $feature->location();
-    my $start = $location->start();
-    my $end = $location->end();
-    my $strand = $location->strand();
-
-    push @{$allFeatureLocations->{$seqId}->{$gene}->{$strand}}, $start;
-    push @{$allFeatureLocations->{$seqId}->{$gene}->{$strand}}, $end;
-  }
-
-  $gffIO->close();
-}
 
 
 
