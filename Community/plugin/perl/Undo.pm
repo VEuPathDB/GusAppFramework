@@ -167,7 +167,17 @@ sub run{
        @tables = $plugin->undoTables();
    }
 
-
+   eval {
+     $plugin->undoPreprocess($self->getDbHandle(), $self->getArg('algInvocationId'));
+   };
+   if($@ && $@ =~ /Can't locate object method "undoPreprocess" via package/) {
+     $self->log("No undoPreprocess method defined for $pluginName... skipping");
+   }
+   elsif($@) {
+     $self->error($@);
+   }
+   else {}
+   
    foreach my $table (@tables) {
 
       $self->deleteFromTable($table,'row_alg_invocation_id', $self->getArg('limit'));
