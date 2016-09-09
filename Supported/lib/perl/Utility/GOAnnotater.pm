@@ -69,6 +69,13 @@ sub getGoTermIdFromName {
   $goName =~ tr/ /_/;
   my $goTermId = $self->{goTermNames}->{$goName};
 
+  
+  unless($goTermId) {
+    $goName =~ s/:/_/;
+    $goTermId = $self->{goTermNames}->{$goName};
+  }
+
+
   $goTermId
     || print("Can't find GoTerm in database for GO Id: $goName");
 
@@ -242,7 +249,10 @@ and o.external_database_release_id = $goVersion";
 
         while (my ($go_term_id, $name) = $stmt->fetchrow_array()) {
            $name =~ tr/ /_/;
+
+
            $self->{goTermNames}->{$name} = $go_term_id;
+
         }
     }
 }
