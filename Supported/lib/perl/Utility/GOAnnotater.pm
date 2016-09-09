@@ -258,7 +258,9 @@ sub undoTables {
 
 
 sub undoPreprocess {
-  my ($dbh, $rowAlgInvocationList) = @_;
+  my ($dbh, $rowAlgInvocations) = @_;
+
+  my $rowAlgInvocationList = join(',', @$rowAlgInvocations);
 
 
   my $updateSql = "update dots.goassociation set row_alg_invocation_id = ? where go_association_id = ?";
