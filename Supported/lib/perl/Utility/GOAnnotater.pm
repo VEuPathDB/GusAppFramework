@@ -257,6 +257,38 @@ sub undoTables {
 }
 
 
+sub undoPreprocess {
+  my ($dbh, $rowAlgInvocationList) = @_;
+
+
+  my $updateSql = "update dots.goassociation set row_alg_invocation_id = ? where go_association_id = ?";
+  my $updateSh = $dbh->prepare($updateSql);
+
+  my $sql = "select ga.go_association_id, rightInstance.row_alg_invocation_id, ga.row_alg_invocation_id as old_row_alg_invocation_id
+from dots.GoAssociation ga,
+     (select go_association_id, min(row_alg_invocation_id) as row_alg_invocation_id
+      from dots.GoAssociationInstance
+      where row_alg_invocation_id not in ($rowAlgInvocationList)
+      group by go_association_id
+     ) rightInstance
+where ga.row_alg_invocation_id in ($rowAlgInvocationList)
+  and ga.go_association_id = rightInstance.go_association_id
+";
+
+
+  my $sh = $dbh->prepare($sql);
+  $sh->execute();
+
+  my $rowCount;
+
+  while(my ($goAssId, $rowAlgId, $oldRowAlgInvocation) = $sh->fetchrow_array()) {
+    $updateSh->execute($goAssId, $rowAlgId);
+    $rowCount++;
+  }
+
+  return "Updated $rowCount Dots.GOAssocations";
+}
+
 
 1;
 
