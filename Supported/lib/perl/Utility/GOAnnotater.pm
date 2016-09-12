@@ -272,7 +272,6 @@ sub undoPreprocess {
 
   my $rowAlgInvocationList = join(',', @$rowAlgInvocations);
 
-
   my $updateSql = "update dots.goassociation set row_alg_invocation_id = ? where go_association_id = ?";
   my $updateSh = $dbh->prepare($updateSql);
 
@@ -287,14 +286,13 @@ where ga.row_alg_invocation_id in ($rowAlgInvocationList)
   and ga.go_association_id = rightInstance.go_association_id
 ";
 
-
   my $sh = $dbh->prepare($sql);
   $sh->execute();
 
   my $rowCount;
 
   while(my ($goAssId, $rowAlgId, $oldRowAlgInvocation) = $sh->fetchrow_array()) {
-    $updateSh->execute($goAssId, $rowAlgId);
+    $updateSh->execute( $rowAlgId, $goAssId);
     $rowCount++;
   }
 
