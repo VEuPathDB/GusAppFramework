@@ -296,6 +296,9 @@ where ga.row_alg_invocation_id in ($rowAlgInvocationList)
     $rowCount++;
   }
 
+  $updateSh->finish();
+
+
   return "Updated $rowCount Dots.GOAssocations";
 }
 
