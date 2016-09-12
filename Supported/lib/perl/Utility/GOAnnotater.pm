@@ -57,6 +57,12 @@ sub getGoTermId {
 
   my $goTermId = $self->{goTermIds}->{$goId};
 
+unless($goTermId) {
+    $goId =~ s/:/_/;
+    $goTermId = $self->{goTermIds}->{$goId};
+  }
+
+
   $goTermId
     || print("Can't find GoTerm in database for GO Id: $goId");
 
