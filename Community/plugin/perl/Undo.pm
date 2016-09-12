@@ -168,7 +168,10 @@ sub run{
    }
 
    eval {
-     $plugin->undoPreprocess($self->getDbHandle(), $self->getArg('algInvocationId'));
+     $plugin->undoPreprocess($self->{'dbh'}, $self->getArg('algInvocationId'));
+     if ($self->{commit} == 1) {
+       $self->{dbh}->commit() || die "Error w/ commit of undoPreprocess" . $self->{dbh}->errstr() . "\n";
+     }
    };
    if($@ && $@ =~ /Can't locate object method "undoPreprocess" via package/) {
      $self->log("No undoPreprocess method defined for $pluginName... skipping");
