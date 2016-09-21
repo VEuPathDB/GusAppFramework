@@ -128,7 +128,6 @@ my $argsDeclaration  =
 ];
 
 
-
 sub new {
    my $class = shift;
    my $self = {};
