@@ -587,6 +587,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   my $soTerm = $self->getSequenceOntologyTerm();
   my $soExclude = $self->getSequenceOntologyExclude();
 
+
   while(my $arr = $sh->fetchrow_arrayref()) {
     my $geneSourceId = $arr->[0];
     my $geneNaFeatureId = $arr->[1];
@@ -720,11 +721,28 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
       };
 
 
+      unless(defined($isAllUtr)) {
+        if($geneModels->{$geneSourceId}->{min_cds_start}) {
+          $geneModels->{$geneSourceId}->{min_cds_start} = $cdsLocation->start if($cdsLocation->start < $geneModels->{$geneSourceId}->{min_cds_start});
+        }
+        else {
+          $geneModels->{$geneSourceId}->{min_cds_start} = $cdsLocation->start;
+        }
+
+        if($geneModels->{$geneSourceId}->{max_cds_end}) {
+          $geneModels->{$geneSourceId}->{max_cds_end} = $cdsLocation->end if($cdsLocation->end > $geneModels->{$geneSourceId}->{max_cds_end});
+        }
+        else {
+          $geneModels->{$geneSourceId}->{max_cds_end} = $cdsLocation->end;
+        }
+      }
+
       push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $exon;
     }
   }
 
-  my @sortedGenes = map { [$_->{sequence_source_id}, $_->{source_id}, $_->{start}, $_->{end}] } sort {$a->{sequence_source_id} cmp $b->{sequence_source_id} || $a->{start} <=> $b->{start} } values %{$geneModels};;
+
+  my @sortedGenes = map { [$_->{sequence_source_id}, $_->{source_id}, $_->{start}, $_->{end}, $_->{min_cds_start}, $_->{max_cds_end}] } sort {$a->{sequence_source_id} cmp $b->{sequence_source_id} || $a->{start} <=> $b->{start} } values %{$geneModels};;
 
   my @distinctSequenceSourceIds = keys %seenGenomicSequences;
   my $sequenceLengths = $self->getSequenceLengths(\@distinctSequenceSourceIds, $dbh);
@@ -734,20 +752,28 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $sequenceSourceId = $sortedGenes[$i]->[0];
     
     my ($lastGeneEndOrSeqStart, $nextGeneStartOrSeqEnd);
+    my ($lastCdsEndOrSeqStart, $nextCdsStartOrSeqEnd);
 
     if($i == 0 || $sortedGenes[$i-1]->[0] ne $sequenceSourceId) {
       $lastGeneEndOrSeqStart = 1;
+      $lastCdsEndOrSeqStart = 1;
     }
     else {
       $lastGeneEndOrSeqStart = $sortedGenes[$i-1]->[3];
+      $lastCdsEndOrSeqStart = $sortedGenes[$i-1]->[5];
     }
 
     if($i == scalar @sortedGenes - 1 || $sortedGenes[$i+1]->[0] ne $sequenceSourceId) {
       $nextGeneStartOrSeqEnd = $sequenceLengths->{$sequenceSourceId};
+      $nextCdsStartOrSeqEnd = $sequenceLengths->{$sequenceSourceId};
     }
     else {
       $nextGeneStartOrSeqEnd = $sortedGenes[$i+1]->[2];
+      $nextCdsStartOrSeqEnd = $sortedGenes[$i+1]->[4];
     }
+
+    $geneModels->{$geneSourceId}->{last_cds_end_or_seq_start} = $lastCdsEndOrSeqStart;
+    $geneModels->{$geneSourceId}->{next_cds_start_or_seq_end} = $nextCdsStartOrSeqEnd;
 
     $geneModels->{$geneSourceId}->{last_gene_end_or_seq_start} = $lastGeneEndOrSeqStart;
     $geneModels->{$geneSourceId}->{next_gene_start_or_seq_end} = $nextGeneStartOrSeqEnd;
