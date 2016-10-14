@@ -244,7 +244,13 @@ sub doTerms {
     next if($isObsolete eq 'true');
     next unless($name);
 
-    my $length =length($definition);
+    my $length = length($name);
+    if ($length > 400) {
+      $name = substr($name,0,397) . "...";
+      print STDERR "Term $name was $length chars, truncated to 400\n";
+    }
+
+    $length = length($definition);
  
     if ($length > 2000) {
       $definition = substr($definition,0,2000) . " ...";
