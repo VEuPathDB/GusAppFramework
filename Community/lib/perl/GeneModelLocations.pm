@@ -130,6 +130,8 @@ sub bioperlFeaturesFromGeneSourceId {
 
     push @rv, $transcriptFeature;
 
+    my $cdsCount = 1;
+
     foreach my $proteinSourceId (keys %{$transcriptHash->{proteins}}) {
       my $proteinHash = $transcriptHash->{proteins}->{$proteinSourceId};
 
@@ -161,6 +163,9 @@ sub bioperlFeaturesFromGeneSourceId {
         $minCdsLoc = $pExon->{cds_start} if($pExon->{cds_start}) < $minCdsLoc;
         $maxCdsLoc = $pExon->{cds_end} if($pExon->{cds_end}) > $maxCdsLoc;
 
+
+        my $cdsId = "${proteinSourceId}-CDS$cdsCount";
+
         my $cdsFeature = new Bio::SeqFeature::Generic ( -start => $pExon->{cds_start},
                                                         -end => $pExon->{cds_end}, 
                                                         -seq_id => $geneModelHash->{sequence_source_id},
@@ -168,7 +173,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                         -frame => $phase,
                                                         -primary => 'CDS',
                                                         -source_tag => $sourceTag, 
-                                                        -tag    => { ID => $proteinSourceId,
+                                                        -tag    => { ID => $cdsId,
                                                                      AA_FEATURE_ID => $proteinHash->{aa_feature_id},
                                                                      AA_SEQUENCE_ID => $proteinHash->{aa_sequence_id},
                                                                      PARENT => $transcriptSourceId,
@@ -186,6 +191,7 @@ sub bioperlFeaturesFromGeneSourceId {
 
 
         push @cdsFeatures, $cdsFeature;
+        $cdsCount++;
       }
 
       my $utrCount;
