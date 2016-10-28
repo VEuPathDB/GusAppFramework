@@ -178,6 +178,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                                      AA_SEQUENCE_ID => $proteinHash->{aa_sequence_id},
                                                                      PARENT => $transcriptSourceId,
                                                                      NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
+                                                                     PROTEIN_SOURCE_ID => $proteinSourceId,
                                                                      PARENT_NA_FEATURE_ID => $transcriptHash->{na_feature_id}
                                                         });
 
