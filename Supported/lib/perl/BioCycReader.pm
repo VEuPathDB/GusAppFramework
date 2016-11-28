@@ -39,12 +39,8 @@ sub read {
 
     #Add pathway information
         $pathway->{'Description'} = $rdf->{'Pathway'}->{$pathwayId}->{'standardName'};
-        foreach my $xref (@{$rdf->{'Pathway'}->{$pathwayId}->{'xref'}}) {
-            $xref =~ s/^#//;
-            if (defined($rdf->{'UnificationXref'}->{$xref}->{'db'}) && $rdf->{'UnificationXref'}->{$xref}->{'db'} =~ /Cyc/) {
-                $pathway->{'SourceId'} = $rdf->{'UnificationXref'}->{$xref}->{'id'};
-            }
-        }
+        #use file name for source id as some pathways have >1 as synonyms
+        $pathway->{'SourceId'} = fileparse($file, '\..*');
 
     #Get pathway steps
         foreach my $pathwayStep (@{$rdf->{'Pathway'}->{$pathwayId}->{'pathwayOrder'}}) {
@@ -245,12 +241,23 @@ sub getCompounds {
     foreach my $compound (@{$compounds}) {
         $compound =~ s/^#//;
         my $standardName = $rdf->{'SmallMolecule'}->{$compound}->{'standardName'};
+
+        my $cellularLocation;
+        if (exists ($rdf->{'SmallMolecule'}->{$compound}->{'cellularLocation'})) {
+            my $cellularLocationRef = $rdf->{'SmallMolecule'}->{$compound}->{'cellularLocation'};
+            $cellularLocationRef =~ s/^#//;
+            $cellularLocation = $rdf->{'CellularLocationVocabulary'}->{$cellularLocationRef}->{'term'};
+        } else {
+            $cellularLocation = undef;
+        }
+
         if (exists($rdf->{'SmallMolecule'}->{$compound}->{'entityReference'})) {
             my $smallMolRef = $rdf->{'SmallMolecule'}->{$compound}->{'entityReference'};
             $smallMolRef =~ s/^#//;
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'NodeType'} = 'compound';
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'standardName'} = $standardName;
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'UniqueId'} = "$pathwayStep.$smallMolRef.$standardName";
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'CellularLocation'} = $cellularLocation;
             foreach my $xref (@{$rdf->{'SmallMoleculeReference'}->{$smallMolRef}->{'xref'}}) {
                 $xref =~ s/^#//;
                 if ($xref =~ /UnificationXref/) {
@@ -263,6 +270,7 @@ sub getCompounds {
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'NodeType'} = 'compound';
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'standardName'} = $standardName;
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'UniqueId'} = "$pathwayStep.$compound.$standardName";
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'CellularLocation'} = $cellularLocation;
         }
     }
 }
@@ -299,7 +307,7 @@ sub makeRdfHash {
                     addPropToRdf($rdf, $attributes, $propertyValue);
                 } 
             
-            }elsif ($class eq 'UnificationXref') {
+            }elsif ($class eq 'UnificationXref' || $class eq 'CellularLocationVocabulary') {
                 addPropToRdf($rdf, $attributes, $propertyValue);
             
             }elsif ($class eq 'BiochemicalPathwayStep') {
@@ -325,7 +333,7 @@ sub makeRdfHash {
             
             }elsif ($class eq 'SmallMolecule' || $class eq 'Protein' || $class eq 'Complex' || $class eq 'Rna') {
                 $attributes->[0] = 'SmallMolecule';
-                if($property eq 'entityReference' || $property eq 'xref') {
+                if($property eq 'entityReference' || $property eq 'xref' || $property eq 'cellularLocation') {
                     addPropToRdf($rdf, $attributes, $propertyAttrVal);
                 }elsif($property eq 'standardName') {
                     addPropToRdf($rdf, $attributes, $propertyValue);
