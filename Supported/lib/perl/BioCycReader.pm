@@ -241,6 +241,7 @@ sub getCompounds {
     foreach my $compound (@{$compounds}) {
         $compound =~ s/^#//;
         my $standardName = $rdf->{'SmallMolecule'}->{$compound}->{'standardName'};
+        $standardName = 'Unknown' unless(defined($standardName));
 
         my $cellularLocation;
         if (exists ($rdf->{'SmallMolecule'}->{$compound}->{'cellularLocation'})) {
