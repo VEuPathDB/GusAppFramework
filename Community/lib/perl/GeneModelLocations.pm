@@ -14,6 +14,42 @@ use Bio::SeqFeature::Gene::Transcript;
 
 use Data::Dumper;
 
+BEGIN {
+
+  my $geneSh;
+  my $seqSh;
+  my $virtualSeqSh;
+
+  sub setGeneSh {
+    my ($sh) = @_;
+
+    $geneSh = $sh;
+  }
+
+  sub getGeneSh {
+    return $geneSh;
+  }
+
+  sub setSeqSh {
+    my ($sh) = @_;
+
+    $seqSh = $sh;
+  }
+
+  sub getSeqSh {
+    return $seqSh;
+  }
+
+  sub setVirtualSeqSh {
+    my ($sh) = @_;
+
+    $virtualSeqSh = $sh;
+  }
+
+  sub getVirtualSeqSh {
+    return $virtualSeqSh;
+  }
+}
 
 sub new {
   my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $soExclude) = @_;
@@ -571,7 +607,11 @@ and gf.sequence_ontology_id = so.ontology_term_id
 order by gf.na_feature_id, t.na_feature_id, l.start_min
 ";
 
-  my $sh = $dbh->prepare($sql);
+  my $sh = getGeneSh();
+  unless ($sh) {
+    $sh = $dbh->prepare($sql);
+    setGeneSh($sh);
+  }
   $sh->execute($extDbRlsId);
 
   my $geneModels = {};
@@ -798,7 +838,12 @@ sub getSequenceLengths {
   my ($self, $sequenceIds, $dbh) = @_;
 
   my $sql = "select source_id, length from dots.nasequence where source_id = ?";
-  my $sh = $dbh->prepare($sql);
+
+  my $sh = getSeqSh();
+  unless ($sh) {
+    $sh = $dbh->prepare($sql);
+    setSeqSh($sh);
+  }
 
   my $rv = {};
 
@@ -843,7 +888,11 @@ sub queryForAgpMap {
                     and o.name not in ('gap')";
 
 
-  my $sh = $dbh->prepare($sql);
+  my $sh = getVirtualSeqSh();
+  unless ($sh) {
+    $sh = $dbh->prepare($sql);
+    setVirtualSeqSh($sh);
+  }
   $sh->execute();
 
   while(my $hash = $sh->fetchrow_hashref()) {
