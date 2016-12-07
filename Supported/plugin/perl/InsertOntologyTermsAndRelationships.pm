@@ -263,6 +263,7 @@ sub doTerms {
 
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
+      my $dbDefinition = $ontologyTerm->getDefinition();
 
       unless($dbName eq $name) {
         $self->log("Accession [$sourceId] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
@@ -273,8 +274,11 @@ sub doTerms {
           $ontologySynonym->submit();
         }
       }
+      if(defined $definition && $definition =~/\w/) {
+        $ontologyTerm->setDefinition($definition);
+        $ontologyTerm->submit();
+      }
     }
-
     else {
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
