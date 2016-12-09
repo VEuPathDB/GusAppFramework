@@ -124,7 +124,7 @@ sub new {
   bless($self,$class);
 
   my $documentation = &getDocumentation();
-  my $argumentDeclaration    = &getArgumentsDeclaration();
+ my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
 		     cvsRevision => '$Revision$',
@@ -212,13 +212,22 @@ sub insertTerms {
   my $line = <$fh> if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
     chomp($line);
-    my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
+    my ($id, $name, $definition, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete =~/^false$/i ? 0 : 1;
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $id });
 
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
+      
+      my $dbDefinition = $ontologyTerm->getDefinition();
+
+      if(defined $definition && $definition =~/\w/ && !($dbDefinition eq $definition) ) {
+        $ontologyTerm->setDefinition($definition);
+#        $submitTermFlag = 1;
+        print STDERR "updated Definition for $id from: $dbDefinition\n to: $definition\n";
+      }
+
       unless($dbName eq $name) {
         $self->log("Accession [$id] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
         my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRls});  
@@ -229,7 +238,7 @@ sub insertTerms {
     else {
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
-      $ontologyTerm->setDefinition($def);
+      $ontologyTerm->setDefinition($definition);
       $ontologyTerm->setIsObsolete($isObsolete);
       $ontologyTerm->setOntologyTermTypeId($ontologyTermType);
       $ontologyTerm->setAncestorTermId($category);
