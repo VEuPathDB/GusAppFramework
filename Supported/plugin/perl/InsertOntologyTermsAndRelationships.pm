@@ -261,9 +261,18 @@ sub doTerms {
       new({           source_id => $sourceId,
           });
 
+    my $submitTermFlag = 0;
+
     if($ontologyTerm->retrieveFromDB()) {
+
       my $dbName = $ontologyTerm->getName();
       my $dbDefinition = $ontologyTerm->getDefinition();
+      print STDERR $definition."\n";
+      if(defined $definition && $definition =~/\w/ && !($dbDefinition eq $definition) ) {
+        $ontologyTerm->setDefinition($definition);
+        $submitTermFlag = 1;
+        print STDERR "updated Definition for $sourceId from $dbDefinition to $definition";
+      }
 
       unless($dbName eq $name) {
         $self->log("Accession [$sourceId] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
@@ -272,21 +281,17 @@ sub doTerms {
 
         unless($ontologySynonym->retrieveFromDB()) {
           $ontologySynonym->submit();
+          $submitTermFlag =0;
         }
-      }
-      if(defined $definition && $definition =~/\w/) {
-        $ontologyTerm->setDefinition($definition);
-        $ontologyTerm->submit();
       }
     }
     else {
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($definition);
-
-      $ontologyTerm->submit();
+      $submitTermFlag = 1;
     }
-
+    $ontologyTerm->submit() if ($submitTermFlag);
     push(@ontologyTerms, $ontologyTerm);
     $self->undefPointerCache();
   }
