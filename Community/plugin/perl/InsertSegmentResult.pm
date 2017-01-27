@@ -167,7 +167,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 19661 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 19662 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -203,8 +203,8 @@ sub fetchOntologyTermId {
     return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
 
     # otherwise try source_id
-    (my $sourceRef = $term) =~ s/:/_/; 
-    $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ 
+    (my $sourceRef = $term) =~ s/:/_/;
+    $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
 							 source_id => $sourceRef,
 							});
 
