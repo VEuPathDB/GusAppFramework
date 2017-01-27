@@ -77,12 +77,12 @@ my $argsDeclaration =
 	       reqd           => 0,
 	       isList         => 0 }),
     stringArg({ name  => 'type',
-	       descr => "The type of dataset specified as 'term;Ontology|Version' where 'Ontology' must match an entry in SRes.ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.  term must match a source_id or name in SRes.OntologyTerm associated with the versioned external database",
+	       descr => "The type of dataset specified as an ontology term source_ref",
 	       constraintFunc => undef,
 	       reqd           => 0,
 	       isList         => 0 }),
    stringArg({ name  => 'subType',
-	       descr => "sub-type defined as 'term;Ontology|Version.  See 'type' parameter for more information",
+	       descr => "sub-type defined as an ontology term source ref",
 	       constraintFunc => undef,
 	       reqd           => 0,
 	       isList         => 0 }),
@@ -167,7 +167,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 16563 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 19660 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -198,7 +198,6 @@ sub fetchOntologyTermId {
     my $xdbrId = $self->getExtDbRlsId($xdbr);
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
 							    name => $term,
-							    external_database_release_id => $xdbrId
 							   });
 
     return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
@@ -206,7 +205,6 @@ sub fetchOntologyTermId {
     # otherwise try source_id
     $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ 
 							 source_id => $term,
-							 external_database_release_id => $xdbrId
 							});
 
     return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
@@ -215,7 +213,6 @@ sub fetchOntologyTermId {
     # otherwise try synonym
     my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({
 								  ontology_synonym => $term,
-								  external_database_release_id => $xdbrId
 								   });
 
     return $ontologySynonym->getOntologyTermId() if $ontologySynonym->retrieveFromDB();
