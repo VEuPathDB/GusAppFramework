@@ -167,7 +167,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 19660 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 19661 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -195,7 +195,7 @@ sub run {
 sub fetchOntologyTermId {
     my ($self, $term, $xdbr) = @_;
 
-    my $xdbrId = $self->getExtDbRlsId($xdbr);
+    # my $xdbrId = $self->getExtDbRlsId($xdbr);
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
 							    name => $term,
 							   });
@@ -203,8 +203,9 @@ sub fetchOntologyTermId {
     return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
 
     # otherwise try source_id
+    (my $sourceRef = $term) =~ s/:/_/; 
     $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ 
-							 source_id => $term,
+							 source_id => $sourceRef,
 							});
 
     return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
