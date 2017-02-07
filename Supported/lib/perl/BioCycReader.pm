@@ -6,8 +6,10 @@ use strict;
 use warnings;
 
 use List::MoreUtils qw(any);
+use List::Util qw(sum);
 use File::Basename;
 use CBIL::Util::Utils;
+use JSON;
 
 use Data::Dumper;
 
@@ -24,13 +26,43 @@ sub read {
     die "Input file $biopaxFile cannot be found" unless (-e $biopaxFile);
 
     my ($file, $path, $ext) = fileparse($biopaxFile, '\..*');
-    $file = "$file.rdf";
+    my $rdfFile = "$file.rdf";
 
     #convert biopax owl to tabulated rdf (writes rdf file in same dir)
     runCmd("biopaxToRdf.R $biopaxFile $path"); 
 
     # reads rdf and extracts only required information as hash
-    my $rdf = makeRdfHash("$path/$file");
+    my $rdf = &makeRdfHash("$path/$rdfFile");
+    #print Dumper $rdf;
+
+    #read associated json file and push nodes into hash
+    my $jsonFile = "$path/$file.json";
+    my $json;
+    if ( -e $jsonFile) {
+        open (JSON, $jsonFile); 
+        my $jsonLines = 0;
+        while ( <JSON> ) {
+            my $line = from_json($_);
+            $jsonLines ++;
+            foreach my $class (@{$line->{'elements'}}) {
+                if ($class->{'group'} eq 'nodes') {
+                    if (exists $class->{'data'}->{'id'}) {
+                        my $id = $class->{'data'}->{'id'};
+                        $json->{'nodes'}->{$id}->{'data'} = $class->{'data'};
+                        $json->{'nodes'}->{$id}->{'position'} = $class->{'position'};
+                    }
+                }elsif ($class->{'group'} eq 'edges') {
+                    if (exists $class->{'data'}->{'id'}) {
+                    my $id = $class->{'data'}->{'id'};
+                    $json->{'edges'}->{$id}->{'data'} = $class->{'data'};
+                    }
+                }
+            }
+        }
+        close JSON;
+        die "JSON file for this pathway contains more than one JSON object\n" unless $jsonLines == 1;
+    }
+    #print Dumper $json;
 
     #parse rdf structure to make pathway hash
     my $pathway = {};
@@ -40,7 +72,7 @@ sub read {
     #Add pathway information
         $pathway->{'Description'} = $rdf->{'Pathway'}->{$pathwayId}->{'standardName'};
         #use file name for source id as some pathways have >1 as synonyms
-        $pathway->{'SourceId'} = fileparse($file, '\..*');
+        $pathway->{'SourceId'} = $file;
 
     #Get pathway steps
         foreach my $pathwayStep (@{$rdf->{'Pathway'}->{$pathwayId}->{'pathwayOrder'}}) {
@@ -51,6 +83,39 @@ sub read {
            
             #Add reactions
             foreach my $reaction (@{$biochemicalPathway->{'stepConversion'}}) {
+                my @xCoords;
+                my @yCoords;
+                my $internalId;
+                foreach my $catalysis (keys(%{$rdf->{'Catalysis'}})) {
+                    #my $internalId;
+                    if (@{$rdf->{'Catalysis'}->{$catalysis}->{'controlled'}}[0] eq $reaction) {
+                        my $proteinList = $rdf->{'Catalysis'}->{$catalysis}->{'controller'};
+                        foreach my $protein (@{$proteinList}) {
+                            $protein =~ s/^#//;
+                            my $proteinXref = $rdf->{'SmallMolecule'}->{$protein}->{'xref'};
+                            $proteinXref =~ s/^#//;
+                            my $relationshipType = ($proteinXref =~/Relationship/) ? 'RelationshipXref' : 'UnificationXref';         
+                            if ($rdf->{$relationshipType}->{$proteinXref}->{'db'} =~ /Cyc/) {
+                                $internalId = $rdf->{$relationshipType}->{$proteinXref}->{'id'};
+                                foreach my $jsonKey (keys(%{$json->{'nodes'}})) {
+                                    if (exists ($json->{'nodes'}->{$jsonKey}->{'data'}->{'frame-id'})) {
+                                        if ($json->{'nodes'}->{$jsonKey}->{'data'}->{'frame-id'} eq $internalId) {
+                                            push (@xCoords, $json->{'nodes'}->{$jsonKey}->{'position'}->{'x'});
+                                            push (@yCoords, $json->{'nodes'}->{$jsonKey}->{'position'}->{'y'});
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                # if an enzyme has >1 gene in JSON it will have multiple coords.  Average these.
+                my ($xCoord, $yCoord);
+                if (@xCoords && @yCoords) {
+                    $xCoord = &mean(@xCoords);
+                    $yCoord = &mean(@yCoords);
+                }
+
                 $reaction =~ s/^#//;
                 my $biochemicalReaction = $rdf->{'BiochemicalReaction'}->{$reaction};
                 
@@ -70,9 +135,12 @@ sub read {
                 $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'UniqueId'} = "$pathwayStep.$reaction";
                 if (exists ($biochemicalReaction->{'eCNumber'})) {
                     foreach my $ecNumber (@{$biochemicalReaction->{'eCNumber'}}) {
-                        my $reactionNode = {'ecNumber' => $ecNumber,
-                                            'NodeType' => 'enzyme',
-                                            'UniqueId' =>  "$pathwayStep.$reaction.$ecNumber"
+                        my $reactionNode = {'ecNumber'      => $ecNumber,
+                                            'NodeType'      => 'enzyme',
+                                            'UniqueId'      =>  "$pathwayStep.$reaction.$ecNumber",
+                                            'x'             => $xCoord,
+                                            'y'             => $yCoord,
+                                            'InternalId'    => $internalId,
                                             };
                         push (@{$pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'reactionNodes'}}, $reactionNode);
                     }
@@ -83,11 +151,11 @@ sub read {
                                        };
                     push (@{$pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'reactionNodes'}}, $reactionNode);
                 }
- 
+
 
                 #Get all compounds
-                getCompounds ($pathway, $rdf, $pathwayStep, $biochemicalReaction, "left");
-                getCompounds ($pathway, $rdf, $pathwayStep, $biochemicalReaction, "right");
+                &getCompounds ($pathway, $rdf, $pathwayStep, $biochemicalReaction, "left");
+                &getCompounds ($pathway, $rdf, $pathwayStep, $biochemicalReaction, "right");
 
 
             }
@@ -96,7 +164,7 @@ sub read {
             die "Pathway step $pathwayStep has more than one reaction\n" unless scalar(@reactions) == 1;
             foreach my $reactionNode (@{$pathway->{$pathwayStep}->{'Reactions'}->{$reactions[0]}->{'reactionNodes'}}) {
                 my $reactionNodeId = $reactionNode->{'UniqueId'};
-                $count = makeEdges ($pathway, $pathwayStep, $reactionNodeId, $count);
+                $count = &makeEdges ($pathway, $pathwayStep, $reactionNodeId, $count);
             }
         }
     }
@@ -129,6 +197,9 @@ sub read {
                     }
                 }
             }
+            # Get compound coordinates
+            &getCompoundCoords($pathway, $pathwayStep, 'left', $json);
+            &getCompoundCoords($pathway, $pathwayStep, 'right', $json);
         }
     }
 
@@ -252,6 +323,15 @@ sub getCompounds {
             $cellularLocation = undef;
         }
 
+        my $internalId;
+        if (exists ($rdf->{'SmallMolecule'}->{$compound}->{'xref'})) {
+            my $relationshipXref = $rdf->{'SmallMolecule'}->{$compound}->{'xref'};
+            $relationshipXref =~ s/^#//;
+            if ($rdf->{'RelationshipXref'}->{$relationshipXref}->{'db'} =~ /Cyc/) {
+                $internalId = $rdf->{'RelationshipXref'}->{$relationshipXref}->{'id'};
+            }
+        }
+
         if (exists($rdf->{'SmallMolecule'}->{$compound}->{'entityReference'})) {
             my $smallMolRef = $rdf->{'SmallMolecule'}->{$compound}->{'entityReference'};
             $smallMolRef =~ s/^#//;
@@ -259,6 +339,7 @@ sub getCompounds {
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'standardName'} = $standardName;
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'UniqueId'} = "$pathwayStep.$smallMolRef.$standardName";
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'CellularLocation'} = $cellularLocation;
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$smallMolRef.$standardName}->{'InternalId'} = $internalId;
             foreach my $xref (@{$rdf->{'SmallMoleculeReference'}->{$smallMolRef}->{'xref'}}) {
                 $xref =~ s/^#//;
                 if ($xref =~ /UnificationXref/) {
@@ -272,6 +353,38 @@ sub getCompounds {
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'standardName'} = $standardName;
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'UniqueId'} = "$pathwayStep.$compound.$standardName";
             $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'CellularLocation'} = $cellularLocation;
+            $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound.$standardName}->{'InternalId'} = $internalId;
+        }
+    }
+}
+
+sub getCompoundCoords {
+    my ($pathway, $pathwayStep, $side, $json) = @_;
+    ##Always one reaction per pathway step - tested elsewhere in script
+    my $reaction = (keys(%{$pathway->{$pathwayStep}->{'Reactions'}}))[0];
+    foreach my $compound (keys(%{$pathway->{$pathwayStep}->{'Compounds'}->{$side}})) {
+        my $internalId = $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound}->{'InternalId'};
+        foreach my $jsonKey (keys(%{$json->{'nodes'}})) {
+            if (exists ($json->{'nodes'}->{$jsonKey}->{'data'}->{'frame-id'})) {
+                if ($json->{'nodes'}->{$jsonKey}->{'data'}->{'frame-id'} eq $internalId) {
+                    my $uniqueId = $json->{'nodes'}->{$jsonKey}->{'data'}->{'id'};
+                    my $parent = $json->{'nodes'}->{$jsonKey}->{'data'}->{'parent'};
+                    foreach my $edgeKey (keys(%{$json->{'edges'}})) {
+                        if ($parent eq $pathway->{'SourceId'} && ($json->{'edges'}->{$edgeKey}->{'data'}->{'source'} eq $uniqueId || $json->{'edges'}->{$edgeKey}->{'data'}->{'target'} eq $uniqueId)) {
+                            my $rxnId = $json->{'edges'}->{$edgeKey}->{'data'}->{'frame-id'};
+                            if ($rxnId eq $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'SourceId'}) {
+                                #print Dumper $compound;
+                                #print Dumper $uniqueId;
+                                #print Dumper $rxnId;
+                                #print Dumper $pathway->{$pathwayStep}->{'Reactions'}->{$reaction}->{'SourceId'};
+                                #print Dumper $json->{'nodes'}->{$jsonKey}->{'position'};
+                                $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound}->{'x'} = $json->{'nodes'}->{$jsonKey}->{'position'}->{'x'};
+                                $pathway->{$pathwayStep}->{'Compounds'}->{$side}->{$compound}->{'y'} = $json->{'nodes'}->{$jsonKey}->{'position'}->{'y'};
+                            } 
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -308,16 +421,21 @@ sub makeRdfHash {
                     addPropToRdf($rdf, $attributes, $propertyValue);
                 } 
             
-            }elsif ($class eq 'UnificationXref' || $class eq 'CellularLocationVocabulary') {
+            }elsif ($class eq 'UnificationXref' || $class eq 'CellularLocationVocabulary' || $class eq 'RelationshipXref') {
                 addPropToRdf($rdf, $attributes, $propertyValue);
             
             }elsif ($class eq 'BiochemicalPathwayStep') {
-                if ($property eq 'nextStep' || $property eq 'stepConversion') {
+                if ($property eq 'nextStep' || $property eq 'stepConversion' || $property eq 'stepProcess') {
                     pushPropToRdfArray($rdf, $attributes, $propertyAttrVal);
                 }elsif ($property eq 'stepDirection') {
                     addPropToRdf($rdf, $attributes, $propertyValue);
                 }
-            
+
+            }elsif ($class eq 'Catalysis') {
+                if ($property eq 'controller' || $property eq 'controlled') {
+                    pushPropToRdfArray($rdf, $attributes, $propertyAttrVal);
+                }
+
             }elsif ($class eq 'BiochemicalReaction' || $class eq 'TransportWithBiochemicalReaction' || $class eq 'Transport' || $class eq 'ComplexAssembly') {
                 $attributes->[0] = 'BiochemicalReaction';
                 if ($property eq 'eCNumber') {
@@ -334,7 +452,7 @@ sub makeRdfHash {
             
             }elsif ($class eq 'SmallMolecule' || $class eq 'Protein' || $class eq 'Complex' || $class eq 'Rna') {
                 $attributes->[0] = 'SmallMolecule';
-                if($property eq 'entityReference' || $property eq 'xref' || $property eq 'cellularLocation') {
+                if($property eq 'entityReference' || ($property eq 'xref' && $propertyAttrVal =~ /Relationship/) || ($class eq 'Complex' && $property eq 'xref' && $propertyAttrVal =~ /Unification/) || $property eq 'cellularLocation') {
                     addPropToRdf($rdf, $attributes, $propertyAttrVal);
                 }elsif($property eq 'standardName') {
                     addPropToRdf($rdf, $attributes, $propertyValue);
@@ -362,4 +480,8 @@ sub setPathwayHash {
 sub getPathwayHash {
     my ($self) = @_;
     return $self->{_pathway_hash};
+}
+
+sub mean {
+    return sum(@_)/@_;
 }
