@@ -87,6 +87,7 @@ sub getQueryHandle {
     $self->{'queryDbh'} = $self->makeNewHandle($autocommit); 
     $self->{'queryDbh'}->{LongReadLen} = 300000000;
   }
+  $self->{'queryDbh'}->{AutoCommit} = $autocommit if defined $autocommit;
   return $self->{'queryDbh'};
 }
 
