@@ -79,7 +79,7 @@ stringArg({   name           => 'ncbiTaxonName',
  integerArg({   name          => 'logFrequency',
 	       descr          => 'The frequency of logging progress, ie, after how many sequences are processed',
 	       reqd           => 0,
-		default       => 10,
+		default       => 100,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
