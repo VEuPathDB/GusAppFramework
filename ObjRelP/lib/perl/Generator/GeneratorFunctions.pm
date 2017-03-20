@@ -38,6 +38,15 @@ sub oracleTypeConverter {
     elsif (uc($oraType) eq "BPCHAR") {  # Postgres Binary Precision Character
 	$newType .= "Short";
     }
+    elsif (uc($oraType) eq "JSONB") { # Postgres JSONB Type; can be treated as String
+      $newType .= "String";
+    }
+    elsif (uc($oraType) eq "INT4") { # Postgres SERIAL (autoincrement) type translates to Int4 == Integer
+      $newType .= "Integer";
+    }
+    elsif (uc($oraType) eq "BOOL") {# Postrgres BOOL type
+      $newType .= "Boolean";
+    }
     elsif (uc($oraType) eq "DATE"){
 	if ($oraLen == 7){
 	    $newType .= "Date";}
@@ -67,7 +76,8 @@ sub oracleTypeConverter {
 	print STDERR "Warning: No JavaType found for '".$att."', type: '".$oraType."'\n";
 	$newType .= "notdefyet";
     }
-# print STDERR "name is $att type is $oraType, precision is $oraPrec, scale is $oraScale,  length  $oraLen, javatype is $newType\n" ;
+
+    # print STDERR "name is $att type is $oraType, precision is $oraPrec, scale is $oraScale,  length  $oraLen, javatype is $newType\n" ;
 
     return $newType;
 }
