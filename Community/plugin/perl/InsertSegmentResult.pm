@@ -167,7 +167,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 19979 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 19980 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -215,7 +215,7 @@ sub fetchOntologyTermId {
 							 source_id => $sourceRef,
 							});
 
-    return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB();)
+    return $ontologyTerm->getOntologyTermId() if ($ontologyTerm->retrieveFromDB());
 
 
     # otherwise try synonym
