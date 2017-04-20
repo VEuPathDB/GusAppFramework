@@ -167,7 +167,7 @@ sub new {
 
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 19662 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 19977 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -307,7 +307,7 @@ sub loadProtocolAppNode {
 	source_id => $self->getArg('sourceId'),
 	description => $self->getArg('description')
 								  });
-      $protocolAppNode->submit();
+      $protocolAppNode->submit() unless $protocolAppNode->retrieveFromDB();
     }
      
     $self->link2table($protocolAppNode->getProtocolAppNodeId(), 'Results::SegmentResult');
