@@ -63,7 +63,10 @@ sub getArgumentsDeclaration {
              descr => 'do the input files have a header row?',
 reqd => 0
             }),
-
+     booleanArg({name => 'isPreferred',
+             descr => 'set the name and definition in ontologyterm; mark ontologysynonym as is_preferred',
+reqd => 0
+            }),
 
 
     ];
@@ -219,22 +222,24 @@ sub insertTerms {
 
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
+
+      $ontologyTerm->setName($name) if($self->getArg('isPreferred');
       
       my $dbDefinition = $ontologyTerm->getDefinition();
 
-      if(defined $definition && $definition =~/\w/ && !($dbDefinition eq $definition) ) {
+      if($self->getArg('isPreferred') || (defined $definition && $definition =~/\w/ && !($dbDefinition eq $definition) )) {
         $ontologyTerm->setDefinition($definition);
 #        $submitTermFlag = 1;
         print STDERR "updated Definition for $id from: $dbDefinition\n to: $definition\n";
       }
 
-      unless($dbName eq $name) {
-        $self->log("Accession [$id] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
-        my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRls});  
-        $ontologySynonym->setParent($ontologyTerm);
-        $ontologySynonym->retrieveFromDB();
-      }
+      my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRls});  
+      $ontologySynonym->setParent($ontologyTerm);
+      $ontologySynonym->setIsPreferred(1) if($self->getArg('isPreferred');
+
+      $ontologySynonym->retrieveFromDB();
     }
+
     else {
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
