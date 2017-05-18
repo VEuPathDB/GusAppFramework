@@ -223,7 +223,7 @@ sub insertTerms {
     if($ontologyTerm->retrieveFromDB()) {
       my $dbName = $ontologyTerm->getName();
 
-      $ontologyTerm->setName($name) if($self->getArg('isPreferred');
+      $ontologyTerm->setName($name) if($self->getArg('isPreferred'));
       
       my $dbDefinition = $ontologyTerm->getDefinition();
 
@@ -235,7 +235,7 @@ sub insertTerms {
 
       my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRls});  
       $ontologySynonym->setParent($ontologyTerm);
-      $ontologySynonym->setIsPreferred(1) if($self->getArg('isPreferred');
+      $ontologySynonym->setIsPreferred(1) if($self->getArg('isPreferred'));
 
       $ontologySynonym->retrieveFromDB();
     }
