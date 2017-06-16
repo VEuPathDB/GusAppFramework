@@ -63,10 +63,13 @@ sub getArgumentsDeclaration {
              descr => 'do the input files have a header row?',
 reqd => 0
             }),
-     booleanArg({name => 'isPreferred',
-             descr => 'set the name and definition in ontologyterm; mark ontologysynonym as is_preferred',
-reqd => 0
-            }),
+     enumArg({name => 'isPreferred',
+                 descr => 'set the name and definition in ontologyterm; mark ontologysynonym as is_preferred; value must be either true or false',
+                 reqd           => 0,
+                 isList         => 0,
+                 enum => "true,false",
+               }),
+
 
 
     ];
@@ -212,6 +215,8 @@ sub insertTerms {
   my $category = $self->category();
   my $ontologyTermType = $self->ontologyTermType();
 
+  my $isPreferred = $self->getArg('isPreferred') eq 'true' ? 1 : 0;
+
   my $line = <$fh> if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
     chomp($line);
@@ -219,27 +224,17 @@ sub insertTerms {
     $isObsolete = $isObsolete =~/^false$/i ? 0 : 1;
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $id });
-
+    
     if($ontologyTerm->retrieveFromDB()) {
-      my $dbName = $ontologyTerm->getName();
+      if($isPreferred) {
+        my $dbName = $ontologyTerm->getName();
+        my $dbDef = $ontologyTerm->getDefinition();
 
-      $ontologyTerm->setName($name) if($self->getArg('isPreferred'));
-      
-      my $dbDefinition = $ontologyTerm->getDefinition();
-
-      if($self->getArg('isPreferred') || (defined $definition && $definition =~/\w/ && !($dbDefinition eq $definition) )) {
+        $ontologyTerm->setName($name);
         $ontologyTerm->setDefinition($definition);
-#        $submitTermFlag = 1;
-        print STDERR "updated Definition for $id from: $dbDefinition\n to: $definition\n";
+        print STDERR "updated term and Definition for $id: $dbName to $name and $dbDef to $definition\n" if($dnName ne $name || $dbDef ne $definition);
       }
-
-      my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRls});  
-      $ontologySynonym->setParent($ontologyTerm);
-      $ontologySynonym->setIsPreferred(1) if($self->getArg('isPreferred'));
-
-      $ontologySynonym->retrieveFromDB();
     }
-
     else {
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
@@ -247,9 +242,14 @@ sub insertTerms {
       $ontologyTerm->setIsObsolete($isObsolete);
       $ontologyTerm->setOntologyTermTypeId($ontologyTermType);
       $ontologyTerm->setAncestorTermId($category);
-      $ontologyTerm->setExternalDatabaseReleaseId($extDbRls);
-      $countTerms++;
     }
+    $countTerms++;
+
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRls});  
+    $ontologySynonym->setParent($ontologyTerm);
+    $ontologySynonym->setIsPreferred(1) if($isPreferred);
+    $ontologySynonym->retrieveFromDB();
+    $countSyns++;
 
     my @synArr = split(/,/, $synonyms);
     for (my $i=0; $i<@synArr; $i++) {

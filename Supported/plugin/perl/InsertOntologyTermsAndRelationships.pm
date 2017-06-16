@@ -45,6 +45,13 @@ my $argsDeclaration =
 	     reqd  => 1,
 	     constraintFunc => undef,
 	   }),
+     enumArg({name => 'isPreferred',
+                 descr => 'set the name and definition in ontologyterm; mark ontologysynonym as is_preferred; value must be either true or false',
+                 reqd           => 0,
+                 isList         => 0,
+                 enum => "true,false",
+               }),
+
 
 ];
 
@@ -230,6 +237,8 @@ sub doTerms {
 
   my %seen;
 
+  my $isPreferred = $self->getArg('isPreferred') eq 'true' ? 1 : 0;
+
   foreach my $line (@$lines) {
     my @a = split(/\t/, $line);
     my $sourceId = $a[0];
@@ -261,37 +270,33 @@ sub doTerms {
       new({           source_id => $sourceId,
           });
 
-    my $submitTermFlag = 0;
-
     if($ontologyTerm->retrieveFromDB()) {
 
-      my $dbName = $ontologyTerm->getName();
-      my $dbDefinition = $ontologyTerm->getDefinition();
-      print STDERR $definition."\n";
-      if(defined $definition && $definition =~/\w/ && !($dbDefinition eq $definition) ) {
+      if($isPreferred) {
+        $ontologyTerm->setName($name);
         $ontologyTerm->setDefinition($definition);
-        $submitTermFlag = 1;
-        print STDERR "updated Definition for $sourceId from $dbDefinition to $definition";
-      }
-
-      unless($dbName eq $name) {
-        $self->log("Accession [$sourceId] with name [$name] has previously been loaded with a different name:  $dbName.  Adding Synonym.");
-        my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, external_database_release_id => $extDbRlsId});  
-        $ontologySynonym->setParent($ontologyTerm);
-
-        unless($ontologySynonym->retrieveFromDB()) {
-          $ontologySynonym->submit();
-          $submitTermFlag =0;
-        }
+        print STDERR "updated term and Definition for $id: $dbName to $name and $dbDef to $definition\n" if($dnName ne $name || $dbDef ne $definition);
       }
     }
     else {
       $ontologyTerm->setName($name);
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($definition);
-      $submitTermFlag = 1;
+
     }
-    $ontologyTerm->submit() if ($submitTermFlag);
+
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId});  
+    $ontologySynonym->setParent($ontologyTerm);
+    $ontologySynonym->setIsPreferred(1) if($isPreferred);
+
+    # my @synArr = split(/,/, $synonyms);
+    # for (my $i=0; $i<@synArr; $i++) {
+    #   $synArr[$i] =~ s/^\s+|\s+$//g;
+    #   my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $synArr[$i], external_database_release_id => $extDbRls});  
+    #   $ontologySynonym->setParent($ontologyTerm);
+    # }
+
+    $ontologyTerm->submit();
     push(@ontologyTerms, $ontologyTerm);
     $self->undefPointerCache();
   }
