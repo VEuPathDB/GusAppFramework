@@ -273,9 +273,12 @@ sub doTerms {
     if($ontologyTerm->retrieveFromDB()) {
 
       if($isPreferred) {
+        my $dbName = $ontologyTerm->getName();
+        my $dbDef = $ontologyTerm->getDefinition();
+
         $ontologyTerm->setName($name);
         $ontologyTerm->setDefinition($definition);
-        print STDERR "updated term and Definition for $id: $dbName to $name and $dbDef to $definition\n" if($dnName ne $name || $dbDef ne $definition);
+        print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
       }
     }
     else {
