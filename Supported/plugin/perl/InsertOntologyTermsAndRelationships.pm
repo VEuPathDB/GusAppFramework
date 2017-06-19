@@ -50,6 +50,7 @@ my $argsDeclaration =
                  reqd           => 0,
                  isList         => 0,
                  enum => "true,false",
+	  constraintFunc => undef,
                }),
 
 
