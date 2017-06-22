@@ -1568,8 +1568,8 @@ sub allNonNullsSet {
   }
 
   foreach my $a (@{$table->getAttributeInfo()}) {
-    ##	print STDERR $self->getClassName(),"::allNonNullsSet: $a->{'col'}, nullable = $a->{'Nulls'}, value=",$self->get("$a->{'col'}"),"\n";
-    if ($a->{'Nulls'} == 0 && (!defined $self->get("$a->{'col'}") || $self->get("$a->{'col'}") =~ /null/i)) {
+    # print STDERR $self->getClassName(),"::allNonNullsSet: $a->{'col'}, nullable = $a->{'Nulls'}, value=",$self->get("$a->{'col'}"),"\n";
+    if ($a->{'Nulls'} == 0 && (!defined $self->get("$a->{'col'}") || $self->get("$a->{'col'}") =~ /^null$/i)) {
       print STDERR "allNonNullsSet: $a->{'col'} not set... = '".$self->get("$a->{'col'}")."'\n" if $debug;
       return 0;
     }
