@@ -8,6 +8,8 @@ use Getopt::Long;
 
 use DBI;
 use DBD::Oracle;
+use GUS::Supported::GusConfig;
+use GUS::ObjRelP::DbiDatabase;
 
 my ($gusConfigFile, $externalDatabaseName);
 
