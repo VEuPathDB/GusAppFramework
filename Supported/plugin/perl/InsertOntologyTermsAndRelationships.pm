@@ -289,7 +289,7 @@ sub doTerms {
 
     }
 
-    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId});  
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId});
     $ontologySynonym->setParent($ontologyTerm);
     $ontologySynonym->setIsPreferred(1) if($isPreferred);
 
@@ -427,12 +427,12 @@ sub getRelationshipTypes {
 
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
 
-  my $sql = "select name, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf')";
+  my $sql = "select name, source_id, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf')";
   my $sh = $self->getQueryHandle()->prepare($sql);
   $sh->execute();
 
-  while(my ($name, $id) = $sh->fetchrow_array()) {
-    $rv{$name} = $id;
+  while(my ($name, $sourceId, $id) = $sh->fetchrow_array()) {
+    $rv{$sourceId} = $id;
   }
   $sh->finish();
 
