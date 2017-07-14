@@ -689,7 +689,7 @@ sub maybeIndexQueryFile {
    my ($self,$queryFile) = @_;
    # Make sure that query_file is indexed
    #
-   #my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
+   my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
    my $createIndex = $self->getArg('force_create_index');
 
    if (!$qIndex->open() || $createIndex) {
@@ -703,7 +703,7 @@ sub maybeIndexQueryFile {
 
          $self->error ("Unable to parse $defline with regex = '$regex'");
       };
-    my $qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
+      $qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
       $qIndex = undef;
       $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
    }
