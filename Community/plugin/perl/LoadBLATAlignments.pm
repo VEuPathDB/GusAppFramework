@@ -214,6 +214,14 @@ my $argsDeclaration = [
                                    reqd  => 0,
                                    isList => 0,
                                   }),
+                       booleanArg({
+                                   name => 'force_create_index',
+                                   descr => 'Determine if new index file should be created or existing index file should be used when available.',
+                                   default => 1,
+                                   constraintFunc => undef,
+                                   reqd => 0,
+                                   isList => 0,
+                                  }),
                        ######################################################
                        # gate-keeping parameter to prevent loading everything
                        ######################################################
@@ -681,9 +689,10 @@ sub maybeIndexQueryFile {
    my ($self,$queryFile) = @_;
    # Make sure that query_file is indexed
    #
-   my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
+   #my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
+   my $createIndex = $self->getArg('force_create_index');
 
-   if (!$qIndex->open()) {
+   if (!$qIndex->open() || $createIndex) {
       my $regex = $self->getArg('queryRegex');
       my $idSub = sub {
          my($defline) = @_;
@@ -694,7 +703,7 @@ sub maybeIndexQueryFile {
 
          $self->error ("Unable to parse $defline with regex = '$regex'");
       };
-      $qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
+    my $qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
       $qIndex = undef;
       $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
    }
