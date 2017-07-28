@@ -967,12 +967,13 @@ sub getQueryNaSeqId {
 
    my $sql;
    if ($queryTableName eq 'externalnasequence') {
-      $sql = "select na_sequence_id from $TPREF.externalnasequence where source_id = '$qid'";
+      $sql = "select na_sequence_id from $TPREF.externalnasequence where source_id = ?";
    } elsif ($queryTableName eq 'assemblysequence') {
-      $sql = "select na_sequence_id from $TPREF.assemblysequence where assembly_sequence_id = $qid";
+      $sql = "select na_sequence_id from $TPREF.assemblysequence where assembly_sequence_id = ?";
    }
 
-   my $sth = $dbh->prepareAndExecute($sql);
+   my $sth = $dbh->prepare($sql);
+   $sth->execute($qid);
    my($sid) =  $sth->fetchrow_array();
    $sth->finish();       
    return $sid;
