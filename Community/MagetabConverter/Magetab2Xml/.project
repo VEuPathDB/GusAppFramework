@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>Magetab2Xml</name>
+	<name>GUS Community Magetab2Xml</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -14,16 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>src/application.properties</name>
-			<type>1</type>
-			<location>C:/Users/crislawrence/workspace/MagetabConverter/Magetab2Xml/resources/application.properties</location>
-		</link>
-		<link>
-			<name>src/log4j.xml</name>
-			<type>1</type>
-			<location>C:/Users/crislawrence/workspace/MagetabConverter/Magetab2Xml/resources/log4j.xml</location>
-		</link>
-	</linkedResources>
 </projectDescription>
