@@ -18,7 +18,9 @@ import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
  *
  */
 public class Study {
+
   public static Logger logger = LoggerFactory.getLogger(Study.class);
+
   private String name;
   private String dbId;
   private String description;
@@ -199,6 +201,7 @@ public class Study {
    * @return - a complete representation of the study using
    *           ReflectionToStringBuilder for debugging purposes.
    */
+  @Override
   public final String toString() {
     return ReflectionToStringBuilder.toString(this);
   }

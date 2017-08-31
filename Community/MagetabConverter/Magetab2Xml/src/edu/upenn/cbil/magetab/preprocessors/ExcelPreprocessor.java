@@ -5,13 +5,10 @@ import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.SDRF;
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.TEXT_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.EXCEL_PARSE_ERROR;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_IO_ERROR;
-import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_CLOSE_ERROR;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.SDRF_COLUMN_MISMATCH_ERROR;
 
 import java.awt.Color;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 

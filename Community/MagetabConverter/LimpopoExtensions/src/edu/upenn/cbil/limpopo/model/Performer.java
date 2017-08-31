@@ -1,6 +1,5 @@
 package edu.upenn.cbil.limpopo.model;
 
-import java.lang.reflect.Field;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
@@ -8,7 +7,6 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 import edu.upenn.cbil.limpopo.utils.AppUtils;
-
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.PerformerAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 
@@ -114,11 +112,7 @@ public class Performer {
    */
   @Override
   public String toString() {
-    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
-      protected boolean accept(Field f) {
-        return super.accept(f);
-      }
-    }).toString();
+    return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).toString();
   }
 
 }

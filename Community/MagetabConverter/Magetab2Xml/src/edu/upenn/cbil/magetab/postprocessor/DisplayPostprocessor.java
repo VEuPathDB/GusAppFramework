@@ -71,12 +71,14 @@ import freemarker.template.TemplateException;
  *
  */
 public class DisplayPostprocessor {
+
+  public static Logger logger = Logger.getLogger(DisplayPostprocessor.class);
+
   private String dotFilename;
   private String imageFilename;
   private String htmlFilename;
   private static final String TEMPLATE_FOLDER = "templates";
   private static final String CONTENT_TEMPLATE = "content.ftl";
-  public static Logger logger = Logger.getLogger(DisplayPostprocessor.class);
   
   /**
    * Use the directory name argument to create filenames for the dot, image, html, and zip
@@ -194,13 +196,13 @@ public class DisplayPostprocessor {
       throw new ApplicationException(DOT_INTERRUPTION_ERROR, ie);
     }
     finally {
-      if(errorReader != null) {
-    	try {
+      if (errorReader != null) {
+        try {
           errorReader.close();
-    	}
-    	catch(IOException ioe) {
-    	  ;
-    	}
+        }
+        catch(IOException ioe) {
+          // ignore
+        }
       }
     }
     return mapFile;

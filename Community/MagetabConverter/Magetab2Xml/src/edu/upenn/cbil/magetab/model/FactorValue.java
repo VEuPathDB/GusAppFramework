@@ -1,6 +1,5 @@
 package edu.upenn.cbil.magetab.model;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +10,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import edu.upenn.cbil.limpopo.model.ProtocolApplication;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.magetab.utilities.ApplicationException;
 
@@ -145,11 +143,7 @@ public class FactorValue {
    */
   @Override
   public String toString() {
-    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
-      protected boolean accept(Field field) {
-        return super.accept(field);
-      }
-   }).toString();
+    return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).toString();
   }
   
   @Override

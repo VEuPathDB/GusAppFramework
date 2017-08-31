@@ -1,6 +1,5 @@
 package edu.upenn.cbil.limpopo.model;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -10,10 +9,10 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.ebi.arrayexpress2.magetab.datamodel.IDF;
-import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.ListUtils;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.IDF;
+import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 
 
 /**
@@ -60,11 +59,7 @@ public class StudyDesign {
    */
   @Override
   public String toString() {
-    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
-      protected boolean accept(Field field) {
-        return super.accept(field);
-      }
-    }).toString();
+    return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).toString();
   }
   
   /**

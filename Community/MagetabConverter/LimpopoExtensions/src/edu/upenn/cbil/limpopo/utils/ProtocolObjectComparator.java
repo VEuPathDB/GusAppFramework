@@ -7,6 +7,7 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.*;
 
 public class ProtocolObjectComparator implements Comparator<ProtocolObject> {
   
+  @Override
   public int compare(ProtocolObject obj1, ProtocolObject obj2) {
     int result = 0;
     String id1 = obj1.getId().split(NODE_SEPARATOR)[0];

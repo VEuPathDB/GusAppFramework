@@ -1,6 +1,5 @@
 package edu.upenn.cbil.magetab.model;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
@@ -81,11 +80,7 @@ public class Study {
    */
   @Override
   public String toString() {
-    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
-      protected boolean accept(Field field) {
-        return super.accept(field);
-      }
-    }).toString();
+    return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).toString();
   }
 
 }

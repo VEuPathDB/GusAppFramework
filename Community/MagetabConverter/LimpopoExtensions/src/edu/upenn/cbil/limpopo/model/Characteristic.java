@@ -1,16 +1,14 @@
 package edu.upenn.cbil.limpopo.model;
 
-import java.lang.reflect.Field;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+import edu.upenn.cbil.limpopo.utils.AppUtils;
+import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.CharacteristicsAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.MaterialTypeAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
-import edu.upenn.cbil.limpopo.utils.AppUtils;
-import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 
 /**
  * Represents a slightly different definition of characteristic than the one applied in a 
@@ -121,11 +119,7 @@ public class Characteristic {
   
   @Override
   public String toString() {
-    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
-      protected boolean accept(Field field) {
-        return super.accept(field);
-      }
-    }).toString();
+    return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).toString();
   }
 
 }

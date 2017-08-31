@@ -4,43 +4,36 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.ADDITION_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CATEGORY_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CHARACTERISTIC_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CHILD_PROTOCOL_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.CONTACTS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CONTACT_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.ROLE_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.DBID_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.DESCRIPTION_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.EXTERNAL_DATABASE_RELEASE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.IDF_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ID_ATTR;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.RUN_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.INPUT_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.NAME_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.NODE_CHARACTERISTICS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ONTOLOGY_TERM_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.VALUE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.OUTPUT_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_DATE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_NODE_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_PARAMETERS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_PARAMETER_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.STEP_ATTR;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.SDRF_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.TABLE_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.ROLE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ROW_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.RUN_ATTR;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.SDRF_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.STEP_ATTR;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.TABLE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.TAXON_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.TRUE;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.TYPE_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.URI_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.UNIT_TYPE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.UNIT_TYPE_EXT_DB_RLS_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.DBID_ATTR;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.UNIT_TYPE_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.URI_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.VALUE_TAG;
 
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
-
-import net.sourceforge.fluxion.spi.ServiceProvider;
 
 import org.apache.commons.lang.StringUtils;
 import org.jdom2.Document;
@@ -48,9 +41,6 @@ import org.jdom2.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.ebi.arrayexpress2.magetab.datamodel.SDRF;
-import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
-import uk.ac.ebi.arrayexpress2.magetab.handler.sdrf.SDRFConversionHandler;
 import edu.upenn.cbil.limpopo.model.Characteristic;
 import edu.upenn.cbil.limpopo.model.OntologyTerm;
 import edu.upenn.cbil.limpopo.model.Performer;
@@ -58,7 +48,10 @@ import edu.upenn.cbil.limpopo.model.ProtocolApplication;
 import edu.upenn.cbil.limpopo.model.ProtocolApplicationIONode;
 import edu.upenn.cbil.limpopo.model.ProtocolApplicationParameter;
 import edu.upenn.cbil.limpopo.model.ProtocolSeries;
-import edu.upenn.cbil.limpopo.utils.SDRFUtils;
+import net.sourceforge.fluxion.spi.ServiceProvider;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.SDRF;
+import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
+import uk.ac.ebi.arrayexpress2.magetab.handler.sdrf.SDRFConversionHandler;
 
 
 /**
@@ -91,7 +84,6 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
   @Override
   protected void convertData(SDRF data, Document document) throws ConversionException {
 	logger.debug("START - " + getClass().getSimpleName());
-	SDRFUtils utils = new SDRFUtils(data.getLayout());
 	Element sdrfElement = new Element(SDRF_TAG);
 	ProtocolApplication.createAllProtocolApplications(data);
 	Set<ProtocolApplicationIONode> appNodes = ProtocolApplicationIONode.getApplicationIONodes();

@@ -20,6 +20,7 @@ import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.ListUtils;
 
 public class ProtocolParam {
+
   public static Logger logger = LoggerFactory.getLogger(ProtocolParam.class);
   private boolean addition;
   private String name;
@@ -75,6 +76,7 @@ public class ProtocolParam {
 	this.userSpecified = AppUtils.removeTokens(userSpecified);
   }
   
+  @Override
   public String toString() {
 	return ReflectionToStringBuilder.toString(this);
   }

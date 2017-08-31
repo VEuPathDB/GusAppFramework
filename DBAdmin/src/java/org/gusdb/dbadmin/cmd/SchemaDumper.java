@@ -258,13 +258,13 @@ public class SchemaDumper {
      * @param db The database on which to perform the conversion
      */
     private static void convertSubclasses(Database db) {
-        Collection superClasses = new HashSet();
+        Collection<Table> superClasses = new HashSet<>();
 
-        for (Iterator i = db.getAllSchemas().iterator(); i.hasNext();) {
-            Schema schema = (Schema)i.next();
+        for (Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext();) {
+            Schema schema = i.next();
 
-            for (Iterator j = schema.getTables().iterator(); j.hasNext();) {
-                Table table = (Table)j.next();
+            for (Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext();) {
+                Table table = j.next();
 
                 if (!table.getSubclasses().isEmpty() && 
                     table.getClass() == GusTable.class) {
@@ -273,23 +273,21 @@ public class SchemaDumper {
             }
         }
 
-        for (Iterator i = superClasses.iterator(); i.hasNext();) {
-            GusClassHierarchyConverter converter = new GusClassHierarchyConverter(
-                                                           (GusTable)i.next());
+        for (Iterator<Table> i = superClasses.iterator(); i.hasNext();) {
+            GusClassHierarchyConverter converter = new GusClassHierarchyConverter((GusTable)i.next());
             converter.convert();
         }
     }
-	
-	private static void readProperties() {
-		File propertyFile;
 
-		try {
-			propertyFile = new File(System.getProperty("PROPERTYFILE"));
-			properties.load(new FileInputStream(propertyFile));
-		} catch (IOException e) {
-		    throw new RuntimeException(e);
-		}
-	}
+    private static void readProperties() {
+      File propertyFile;
 
-	
+      try {
+        propertyFile = new File(System.getProperty("PROPERTYFILE"));
+        properties.load(new FileInputStream(propertyFile));
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
 }
