@@ -2,9 +2,6 @@ package edu.upenn.cbil.magetab.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Represents all the factor values contained within one row of the original Excel spreadsheet.

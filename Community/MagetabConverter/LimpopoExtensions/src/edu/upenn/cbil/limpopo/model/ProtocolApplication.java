@@ -1,8 +1,6 @@
 package edu.upenn.cbil.limpopo.model;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,17 +19,18 @@ import org.mged.magetab.error.ErrorItemFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.upenn.cbil.limpopo.utils.AppUtils;
+import edu.upenn.cbil.limpopo.utils.ProtocolObjectComparator;
+import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.SDRF;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.graph.Node;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.ProtocolApplicationNode;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SDRFNode;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.ParameterValueAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
-import edu.upenn.cbil.limpopo.utils.AppUtils;
-import edu.upenn.cbil.limpopo.utils.ProtocolObjectComparator;
-import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 
 public class ProtocolApplication extends ProtocolObject {
+
   private String name;
   private boolean addition;
   private String dbId;
@@ -170,26 +169,25 @@ public class ProtocolApplication extends ProtocolObject {
   
   @Override
   public String toString() {
-    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
-      protected boolean accept(Field f) {
-        //return super.accept(f) && !f.getName().equals("node");
-        return super.accept(f);
-      }
-    }).toString();
+    return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).toString();
   }
   
   @Override
   public boolean equals(Object obj) {
     if (obj instanceof ProtocolApplication) {
       ProtocolApplication that = (ProtocolApplication) obj;
-      boolean nodesEqual = that.getNode().equals(getNode());
-      return nodesEqual;
+      return that.getNode().equals(getNode());
     }
     else {
       return false;
     }
   }
-  
+
+  @Override
+  public int hashCode() {
+    return getNode().hashCode();
+  }
+
   /**
    * Populate the protocol application reference (edge or part of edge).  Determine if the protocol reference
    * is an addition.  Remove tokens from any subordinate components of the protocol application
@@ -198,20 +196,20 @@ public class ProtocolApplication extends ProtocolObject {
    */
   public void populate() throws ConversionException {
     ProtocolApplicationNode appNode = (ProtocolApplicationNode) node;
-    String name = appNode.protocol;
-    if(StringUtils.isEmpty(name)) {
+    String protocolName = appNode.protocol;
+    if (StringUtils.isEmpty(protocolName)) {
       ErrorItemFactory factory = ErrorItemFactory.getErrorItemFactory();
       ErrorItem error = factory.generateErrorItem("Check your SDRF", 8001, this.getClass());
       throw new ConversionException(true, error);
     }
-	setName(name);
-	setAddition(AppUtils.checkForAddition(name));
-	setDbId(AppUtils.filterIdToken(name));
-	assembleParameters();
-	if(appNode.performer != null) {
-	  performers.add(new Performer(appNode.performer, addition));
-	}
-	setDate(appNode.date);
+    setName(protocolName);
+    setAddition(AppUtils.checkForAddition(protocolName));
+    setDbId(AppUtils.filterIdToken(protocolName));
+    assembleParameters();
+    if(appNode.performer != null) {
+      performers.add(new Performer(appNode.performer, addition));
+    }
+    setDate(appNode.date);
   }
   
   /**

@@ -31,6 +31,7 @@ import edu.upenn.cbil.limpopo.utils.SDRFUtils;
  *
  */
 public class ProtocolApplicationIONode extends ProtocolObject {
+
   private boolean addition;
   private String dbId;
   private String name;
@@ -89,6 +90,7 @@ public class ProtocolApplicationIONode extends ProtocolObject {
    * The underlying SDRF node for this protocol application IO node
    * @return - SDRF node
    */
+  @Override
   public SDRFNode getNode() {
 	return node;
   }
@@ -181,6 +183,7 @@ public class ProtocolApplicationIONode extends ProtocolObject {
   @Override
   public String toString() {
     return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
+      @Override
       protected boolean accept(Field f) {
         return super.accept(f) && !f.getName().equals("node");
       }
@@ -284,30 +287,30 @@ public class ProtocolApplicationIONode extends ProtocolObject {
    * class.  Elements of a characteristics class are found in only 4 SDRF nodes and are 
    * based upon what MAGE-TAB refers to as characteristics and material types.  Note that
    * taxon is a MAGE-TAB characteristic, but it is pulled out as the property of this class.
-   * @param node - SDRF node from which to cull characteristics
+   * @param populationNode - SDRF node from which to cull characteristics
    * @throws ConversionException - occurs when the creation of an ontology term fails.
    */
-  protected void populateCharacteristics(SDRFNode node) throws ConversionException {
+  protected void populateCharacteristics(SDRFNode populationNode) throws ConversionException {
     characteristics = new ArrayList<>();
     List<CharacteristicsAttribute> attributes = new ArrayList<>();
     MaterialTypeAttribute material = null;
-    SDRFNodeNames nodeNames = SDRFNodeNames.valueOf(node.getNodeType().toUpperCase());
+    SDRFNodeNames nodeNames = SDRFNodeNames.valueOf(populationNode.getNodeType().toUpperCase());
     switch(nodeNames) {
       case SOURCENAME:
-        attributes = ((SourceNode) node).characteristics;
-        material = ((SourceNode)node).materialType;
+        attributes = ((SourceNode) populationNode).characteristics;
+        material = ((SourceNode)populationNode).materialType;
         break;
       case SAMPLENAME:
-        attributes = ((SampleNode) node).characteristics;
-        material = ((SampleNode)node).materialType;
+        attributes = ((SampleNode) populationNode).characteristics;
+        material = ((SampleNode)populationNode).materialType;
         break;
       case EXTRACTNAME:
-        attributes = ((ExtractNode) node).characteristics;
-        material = ((ExtractNode)node).materialType;
+        attributes = ((ExtractNode) populationNode).characteristics;
+        material = ((ExtractNode)populationNode).materialType;
         break;
       case LABELEXTRACTNAME:
-        attributes = ((LabeledExtractNode) node).characteristics;
-        material = ((LabeledExtractNode)node).materialType;
+        attributes = ((LabeledExtractNode) populationNode).characteristics;
+        material = ((LabeledExtractNode)populationNode).materialType;
         break;
       default:
         break;

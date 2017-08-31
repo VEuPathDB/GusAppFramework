@@ -7,6 +7,7 @@ import uk.ac.ebi.arrayexpress2.magetab.listener.ErrorItemListener;
 public class ErrorListener implements ErrorItemListener  {
   private static int errorCount = 0;
 
+  @Override
   public void errorOccurred(ErrorItem item) {
     errorCount++;
     if(item != null) {

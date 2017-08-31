@@ -42,9 +42,9 @@ import edu.upenn.cbil.limpopo.utils.ListUtils;
  */
 @ServiceProvider
 public class GeneralValidator extends MAGETABValidateHandler {
+
   public static Logger logger = LoggerFactory.getLogger(GeneralValidator.class);
-  protected final Set<HandlerListener> listeners = new HashSet<HandlerListener>();
-  
+
   public GeneralValidator() {
     HandlerListener listener = new ValidateHandlerListener();
     addListener(listener);
@@ -182,7 +182,7 @@ public class GeneralValidator extends MAGETABValidateHandler {
         List<ParameterValueAttribute> params = node.parameterValues;
         for(ParameterValueAttribute param : params) {
           logger.trace("SDRF param: " + param.type); 
-          if(parameterNames == null || !parameterNames.contains(param.type)) {
+          if(!parameterNames.contains(param.type)) {
             throw new AppException("Offending parameter - " + param.type, 6003);
           }
         }

@@ -22,7 +22,7 @@ public class StudyFactor {
   public StudyFactor() {
   }
   
-  public StudyFactor(String name) throws ConversionException {
+  public StudyFactor(String name) {
     this.name = name;
   }
   
@@ -49,6 +49,7 @@ public class StudyFactor {
     this.type = type;
   }
   
+  @Override
   public String toString() {
     return ReflectionToStringBuilder.toString(this);
   }

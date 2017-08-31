@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.WordUtils;
 import org.jdom2.Document;
 import org.jdom2.Element;
 
@@ -49,16 +48,16 @@ public class Protocol {
   }
   
   public static void populateProtocolData(Document document) {
-    List<Protocol> protocols = new ArrayList<>();
+    List<Protocol> newProtocols = new ArrayList<>();
     List<Element> protocolElements = document.getRootElement().getChild(AppUtils.IDF_TAG).getChildren(AppUtils.PROTOCOL_TAG);
     for(Element protocolElement : protocolElements) {
       Protocol protocol = new Protocol();
       protocol.setName(protocolElement.getChildText(AppUtils.NAME_TAG));
       protocol.setDescription(protocolElement.getChildText(AppUtils.DESCRIPTION_TAG));
       protocol.setParameters(protocolElement);
-      protocols.add(protocol);
+      newProtocols.add(protocol);
     }
-    Protocol.setProtocols(protocols);
+    Protocol.setProtocols(newProtocols);
   }
   
   protected void setParameters(Element protocolElement) {

@@ -1,6 +1,5 @@
 package edu.upenn.cbil.magetab.model;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 import org.apache.commons.lang.WordUtils;
@@ -15,6 +14,7 @@ import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
  *
  */
 public class Node {
+
   private String id;
   private String dbId;
   private String label;
@@ -198,10 +198,6 @@ public class Node {
    */
   @Override
   public String toString() {
-    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
-      protected boolean accept(Field field) {
-        return super.accept(field);
-      }
-    }).toString();
+    return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE).toString();
   }
 }

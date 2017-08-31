@@ -129,10 +129,10 @@ public class ProtocolAppConsolidationPostprocessor {
     element.removeAttribute(AppUtils.ADDITION_ATTR);
     element.removeChild(AppUtils.INPUT_TAG);
     element.removeChild(AppUtils.OUTPUT_TAG);
-    Document document = new Document();
-    document.addContent(element);
+    Document tmpDocument = new Document();
+    tmpDocument.addContent(element);
     XMLOutputter xmlOut = new XMLOutputter();
-    return xmlOut.outputString(document).hashCode();
+    return xmlOut.outputString(tmpDocument).hashCode();
   }
 
 }

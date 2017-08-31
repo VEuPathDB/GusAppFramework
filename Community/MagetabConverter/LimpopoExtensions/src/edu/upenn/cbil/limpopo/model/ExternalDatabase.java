@@ -53,6 +53,7 @@ public class ExternalDatabase {
     return filtered + "|" + this.version;
   }
   
+  @Override
   public String toString() {
     return ReflectionToStringBuilder.toString(this);
   }

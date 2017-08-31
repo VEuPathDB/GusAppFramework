@@ -12,6 +12,7 @@ public class FactorValueComparator implements Comparator<FactorValue> {
   /**
    * Factor Value comparison - insures comparison based upon row first and column second. 
    */
+  @Override
   public int compare(FactorValue obj1, FactorValue obj2) {
     int result = 0;
     result = obj1.getRow().compareTo(obj2.getRow());  
