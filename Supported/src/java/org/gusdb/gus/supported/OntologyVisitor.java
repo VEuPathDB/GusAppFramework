@@ -89,7 +89,10 @@ public class OntologyVisitor {
 	     		Matcher m = oboIdPattern.matcher(termIRIstr);
 	    		if (m.find()) {
 	    			termId = m.group(2);
-	    		}
+	    		} else if (termIRIstr.startsWith("http://purl.bioontology.org/ontology/")) {
+			    termId = termIRIstr.replace("http://purl.bioontology.org/ontology/", "");
+			    termId = termId.replace("/", "_");
+			}
 	     		
 	    		// get term type: class or individual
 	    		String type = "class";
