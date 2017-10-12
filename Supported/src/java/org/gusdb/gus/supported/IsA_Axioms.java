@@ -94,6 +94,12 @@ public class IsA_Axioms {
 		Matcher m = oboIdPattern.matcher(iriStr);
 		if (m.find()) {
 			id = m.group(2);
+		} else if (iriStr.startsWith("http://purl.bioontology.org/ontology/")) {
+		    id = iriStr.replace("http://purl.bioontology.org/ontology/", "");
+		    id = id.replace("/", "_");
+		} else if (iriStr.lastIndexOf('#') > 0) {
+		    int sIndex = iriStr.lastIndexOf('#');
+		    if (sIndex < iriStr.length())  id = iriStr.substring(iriStr.lastIndexOf('#')+1);
 		}
 
 		return id;
