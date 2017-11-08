@@ -989,7 +989,11 @@ sub create_or_update_implementation {
       CBIL::Util::Disp::Display(\@apks,     '\@apks: ');
    } else {
       $alg_gus = GUS::Model::Core::Algorithm->new($alg_h) if $alg_h;
+      $alg_gus->retrieveFromDB();# needed because of race condition
+
       my $alg_imp_gus = GUS::Model::Core::AlgorithmImplementation->new($alg_imp_h);
+      $alg_imp_gus->retrieveFromDB();# needed because of race condition
+
       $alg_imp_gus->setParent($alg_gus);
       foreach my $apk (sort {
          lc $a->{algorithm_param_key} cmp lc $b->{algorithm_param_key}
