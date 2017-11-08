@@ -111,10 +111,12 @@
       <property name="component" value="DBAdmin"/>
     </ant>
 
+    <!-- IMPORTANT CAUTION:  if you update the ojdbc driver here,
+	 do so in all other build.xml files that import the driver,
+	 to prevent conflicts in gus_home
+    -->
     <property environment="env"/>
-    <available file="${env.ORACLE_HOME}/jdbc/lib/ojdbc14.jar" type="file"  property="ojdbc14.present" />
-    <antcall target="copyLocal14Driver"/>
-    <available file="${env.ORACLE_HOME}/jdbc/lib/ojdbc5.jar" type="file"  property="ojdbc5.present" />
+    <available file="${env.ORACLE_HOME}/jdbc/lib/ojdbc6.jar" type="file"  property="ojdbc5.present" />
     <antcall target="copyLocal5Driver"/>
 
   </target>  
@@ -151,7 +153,6 @@
      
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core"/>
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD"/>
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes"/>
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS"/>
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study"/>
@@ -161,7 +162,6 @@
       <delete>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core" includes="*.java, *.class"/>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" includes="*.java, *.class"/>
-        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD" includes="*.java, *.class"/>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes" includes="*.java, *.class"/>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS" includes="*.java, *.class"/>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study" includes="*.java, *.class"/>
@@ -182,7 +182,6 @@
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS"/>
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes"/>
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS"/>
-        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/RAD"/>
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Study"/>
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/PROT"/>
 
@@ -202,10 +201,6 @@
            <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS"/>
            <mapper type="glob" from="*.java.man" to="*.java"/>
         </copy>
-        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD" overwrite="true">
-           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/RAD"/>
-           <mapper type="glob" from="*.java.man" to="*.java"/>
-        </copy>
         <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/PROT" overwrite="true">
            <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/PROT"/>
            <mapper type="glob" from="*.java.man" to="*.java"/>
@@ -222,7 +217,6 @@
 
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/RAD"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/PROT"/>
@@ -230,7 +224,6 @@
 
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/Core"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/DoTS"/>
-     <mkdir dir="${targetDir}/lib/perl/GUS/Model/RAD"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/SRes"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/TESS"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/PROT"/>
@@ -239,14 +232,12 @@
      <delete>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS" includes="*.pm"/>
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/RAD" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/Study" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/PROT" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/Core" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/DoTS" includes="*.pm"/>
-       <fileset dir="${targetDir}/lib/perl/GUS/Model/RAD" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/SRes" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/TESS" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/PROT" includes="*.pm"/>
@@ -266,7 +257,6 @@
 
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/RAD"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Study"/>
@@ -279,11 +269,6 @@
 
      <copy todir="${projectsDir}/GUS/Model/lib/perl/DoTS">
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
-       <mapper type="glob" from="*.pm.man" to="*.pm"/>
-     </copy>
-
-     <copy todir="${projectsDir}/GUS/Model/lib/perl/RAD">
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/RAD"/>
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
      </copy>
 
@@ -409,19 +394,6 @@
     </ant>
   </target>
   
- <target name="GUS/RAD-Installation" depends="ProjectTree">
-    <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="RAD"/>
-    </ant>
-  </target>
-
-  <target name="copyLocal14Driver" if="ojdbc14.present">
-    <echo>Installing local ojdbc14.jar from ${env.ORACLE_HOME}/jdbc/lib/ojdbc14.jar</echo>
-    <copy  file="${env.ORACLE_HOME}/jdbc/lib/ojdbc14.jar"
-     toDir="${targetDir}/lib/java/db_driver"
-     overwrite="true"/>
-  </target>
 
   <target name="copyLocal5Driver" if="ojdbc5.present">
     <echo>Installing local ojdbc5.jar from ${env.ORACLE_HOME}/jdbc/lib/ojdbc5.ja
