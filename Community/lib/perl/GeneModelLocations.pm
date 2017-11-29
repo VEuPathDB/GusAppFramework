@@ -194,7 +194,7 @@ sub bioperlFeaturesFromGeneSourceId {
           $phase = 0;
         }
 
-        $prevCdsLength += $pExon->{strand} * ($pExon->{cds_end} - $pExon->{cds_start}) + 1;
+        $prevCdsLength += $pExon->{cds_end} - $pExon->{cds_start} + 1;
 
         $minCdsLoc = $pExon->{cds_start} if($pExon->{cds_start}) < $minCdsLoc;
         $maxCdsLoc = $pExon->{cds_end} if($pExon->{cds_end}) > $maxCdsLoc;
