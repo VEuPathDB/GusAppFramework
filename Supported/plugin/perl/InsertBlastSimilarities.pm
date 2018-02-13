@@ -9,7 +9,7 @@ use GUS::Model::DoTS::Protein;
 use GUS::Model::DoTS::ExternalAASequence;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::PluginMgr::Plugin;
-
+use Data::Dumper;
   my $purposeBrief = 'Load blast results from a condensed file format into the D
 oTS.Similarity table.';
 
@@ -583,7 +583,8 @@ sub insertSubjects {
       my $is_in = $queryobj->retrieveFromDB;
       
       if (! $is_in) {
-	die "can't get the GUS entry for query, $query_id!\n";
+	print Dumper  "can't get the GUS entry for query, $query_id!\n";
+	next;
       }
       else {
 	$s->{query_id} = $queryobj->getId;
