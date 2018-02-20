@@ -165,7 +165,8 @@ sub loadSynonyms {
 		my $ncbi_tax_id = $1;
 		my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id => $ncbi_tax_id });
 		unless ($taxon->retrieveFromDB()){
-			$self->error("unable to find ncbi_tax_id  $ncbi_tax_id ");
+		    next;
+		#	$self->error("unable to find ncbi_tax_id  $ncbi_tax_id ");
 		}
 		my $newTaxonName = GUS::Model::SRes::TaxonName->new({name_class => "synonym", name => $synonym });									
 		$newTaxonName->setParent($taxon);
