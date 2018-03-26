@@ -1059,8 +1059,8 @@ sub makeGusFeatureSkeleton {
 	&$method($self, $bioperlFeature, $naSequenceId, $dbRlsId, $taxonId,$isPredicted);
     };
 
-   # my $err = $@; # this is an empty string but it still defined. 
-   # if ($err =~/\S+/) { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::makeGusSkeleton'.  Error:\n $err\n"; }
+    my $err = $@; # this is an empty string but it still defined. 
+    if ($err) { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::makeGusSkeleton'.  Error:\n $err\n"; }
    # else { die "Jane the error is $err\n";}
   }
 
