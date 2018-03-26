@@ -1060,8 +1060,8 @@ sub makeGusFeatureSkeleton {
     };
 
     my $err = $@; # this is an empty string but it still defined. 
-    if ($err ne "") { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::makeGusSkeleton'.  Error:\n $err\n"; }
-    else { die "Jane the error is $err\n";}
+    if ($err) { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::makeGusSkeleton'.  Error:\n $err\n"; }
+    #else { die "Jane the error is $err\n";}
   }
 
   return $gusSkeleton;
