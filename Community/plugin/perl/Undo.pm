@@ -196,40 +196,40 @@ sub run{
 }
 
 sub deleteFromTable{
-  my ($self, $tableName, $algInvIdColumnName, $limit) = @_;
-  
+  my ($self, $tableName, $algInvIdColumnName, $chunkSize) = @_;
+
   my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
-  my $sql1 =
-    "SELECT COUNT(*) FROM $tableName
-       WHERE $algInvIdColumnName IN ($algoInvocIds)";
-  my $stmt = $self->{dbh}->prepareAndExecute($sql1);
-  my  ($rows) = $stmt->fetchrow_array();   
+
+  $chunkSize = 100000 unless $chunkSize;
+
   if ($self->{commit} == 1) {
-    while ($rows) {
-      my $sql2 = 
-	"DELETE FROM $tableName
-         WHERE $algInvIdColumnName IN ($algoInvocIds)";
-      $sql2 .= " AND rownum<=$limit" if ($limit);
 
-      warn "\n$sql2\n" if $self->getArg('verbose');       
-      $self->{dbh}->do($sql2) || die "Failed running sql:\n$sql2\n";
+    my $deleteSql = <<SQL;
+      delete
+      from $tableName
+      where $algInvIdColumnName in ($algoInvocIds)
+        and rownum <= $chunkSize
+SQL
+    warn "\n$deleteSql\n" if $self->getArg('verbose');
+    my $deleteStmt = $self->{dbh}->prepare($deleteSql) or die $self->{dbh}->errstr;
+    my $rowsDeleted = 0;
 
-      my $numDeleted = $rows;
-
-      if ($limit) {
-	$numDeleted = $rows>10000 ? 10000 : $rows;
-      }
-
-      $self->log("Deleted $numDeleted rows from $tableName");              
-      
+    while (1) {
+      my $rtnVal = $deleteStmt->execute() or die $self->{dbh}->errstr;
+      $rowsDeleted += $rtnVal;
+      $self->log("Deleted $rowsDeleted rows from $tableName");
       $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
-      $self->log("Committed $numDeleted deletions from $tableName");
-      $stmt = $self->{dbh}->prepareAndExecute($sql1);
-      ($rows) = $stmt->fetchrow_array();        
+      last if $rtnVal < $chunkSize;
     }
-  }
-      
-  else {
+  } else {
+    # commit off -- query for row count and log it
+    my $queryStmt = $self->{dbh}->prepare(<<SQL) or die $self->{dbh}->errstr;
+      select count(*)
+      from $tableName
+      where $algInvIdColumnName in ($algoInvocIds)
+SQL
+    $queryStmt->execute() or die $self->{dbh}->errstr;
+    my  ($rows) = $queryStmt->fetchrow_array();
     $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
   }
 }
