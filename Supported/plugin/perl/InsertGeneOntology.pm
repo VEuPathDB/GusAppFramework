@@ -234,6 +234,7 @@ sub _loadRelationships {
 		subject_term_id   => $childTerm->getOntologyTermId(),
 		predicate_term_id => $predicate->getOntologyTermId(),
 		object_term_id    => $parentTerm->getOntologyTermId(),
+                external_database_release_id => $extDbRlsId,
 							});
 
 	$ontologyRelationship->submit();
@@ -262,6 +263,7 @@ sub _processRelationship {
       subject_term_id   => $childTerm->getOntologyTermId(),
       predicate_term_id => $predicate->getOntologyTermId(),
       object_term_id    => $parentTerm->getOntologyTermId(),
+      external_database_release_id => $extDbRlsId,
     });
 
   $ontologyRelationship->submit();
@@ -274,11 +276,12 @@ sub _retrieveRelationshipPredicate {
   my $predicateTerm = GUS::Model::SRes::OntologyTerm->new({
     name                         => $type,
     ontology_term_type_id        => $self->_getOntologyTermTypeId('relationship'),
-    external_database_release_id => $extDbRlsId,
   });
 
-  $predicateTerm->submit()
-    unless ($predicateTerm->retrieveFromDB());
+  # Try to retrieve, updateExtDbRls, submit
+  $predicateTerm->retrieveFromDB();
+  $predicateTerm->setExternalDatabaseReleaseId($extDbRlsId);
+  $predicateTerm->submit();    
 
   return $predicateTerm;
 }
@@ -292,7 +295,7 @@ sub _retrieveOntologyTerm {
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
     source_id                    => $id,
     ontology_term_type_id        => $self->_getOntologyTermTypeId('class'),
-    external_database_release_id => $extDbRlsId,
+#    external_database_release_id => $extDbRlsId,
   });
 
   unless ($ontologyTerm->retrieveFromDB()) {
@@ -301,7 +304,7 @@ sub _retrieveOntologyTerm {
 
   # some of these may not actually yet be available, if we've been
   # called while building a relationship:
-
+  $ontologyTerm->setExternalDatabaseReleaseId($extDbRlsId);
   $ontologyTerm->setName($name) if length($name);
   $ontologyTerm->setDefinition($def) if length($def);
   $ontologyTerm->setNotes($comment) if length($comment);
@@ -412,15 +415,15 @@ sub _updateAncestors {
 
   my $mf = GUS::Model::SRes::OntologyTerm->new({
     name                        => 'molecular_function',
-    external_database_release_id => $extDbRlsId,
+#    external_database_release_id => $extDbRlsId,
   });
   my $cc = GUS::Model::SRes::OntologyTerm->new({
     name                        => 'cellular_component',
-    external_database_release_id => $extDbRlsId,
+#    external_database_release_id => $extDbRlsId,
   });
   my $bp = GUS::Model::SRes::OntologyTerm->new({
     name                        => 'biological_process',
-    external_database_release_id => $extDbRlsId,
+#    external_database_release_id => $extDbRlsId,
   });
 
   if ($mf->retrieveFromDB()) {
@@ -449,7 +452,7 @@ sub _updateAncestors {
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
        source_id                        => $sourceId,
-       external_database_release_id => $extDbRlsId
+#       external_database_release_id => $extDbRlsId
     });
     if ($ontologyTerm->retrieveFromDB()) {
       $ontologyTerm->setAncestorTermId($ancestorIds{$ancestors->{$goId}});
@@ -508,6 +511,7 @@ sub _calcTransitiveClosure {
                subject_term_id   => $key1,
                predicate_term_id => $predicate->getOntologyTermId(),
                object_term_id    => $key2,
+               external_database_release_id => $extDbRlsId,
              });
 
 	  $ontologyRelationship->submit();
