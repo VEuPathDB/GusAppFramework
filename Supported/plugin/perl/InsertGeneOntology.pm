@@ -580,6 +580,6 @@ sub undoTables {
 
   return ('SRes.OntologyRelationship',
 	  'SRes.OntologySynonym',
-	  'SRes.OntologyTerm',
+	  #'SRes.OntologyTerm',
 	 );
 }
