@@ -75,9 +75,6 @@ public class OntologyVisitor {
 	public static ArrayList<TermObject> getOWLTermInfos (OWLOntologyManager manager, OWLOntology ont) {
 		OWLDataFactory df = manager.getOWLDataFactory();
 			
-		String idPattern = "^(http://.+[/|#])([A-Za-z_]{2,10}_[0-9]{1,9})$";
-		Pattern oboIdPattern = Pattern.compile(idPattern);
-		
 		ArrayList<TermObject> termObjects = new ArrayList<TermObject> ();
 	
 	    for (OWLEntity ent : ont.getSignature()) {	    	
@@ -85,14 +82,7 @@ public class OntologyVisitor {
 	     		String termIRIstr = ent.getIRI().toString();
 
 	     		// get term id
-	     		String termId = termIRIstr;
-	     		Matcher m = oboIdPattern.matcher(termIRIstr);
-	    		if (m.find()) {
-	    			termId = m.group(2);
-	    		} else if (termIRIstr.startsWith("http://purl.bioontology.org/ontology/")) {
-			    termId = termIRIstr.replace("http://purl.bioontology.org/ontology/", "");
-			    termId = termId.replace("/", "_");
-			}
+	     		String termId = getID(termIRIstr);
 	     		
 	    		// get term type: class or individual
 	    		String type = "class";
@@ -186,6 +176,27 @@ public class OntologyVisitor {
 	    }
 		
 		return termObjects;
+	}
+
+	public static String getID (String iriStr) {
+		String id = iriStr;
+		String idPattern = "^(http://.+[/|#])([A-Za-z_]{2,10}_[0-9]{1,9})$";
+		Pattern oboIdPattern = Pattern.compile(idPattern);
+		
+		Matcher m = oboIdPattern.matcher(iriStr);
+		if (m.find()) {
+			id = m.group(2);
+		} else if (iriStr.startsWith("http://purl.bioontology.org/ontology/")) {
+			id = iriStr.replace("http://purl.bioontology.org/ontology/", "");
+			id = id.replace("/", "_");
+		} else if (iriStr.startsWith("http://purl.obolibrary.org/obo/")) {
+			id = iriStr.replace("http://purl.obolibrary.org/obo/", "");	
+		} else if (iriStr.lastIndexOf('#') > 0) {
+			int index = iriStr.lastIndexOf('#');
+			if (index < iriStr.length())	id = iriStr.substring(iriStr.lastIndexOf('#')+1);	
+		}
+		
+		return id;
 	}
 	
 	public static String arrayListToString(ArrayList<String> list) {
