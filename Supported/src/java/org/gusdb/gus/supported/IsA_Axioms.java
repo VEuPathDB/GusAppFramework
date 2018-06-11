@@ -97,6 +97,8 @@ public class IsA_Axioms {
 		} else if (iriStr.startsWith("http://purl.bioontology.org/ontology/")) {
 		    id = iriStr.replace("http://purl.bioontology.org/ontology/", "");
 		    id = id.replace("/", "_");
+		} else if (iriStr.startsWith("http://purl.obolibrary.org/obo/")) {
+		    id = iriStr.replace("http://purl.obolibrary.org/obo/", "");	
 		} else if (iriStr.lastIndexOf('#') > 0) {
 		    int sIndex = iriStr.lastIndexOf('#');
 		    if (sIndex < iriStr.length())  id = iriStr.substring(iriStr.lastIndexOf('#')+1);
