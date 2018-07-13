@@ -41,7 +41,6 @@ sub read {
 
   #initialize parser
   # ===================================
-  my $parser = new XML::LibXML;
   my $parser = XML::LibXML->new(load_ext_dtd => 0);
   my $doc = $parser->parse_file($filename);
   my $rid = 0;
