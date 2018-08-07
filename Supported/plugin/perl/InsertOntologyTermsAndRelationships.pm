@@ -39,6 +39,14 @@ my $argsDeclaration =
 	     constraintFunc => undef,
 	   }),
 
+ stringArg({ descr => 'Owl Reader Class',
+	     name  => 'owlReader',
+	     isList    => 0,
+	     reqd  => 0,
+	     constraintFunc => undef,
+	   }),
+
+
  stringArg({ descr => '',
 	     name  => 'relTypeExtDbRlsSpec',
 	     isList    => 0,
@@ -135,40 +143,22 @@ sub run {
   my ($self) = @_;
 
   my $file = $self->getArg('inFile');
-
+	
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   $self->setExtDbRls($extDbRlsId);
-
-  # build classpath
-  opendir(D, "$ENV{GUS_HOME}/lib/java") || $self->error("Can't open $ENV{GUS_HOME}/lib/java to find .jar files");
-  my @jars;
-  foreach my $file (readdir D){
-    next if ($file !~ /\.jar$/);
-    push(@jars, "$ENV{GUS_HOME}/lib/java/$file");
-  }
-  my $classpath = join(':', @jars);
-
-  # This will create a file appending ".out" to the inFile 
-  my $systemResult = system("java -classpath $classpath org.gusdb.gus.supported.OntologyVisitor $file");
-  unless($systemResult / 256 == 0) {
-    $self->error("Could not Parse OWL file $file");
-  }
-
-  my $systemResult = system("java -classpath $classpath org.gusdb.gus.supported.IsA_Axioms $file");
-  unless($systemResult / 256 == 0) {
-    $self->error("Could not Parse OWL file $file");
-  }
-
-  my $termLines = $self->readFile($file . "_terms.txt");
-  my $relationshipLines = $self->readFile($file . "_isA.txt");
-
-  my $terms = $self->doTerms($termLines);
+	my $owlReaderClass = $self->getArg('owlReader') || "GUS::Supported::OwlAPIReader";
+	$self->log("Loading $file using $owlReaderClass");
+	eval "require $owlReaderClass";
+	if($@){ die "Cannot load $owlReaderClass: $@";}
+	my $owlReader = $owlReaderClass->new($file);
+	die "Cannot use $owlReaderClass" unless $owlReader;
+  my $terms = $self->doTerms($owlReader);
   $self->undefPointerCache();
   $self->log("Inserted ", scalar(@$terms), " SRes::OntologyTerms");
 
   my $relationshipTypes = $self->getRelationshipTypes();
 
-  my $relationships = $self->doRelationships($terms, $relationshipLines, $relationshipTypes);
+  my $relationships = $self->doRelationships($terms, $owlReader, $relationshipTypes);
   $self->submitObjectList($relationships);
 
   my $termCount = scalar(@$terms);
@@ -231,7 +221,7 @@ B<Return Type:>
 =cut
 
 sub doTerms {
-  my ($self, $lines) = @_;
+  my ($self, $owlReader) = @_;
 
   my $extDbRlsId = $self->getExtDbRls();
   my @ontologyTerms;
@@ -240,14 +230,21 @@ sub doTerms {
 
   my $isPreferred = $self->getArg('isPreferred') eq 'true' ? 1 : 0;
 
-  foreach my $line (@$lines) {
-    my @a = split(/\t/, $line);
-    my $sourceId = $a[0];
-    my $name = $a[1];
-    my $definition = $a[2];
-    my $synonyms = $a[3];
-    my $uri = $a[4];
-    my $isObsolete = $a[5];
+	my $terms = $owlReader->getTerms();
+	my $displayOrder = $owlReader->getDisplayOrder();
+
+  foreach my $term (@$terms) {
+		my $sourceId = $term->{sid};
+    my $name = $term->{name};
+    my $definition;
+		if(ref $term->{def} eq 'ARRAY'){
+			 $definition = join(",",@{$term->{def}});
+		}
+		else{
+			 $definition = $term->{def};
+		}
+    my $uri = $term->{uri};
+    my $isObsolete = $term->{obs};
 
     next if($seen{$sourceId}); # in case there are dups
     $seen{$sourceId} = 1;
@@ -289,7 +286,7 @@ sub doTerms {
 
     }
 
-    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId});
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
     $ontologySynonym->setParent($ontologyTerm);
     $ontologySynonym->setIsPreferred(1) if($isPreferred);
 
@@ -329,15 +326,18 @@ B<Return Type:>
 =cut
 
 sub doRelationships {
-  my ($self, $terms, $lines, $relationshipTypes) = @_;
+  my ($self, $terms, $owlReader, $relationshipTypes) = @_;
 
   my @relationships;
   my $count = 0;
 
   my $extDbRlsId = $self->getExtDbRls();
 
-  foreach my $line (@$lines) {
-    my ($subject, $type, $object) = split(/\t/, $line);
+	my $relationships = $owlReader->getRelationships();
+
+  foreach my $triple (@$relationships) {
+    my ($subject, $type, $object) = ($triple->{subject},$triple->{type}, $triple->{object});
+		my $line = join(" ", $subject, $type, $object);
 
     my $subjectTermId = $self->getTermIdFromSourceId($terms, $subject);
     my $objectTermId = $self->getTermIdFromSourceId($terms, $object);
@@ -427,7 +427,7 @@ sub getRelationshipTypes {
 
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
 
-  my $sql = "select name, source_id, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf')";
+  $sql = "select name, source_id, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf')";
   my $sh = $self->getQueryHandle()->prepare($sql);
   $sh->execute();
 
