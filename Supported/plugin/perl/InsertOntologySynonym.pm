@@ -169,7 +169,10 @@ sub loadSynonyms {
 		}
 		my $newTaxonName = GUS::Model::SRes::TaxonName->new({name_class => "synonym", name => $synonym });									
 		$newTaxonName->setParent($taxon);
-		$newTaxonName->submit();	
+
+                unless($newTaxonName->retrieveFromDB()) {
+                  $newTaxonName->submit();	
+                }
 	}else{
 	    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
      	new({
