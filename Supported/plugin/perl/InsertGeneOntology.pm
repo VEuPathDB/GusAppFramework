@@ -276,6 +276,7 @@ sub _retrieveRelationshipPredicate {
   my $predicateTerm = GUS::Model::SRes::OntologyTerm->new({
     name                         => $type,
     ontology_term_type_id        => $self->_getOntologyTermTypeId('relationship'),
+    source_id                    => "GOPRED_$type"
   });
 
   # Try to retrieve, updateExtDbRls, submit
