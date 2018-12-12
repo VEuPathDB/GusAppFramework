@@ -146,7 +146,7 @@ sub run {
 	
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   $self->setExtDbRls($extDbRlsId);
-	my $owlReaderClass = $self->getArg('owlReader') || "GUS::Supported::OwlAPIReader";
+	my $owlReaderClass = $self->getArg('owlReader') || "ApiCommonData::Load::OwlReader";
 	$self->log("Loading $file using $owlReaderClass");
 	eval "require $owlReaderClass";
 	if($@){ die "Cannot load $owlReaderClass: $@";}
