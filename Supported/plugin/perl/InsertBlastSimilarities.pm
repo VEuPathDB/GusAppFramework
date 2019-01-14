@@ -619,6 +619,8 @@ sub insertSubjects {
            
       my $is_in = $subjectobj->retrieveFromDB;
       
+      print STDERR "\$dbRlsId = $dbRlsId.....\$subject_id = $subject_id.....\$subjectTable = $subjectTable\n";
+
       if (! $is_in) {
 	die "can't get the GUS entry for subject, $subject_id!\n";
       }
