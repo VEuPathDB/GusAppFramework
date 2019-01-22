@@ -146,22 +146,23 @@ sub run {
 	
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   $self->setExtDbRls($extDbRlsId);
-	my $owlReaderClass = $self->getArg('owlReader') || "ApiCommonData::Load::OwlReader";
-	$self->log("Loading $file using $owlReaderClass");
-	eval "require $owlReaderClass";
-	if($@){ die "Cannot load $owlReaderClass: $@";}
-	my $owlReader = $owlReaderClass->new($file);
-	die "Cannot use $owlReaderClass" unless $owlReader;
-  my $terms = $self->doTerms($owlReader);
+  my $owlReaderClass = $self->getArg('owlReader') || "ApiCommonData::Load::OwlReader";
+  $self->log("Loading $file using $owlReaderClass");
+  eval "require $owlReaderClass";
+  if($@){ die "Cannot load $owlReaderClass: $@";}
+  my $owlReader = $owlReaderClass->new($file);
+  die "Cannot use $owlReaderClass" unless $owlReader;
+  my $termIds = $self->doTerms($owlReader);
+  
+  my $termCount = keys %$termIds;
   $self->undefPointerCache();
-  $self->log("Inserted ", scalar(@$terms), " SRes::OntologyTerms");
+  $self->log("Inserted ", $termCount, " SRes::OntologyTerms");
 
   my $relationshipTypes = $self->getRelationshipTypes();
 
-  my $relationships = $self->doRelationships($terms, $owlReader, $relationshipTypes);
+  my $relationships = $self->doRelationships($termIds, $owlReader, $relationshipTypes);
   $self->submitObjectList($relationships);
 
-  my $termCount = scalar(@$terms);
   my $relationshipCount = scalar(@$relationships);
 
   return "Inserted $termCount SRes::OntologyTerms and $relationshipCount SRes::OntologyRelationships";
@@ -224,71 +225,71 @@ sub doTerms {
   my ($self, $owlReader) = @_;
 
   my $extDbRlsId = $self->getExtDbRls();
-  my @ontologyTerms;
 
   my %seen;
 
   my $isPreferred = $self->getArg('isPreferred') eq 'true' ? 1 : 0;
 
-	my $terms = $owlReader->getTerms();
-	my $displayOrder = $owlReader->getDisplayOrder();
+  my $terms = $owlReader->getTerms();
+  my $displayOrder = $owlReader->getDisplayOrder();
 
+  my %termIds;
   foreach my $term (@$terms) {
-		my $sourceId = $term->{sid};
-    my $name = $term->{name};
-    my $definition;
-		if(ref $term->{def} eq 'ARRAY'){
-			 $definition = join(",",@{$term->{def}});
-		}
-		else{
-			 $definition = $term->{def};
-		}
-    my $uri = $term->{uri};
-    my $isObsolete = $term->{obs};
+      my $sourceId = $term->{sid};
+      my $name = $term->{name};
+      my $isObsolete = $term->{obs};
 
-    next if($seen{$sourceId}); # in case there are dups
-    $seen{$sourceId} = 1;
-    next if($isObsolete eq 'true');
-    next unless($name);
+      next if($seen{$sourceId}); # in case there are dups
+      $seen{$sourceId} = 1;
+      next if($isObsolete eq 'true');
+      next unless($name);
 
-    my $length = length($name);
-    if ($length > 400) {
-      $name = substr($name,0,397) . "...";
-      print STDERR "Term $name was $length chars, truncated to 400\n";
-    }
-
-    $length = length($definition);
- 
-    if ($length > 2000) {
-      $definition = substr($definition,0,2000) . " ...";
-      print STDERR "Definiton for term $name was $length chars, trucated to 2000\n";
-    }
-
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-      new({           source_id => $sourceId,
-          });
-
-    if($ontologyTerm->retrieveFromDB()) {
-
-      if($isPreferred) {
-        my $dbName = $ontologyTerm->getName();
-        my $dbDef = $ontologyTerm->getDefinition();
-
-        $ontologyTerm->setName($name);
-        $ontologyTerm->setDefinition($definition);
-        print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
+      my $definition;
+      if(ref $term->{def} eq 'ARRAY'){
+	  $definition = join(",",@{$term->{def}});
       }
-    }
-    else {
-      $ontologyTerm->setName($name);
-      $ontologyTerm->setUri($uri);
-      $ontologyTerm->setDefinition($definition);
+      else{
+	  $definition = $term->{def};
+      }
+      my $uri = $term->{uri};
+      
+      my $length = length($name);
+      if ($length > 400) {
+	  $name = substr($name,0,397) . "...";
+	  print STDERR "Term $name was $length chars, truncated to 400\n";
+      }
 
-    }
+      $length = length($definition); 
+      if ($length > 2000) {
+	  $definition = substr($definition,0,2000) . " ...";
+	  print STDERR "Definiton for term $name was $length chars, trucated to 2000\n";
+      }
 
-    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
-    $ontologySynonym->setParent($ontologyTerm);
-    $ontologySynonym->setIsPreferred(1) if($isPreferred);
+      my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
+	  new({           source_id => $sourceId,
+	      });
+
+      if($ontologyTerm->retrieveFromDB()) {
+
+	  if($isPreferred) {
+	      my $dbName = $ontologyTerm->getName();
+	      my $dbDef = $ontologyTerm->getDefinition();
+
+	      $ontologyTerm->setName($name);
+	      $ontologyTerm->setDefinition($definition);
+	      print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
+	  }
+      }
+      else {
+	  $ontologyTerm->setName($name);
+	  $ontologyTerm->setUri($uri);
+	  $ontologyTerm->setDefinition($definition);
+
+      }
+
+      my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
+      $ontologySynonym->setParent($ontologyTerm);
+      $ontologySynonym->setIsPreferred(1) if($isPreferred);
 
     # my @synArr = split(/,/, $synonyms);
     # for (my $i=0; $i<@synArr; $i++) {
@@ -297,12 +298,12 @@ sub doTerms {
     #   $ontologySynonym->setParent($ontologyTerm);
     # }
 
-    $ontologyTerm->submit();
-    push(@ontologyTerms, $ontologyTerm);
-    $self->undefPointerCache();
+      $ontologyTerm->submit();
+      $termIds{$ontologyTerm->getSourceId()}=$ontologyTerm->getId();
+      $self->undefPointerCache();
   }
 
-  return \@ontologyTerms;
+  return \%termIds;
 }
 
 
@@ -326,21 +327,21 @@ B<Return Type:>
 =cut
 
 sub doRelationships {
-  my ($self, $terms, $owlReader, $relationshipTypes) = @_;
+  my ($self, $termIds, $owlReader, $relationshipTypes) = @_;
 
   my @relationships;
   my $count = 0;
 
   my $extDbRlsId = $self->getExtDbRls();
 
-	my $relationships = $owlReader->getRelationships();
+  my $relationships = $owlReader->getRelationships();
 
   foreach my $triple (@$relationships) {
     my ($subject, $type, $object) = ($triple->{subject},$triple->{type}, $triple->{object});
-		my $line = join(" ", $subject, $type, $object);
+    my $line = join(" ", $subject, $type, $object);
 
-    my $subjectTermId = $self->getTermIdFromSourceId($terms, $subject);
-    my $objectTermId = $self->getTermIdFromSourceId($terms, $object);
+    my $subjectTermId = $$termIds{$subject};
+    my $objectTermId = $$termIds{$object};
 
     my $relationshipTypeId = $relationshipTypes->{$type};
     unless($relationshipTypeId) {
