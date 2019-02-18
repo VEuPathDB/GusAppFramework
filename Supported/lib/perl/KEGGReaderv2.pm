@@ -39,7 +39,7 @@ my ($rxnDotJson);
 
 sub getCommonFile {
 	my ($ECFile, $workplacePath) = @_;
-	my $commonECFile = $workplacePath ."/workspace/ec/ec$ECFile.xml";
+	my $commonECFile = $workplacePath ."ec/ec$ECFile.xml";
 	return $commonECFile;
 }
 
@@ -337,7 +337,7 @@ sub reactionsjson_tohash{
 my $ec_check = [];
 sub validECs {
     my $ec_file = shift;
-	print $ec_file, "validECs \n";
+	#print $ec_file, "validECs \n";
 	#TODO path to EC file. Will have to give relative to the final folder, i.e. the workflow folder.
 	open(DATA, $ec_file) or die "No file to open. \n";
     while (<DATA>) {
@@ -391,7 +391,7 @@ sub hash_traverse {
 									} 
 								else {
 									# Feeds into below.
-									print $temp_rn, "\n";
+									#print $temp_rn, "\n";
 									$double_rn_hash->{$temp_rn . $rn_add_on} = $validated_ec; 
 								}
 						}
@@ -409,13 +409,13 @@ sub multi_ref_ec_update {
 			for my $item2 (keys $level->{'NODES'}->{$item}){
 				if ($item2 =~ /GRAPHICS/){
 					if ($level->{'NODES'}->{$item}->{$item2}->{'NAME'} ~~ $double_rn_hash){
-						print $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1], " : EC in \n";
+						#print $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1], " : EC in \n";
 						my $to_pop = $level->{'NODES'}->{$item}->{$item2}->{'NAME'};
 						$level->{'NODES'}->{$item}->{$item2}->{'NAME'} = $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1];
-						print Dumper $double_rn_hash->{$to_pop};
+						#print Dumper $double_rn_hash->{$to_pop};
 						pop @{$double_rn_hash->{$to_pop}};
-						print $to_pop, "\n";
-						print Dumper $double_rn_hash->{$to_pop};
+						#print $to_pop, "\n";
+						#print Dumper $double_rn_hash->{$to_pop};
 					}
 				}
 			}
@@ -427,23 +427,39 @@ sub multi_ref_ec_update {
 #sub read {
     my ($self) = @_;
 	my $filename = $self->getFile();
-
+	
 	my $workspacePath = $filename;
-	my @workspacePath = split(/final/, $workspacePath, 2);
+	my @workspacePath = split(/rn/, $workspacePath, 2);
 	$workspacePath = @workspacePath[0];
 
 	my $ECFile = $filename;
 	$ECFile =~m/([\d]{5})/;
 	$ECFile = $1;
 	my $commonECFile = getCommonFile($ECFile, $workspacePath); # Path to the corresponding ec-----.xml file.
-
+	print STDERR "Common EC: ", $commonECFile, "\n";
 	my $returnedHash = {};
 
+	my $ecFilesArray = [];
+	   opendir (DIR, $workspacePath . "ec");
+   	   while (my $file = readdir(DIR)){
+       push $ecFilesArray, $file;
+       }
+	print STDERR Dumper $ecFilesArray;
 	# Checks for another set of files (ec) in workspace. Runs original KEGGReader if no files found.
 	# If files found  runs new subs to update the output hash with incomplete ECs.
-	if (-e $commonECFile){
+	print "Ross ec" . $ECFile . ".xml";
+
+	
+	if($filename =~ m/xml/ && -z $commonECFile){
+	    print "does this";
+			$returnedHash = firstread($filename);
+    }
+			
+	elsif("ec" . $ECFile . ".xml" ~~ $ecFilesArray){
+		print $ECFile, "in array \n";
+		if($filename =~ m/xml/ ){
         #print STDERR "===== File found\n";
-	    my $rxnDotJson =  $workspacePath . "/workspace/reactions.json"; 
+	    my $rxnDotJson =  $workspacePath . "reactions.json"; 
 	    $rn_ec = reactionsjson_tohash($rxnDotJson);
 	    my $zeroHash = firstread($filename);
 	    validECs($commonECFile);
@@ -458,12 +474,9 @@ sub multi_ref_ec_update {
 		    } else {
 			    print STDERR "Unassinged EC numbers:\n";
 			    print STDERR Dumper $double_rn_hash;}
-	}
-	else{
-	    #print STDERR "===== No file\n";
-	    $returnedHash = firstread($filename);
+	  }
     }
-	#print STDERR "HASH:", Dumper $returnedHash;
+
 	$self->setPathwayHash($returnedHash);
 }
 
