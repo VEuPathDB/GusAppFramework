@@ -177,12 +177,12 @@ sub addBibRef {
 sub getPubmedXml {
   my ($self, $pubmedId) = @_;
 
-  my $utils = "http://www.ncbi.nlm.nih.gov/entrez/eutils";
+  my $utils = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 
   my $db     = "pubmed";
   my $report = "xml";
 
-  my $esearch = "$utils/esearch.fcgi?db=$db&retmax=1&usehistory=y&term=";
+  my $esearch = "$utils/esearch.fcgi?api_key=f2006d7a9fa4e92b2931d964bb75ada85a08&db=$db&retmax=1&usehistory=y&term=";
   my $esearchResult = get($esearch . $pubmedId);
 
   $esearchResult =~ 
@@ -192,7 +192,7 @@ sub getPubmedXml {
   my $QueryKey = $2;
   my $WebEnv   = $3;
 
-  my $efetch = "$utils/efetch.fcgi?rettype=$report&retmode=text&retmax=1&db=$db&query_key=$QueryKey&WebEnv=$WebEnv";
+  my $efetch = "$utils/efetch.fcgi?api_key=f2006d7a9fa4e92b2931d964bb75ada85a08&rettype=$report&retmode=text&retmax=1&db=$db&query_key=$QueryKey&WebEnv=$WebEnv";
 	
   my $pubmedXml = get($efetch);
   return($pubmedXml);
