@@ -257,7 +257,6 @@ sub read {
     foreach(@$ar) {
       return 1 if($e == $_);
     }
-
     return 0;
   }
 
@@ -281,6 +280,7 @@ sub read {
   			    if ($item2 =~ /UNIQ_ID/){
   				    if ($level->{'NODES'}->{$item}->{$item2} ~~ $ecHash){
   						$level->{'NODES'}->{$item}->{'GRAPHICS'}->{'NAME'} = $ecHash->{$level->{'NODES'}->{$item}->{$item2}};
+              $level->{'NODES'}->{$item}->{'SOURCE_ID'} = $ecHash->{$level->{'NODES'}->{$item}->{$item2}};
   				    }
   				  }
   		    }
@@ -300,16 +300,11 @@ sub read {
         foreach my $nodeKey(keys $level->{$key}){
           my $name = $level->{'NODES'}->{$nodeKey}->{'GRAPHICS'}->{'NAME'};
 
-          # if ($name =~/^R([\d]{5})/){
-          #   print STDERR "ROSS-Warning - missing ec switch\n";
-          # }
-
           if (($name =~ m/ec:/) && ($level->{'NODES'}->{$nodeKey}->{'GRAPHICS'}->{'NAME'})){
             #print STDERR "$name \n";
             my @ecNumbers = split(/ec:/, $name);
             #print STDERR Dumper @ecNumbers;
             my $id = $nodeKey;
-            print STDERR "$id \n";
             push $edgesToRemove, $id;
             my $ecCount = scalar(@ecNumbers);
 
@@ -322,6 +317,7 @@ sub read {
               $level->{'NODES'}->{$replacementID} = $tempLevel;
               my $insertedEC = @ecNumbers[$i] =~ s/ //r;
               $level->{'NODES'}->{$replacementID}->{'GRAPHICS'}->{'NAME'} = $insertedEC;
+              $level->{'NODES'}->{$replacementID}->{'SOURCE_ID'} = $insertedEC;
               $level->{'NODES'}->{$replacementID}->{'ENTRY_ID'} = $replacementID;
               $level->{'NODES'}->{$replacementID}->{'UNIQ_ID'} = $replacementID;
               ###~~~ If wanting to change the X,Y of the box add in here.~~~###
@@ -437,9 +433,9 @@ sub read {
   		    if ($line =~ /(([\d]{1,2}\.){3}[\d]{1,3})/g){
   			    if ($1 ~~ $ec_check){;}
   			    else {
-                      push $ec_check, $1;
+              push $ec_check, $1;
   					}
-  		    	}
+  		    }
       	}
       }
   }
@@ -451,22 +447,21 @@ sub read {
   	my $level = shift;
   	my $rn_add_on = "...";
 
-  	foreach my $key (keys $level){
+  	foreach my $key (keys $level->{'NODES'}){
   	    my $len_ec = 0;
 
-  		if (ref($level->{$key}) eq 'HASH'){
-  				hash_traverse($level->{$key});
-  		}
-  		else {
-  				if ($key eq 'REACTION'){;}
-  				elsif($key eq 'LINK'){;}
-  				elsif($key eq 'NAME' && $level->{$key} =~ /^R[\d]{5}/ ){
-  						my $temp_rn = $level->{$key};
+  		# if (ref($level->{$key}) eq 'HASH'){
+  		# 		hash_traverse($level->{$key});
+  		# }
+  		# else {
+  				if($level->{'NODES'}->{$key}->{'GRAPHICS'}->{'NAME'} =~ /^R[\d]{5}/ ){
+  						my $temp_rn = $level->{'NODES'}->{$key}->{'GRAPHICS'}->{'NAME'};
   						$temp_rn =~ s/\.\.\.//;
   						$len_ec = scalar (@{$rn_ec->{$temp_rn}});
 
   						if ($len_ec == 1) {
-  							$level->{$key} = $rn_ec->{$temp_rn}[0];
+  							$level->{'NODES'}->{$key}->{'GRAPHICS'}->{'NAME'} = $rn_ec->{$temp_rn}[0];
+                $level->{'NODES'}->{$key}->{'SOURCE_ID'} = $rn_ec->{$temp_rn}[0];
   							}
   						elsif($len_ec > 1) {
   							my @ec_array = @{$rn_ec->{$temp_rn}};
@@ -478,7 +473,8 @@ sub read {
   								}
   								my $validated_ec_len = scalar (@{$validated_ec});
   								if ($validated_ec_len == 1){
-  									$level->{$key} = @{$validated_ec}[0];
+  									$level->{'NODES'}->{$key}->{'GRAPHICS'}->{'NAME'} = @{$validated_ec}[0];
+                    $level->{'NODES'}->{$key}->{'SOURCE_ID'} = @{$validated_ec}[0];
   									}
   								else {
   									# Feeds into below.
@@ -486,9 +482,8 @@ sub read {
   									$double_rn_hash->{$temp_rn . $rn_add_on} = $validated_ec;
   								}
   						}
-  					}
-  			}
-  	}
+  				}
+  		}
   	return $level;
   }
 
@@ -502,7 +497,9 @@ sub read {
   					if ($level->{'NODES'}->{$item}->{$item2}->{'NAME'} ~~ $double_rn_hash){
   						#print $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1], " : EC in \n";
   						my $to_pop = $level->{'NODES'}->{$item}->{$item2}->{'NAME'};
-  						$level->{'NODES'}->{$item}->{$item2}->{'NAME'} = $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1];
+              my $toAdd =  $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1];
+  						$level->{'NODES'}->{$item}->{$item2}->{'NAME'} = $toAdd; # This is broken.
+              $level->{'NODES'}->{$item}->{'SOURCE_ID'} = $toAdd;
   						#print Dumper $double_rn_hash->{$to_pop};
   						pop @{$double_rn_hash->{$to_pop}};
   						#print $to_pop, "\n";
@@ -544,12 +541,9 @@ sub read {
     }
 
   elsif ("ec" . $ECFile . ".xml" ~~ $ecFilesArray){
-  	print $ECFile, "in array \n";
+  	#print $ECFile, "in array \n";
     if($filename =~ m/xml/ ){
     #print STDERR "===== File found\n";
-
-      #my ($parsedEC, $parsedRN) = doubleECNodeDupe($commonECFile, $filename); # ec, rn xml
-
       my $rxnDotJson =  $workspacePath . "reactions.json";
       $rn_ec = reactionsjson_tohash($rxnDotJson);
       my $zeroHash = firstread($filename); # update subs with new xml files.
@@ -557,18 +551,26 @@ sub read {
       my $firstHash = ecrnUpdate($zeroHash, $commonECFile);
       my $secondHash = &hash_traverse($firstHash);
       my $thirdHash = doubleECFix($secondHash);
-      # my $thirdHash = &hash_traverse($firstHash);
       $returnedHash = multi_ref_ec_update($thirdHash);
 
+      foreach my $key (keys $returnedHash->{'NODES'}){
+        #print STDERR $returnedHash->{'NODES'}->{$key}->{'SOURCE_ID'};
+        #print STDERR "\n";
+        if ($returnedHash->{'NODES'}->{$key}->{'SOURCE_ID'} =~ m/R([\d]{5})/){
+         print STDERR "Warning - missing EC number at $key.\n";
+        }
+        }
+
       # Testing for unassigned EC numbers. # This may not work now 20190311 - Ross
-      if (!%{$double_rn_hash}){
-        print STDERR "For $filename: ";
-        print STDERR "All ECs assigned.\n";
-      }
-      else{
-        print STDERR "Unassigned EC numbers:\n";
-        print STDERR Dumper $double_rn_hash;
-      }
+      # if (!%{$double_rn_hash}){
+      #   print STDERR "For $filename: ";
+      #   print STDERR "All ECs assigned.\n";
+      # }
+      # else{
+      #   print STDERR "Unassigned EC numbers:\n";
+      #   print STDERR Dumper $double_rn_hash;
+      # }
+
     }
   }
   $self->setPathwayHash($returnedHash);
