@@ -271,7 +271,7 @@ sub read {
 
   	foreach my $entry (@nodes){
   		my $ecNumber = $entry->getAttribute('name');
-      $ecNumber =~ s/ec://;
+      $ecNumber =~ s/gl:|ec:|cpd:|dr:|path://g;
       $ecHash->{$entry->getAttribute('id')} = $ecNumber;
     }
     foreach my $item (keys $level->{'NODES'}){
