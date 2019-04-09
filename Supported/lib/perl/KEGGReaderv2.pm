@@ -270,24 +270,28 @@ sub read {
     my @nodes = $doc->findnodes('/pathway/entry');
 
   	foreach my $entry (@nodes){
-  		my $ecNumber = $entry->getAttribute('name');
+  	  my $ecNumber = $entry->getAttribute('name');
       $ecNumber =~ s/gl:|ec:|cpd:|dr:|path://g;
       $ecHash->{$entry->getAttribute('id')} = $ecNumber;
     }
     foreach my $item (keys $level->{'NODES'}){
       if ($item =~ /^[\d]{1,3}/){
-  		    for my $item2 (keys $level->{'NODES'}->{$item}){
-  			    if ($item2 =~ /UNIQ_ID/){
-  				    if ($level->{'NODES'}->{$item}->{$item2} ~~ $ecHash){
-  						$level->{'NODES'}->{$item}->{'GRAPHICS'}->{'NAME'} = $ecHash->{$level->{'NODES'}->{$item}->{$item2}};
+        for my $item2 (keys $level->{'NODES'}->{$item}){
+          if ($item2 =~ /UNIQ_ID/){
+            if ($level->{'NODES'}->{$item}->{$item2} ~~ $ecHash){
+              $level->{'NODES'}->{$item}->{'GRAPHICS'}->{'NAME'} = $ecHash->{$level->{'NODES'}->{$item}->{$item2}};
               $level->{'NODES'}->{$item}->{'SOURCE_ID'} = $ecHash->{$level->{'NODES'}->{$item}->{$item2}};
-  				    }
-  				  }
-  		    }
-  	    }
+            }
+            else{
+              #$level->{'NODES'}->{$item}->{'GRAPHICS'}->{'NAME'} = "ROSSTEST"; ;
+              #$level->{'NODES'}->{$item}->{'SOURCE_ID'} = 'ROSSTEST';
+            }
+          }
+        }
       }
-  	return $level;
-  }
+    }
+    return $level;
+    }
 
   sub doubleECFix {
     my($level) = @_;
@@ -295,23 +299,26 @@ sub read {
     my $edgesToRemove = [];
 
     foreach my $key (keys $level){
-      #print STDERR "$key \n";
       if ($key eq 'NODES'){
         foreach my $nodeKey(keys $level->{$key}){
           my $name = $level->{'NODES'}->{$nodeKey}->{'GRAPHICS'}->{'NAME'};
 
-          if (($name =~ m/ec:/) && ($level->{'NODES'}->{$nodeKey}->{'GRAPHICS'}->{'NAME'})){
-            #print STDERR "$name \n";
-            my @ecNumbers = split(/ec:/, $name);
-            #print STDERR Dumper @ecNumbers;
-            my $id = $nodeKey;
-            push $edgesToRemove, $id;
-            my $ecCount = scalar(@ecNumbers);
+          if #((($name =~ m/ec:/) && ($level->{'NODES'}->{$nodeKey}->{'GRAPHICS'}->{'NAME'}))
+              #||
+              (($name =~ m/(([\d]{1,3}\.){3})[\d]{1,3} (([\d]{1,3}\.){3})[\d]{1,3}/) && ($level->{'NODES'}->{$nodeKey}->{'GRAPHICS'}->{'NAME'}))
+              #)
+              {
+
+              my @ecNumbers;
+              @ecNumbers = split(/ /, $name);
+              print STDERR "Ross", Dumper @ecNumbers;
+              my $id = $nodeKey;
+              push $edgesToRemove, $id;
+              my $ecCount = scalar(@ecNumbers);
 
             for(my $i = 0; $i < $ecCount; $i++){
-              my $tempLevel = dclone $level->{'NODES'}->{$id};
+              my $tempLevel = $level->{'NODES'}->{$id};
               my $replacementID = $id . "_" . $i;
-              #print STDERR Dumper $tempLevel, "Ross \n";
 
               # Update NODES hash.
               $level->{'NODES'}->{$replacementID} = $tempLevel;
@@ -326,7 +333,6 @@ sub read {
               if(%{$level->{'REACTIONS'}}){
                 if($level->{'REACTIONS'}->{$id}){
                   my $tempReaction = dclone $level->{'REACTIONS'}->{$id};
-                  #print STDERR Dumper $tempReaction, "Ross \n";
                   $level->{'REACTIONS'}->{$replacementID} = $tempReaction;
                   $level->{'REACTIONS'}->{$replacementID}->{'ENZYMES'} = $replacementID;
                   $level->{'REACTIONS'}->{$replacementID}->{'VERBOSE_NAME'} = $replacementID . "_" . $level->{'REACTIONS'}->{$replacementID}->{'SOURCE_ID'};
@@ -364,22 +370,15 @@ sub read {
 
     if($level->{'EDGES'}){
       foreach my $i (@$edgesToRemove){
-        #print STDERR "ROSS = $i \n"; # TODO Remove old edges.
         foreach my $edge (keys $level->{'EDGES'}){
-          #print STDERR Dumper $edge;
           foreach my $item (keys $level->{'EDGES'}->{$edge}){
-            #print STDERR "$item \n";
-            #print STDERR $level->{'EDGES'}->{$edge}[$item];
-
             if ($level->{'EDGES'}->{$edge}[$item] eq $i){
-              #print STDERR "Match \n";
               splice $level->{'EDGES'}->{$edge}, $item, 1;
             }
           }
         }
       } # End of foreach
     }
-    #print STDERR Dumper $level;
     return $level;
   }
 
@@ -424,7 +423,6 @@ sub read {
   my $ec_check = [];
   sub validECs {
       my $ec_file = shift;
-  	#print $ec_file, "validECs \n";
   	#TODO path to EC file. Will have to give relative to the final folder, i.e. the workflow folder.
   	open(DATA, $ec_file) or die "No file to open. \n";
       while (<DATA>) {
@@ -498,12 +496,15 @@ sub read {
   						#print $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1], " : EC in \n";
   						my $to_pop = $level->{'NODES'}->{$item}->{$item2}->{'NAME'};
               my $toAdd =  $double_rn_hash->{$level->{'NODES'}->{$item}->{$item2}->{'NAME'}}[-1];
-  						$level->{'NODES'}->{$item}->{$item2}->{'NAME'} = $toAdd; # This is broken.
-              $level->{'NODES'}->{$item}->{'SOURCE_ID'} = $toAdd;
-  						#print Dumper $double_rn_hash->{$to_pop};
-  						pop @{$double_rn_hash->{$to_pop}};
-  						#print $to_pop, "\n";
-  						#print Dumper $double_rn_hash->{$to_pop};
+              if (!$toAdd){;}
+              else{
+                $level->{'NODES'}->{$item}->{$item2}->{'NAME'} = $toAdd; # This is broken.
+                $level->{'NODES'}->{$item}->{'SOURCE_ID'} = $toAdd;
+    						#print Dumper $double_rn_hash->{$to_pop};
+    						pop @{$double_rn_hash->{$to_pop}};
+    						#print $to_pop, "\n";
+    						#print Dumper $double_rn_hash->{$to_pop};
+              }
   					}
   				}
   			}
@@ -532,18 +533,14 @@ sub read {
    	   while (my $file = readdir(DIR)){
        push $ecFilesArray, $file;
        }
-  #print STDERR Dumper $ecFilesArray;
   # Checks for another set of files (ec) in workspace. Runs original KEGGReader if no files found.
   # If files found runs new subs to update the output hash with incomplete ECs.
-
   if($filename =~ m/xml/ && (-z $commonECFile | !-e $commonECFile)){
   		$returnedHash = firstread($filename);
     }
 
   elsif ("ec" . $ECFile . ".xml" ~~ $ecFilesArray){
-  	#print $ECFile, "in array \n";
     if($filename =~ m/xml/ ){
-    #print STDERR "===== File found\n";
       my $rxnDotJson =  $workspacePath . "reactions.json";
       $rn_ec = reactionsjson_tohash($rxnDotJson);
       my $zeroHash = firstread($filename); # update subs with new xml files.
@@ -552,14 +549,15 @@ sub read {
       my $secondHash = &hash_traverse($firstHash);
       my $thirdHash = doubleECFix($secondHash);
       $returnedHash = multi_ref_ec_update($thirdHash);
+      #$returnedHash = $zeroHash;
+
+	    print STDERR Dumper $zeroHash;
 
       foreach my $key (keys $returnedHash->{'NODES'}){
-        #print STDERR $returnedHash->{'NODES'}->{$key}->{'SOURCE_ID'};
-        #print STDERR "\n";
         if ($returnedHash->{'NODES'}->{$key}->{'SOURCE_ID'} =~ m/R([\d]{5})/){
          print STDERR "Warning - missing EC number at $key.\n";
         }
-        }
+      }
 
       # Testing for unassigned EC numbers. # This may not work now 20190311 - Ross
       # if (!%{$double_rn_hash}){
