@@ -344,7 +344,7 @@ sub doRelationships {
 
     my $subjectTermId = $$termIds{$subject};
     my $objectTermId = $$termIds{$object};
-    $objectTermId ||= $relationshipTypes->{$type};
+    $objectTermId ||= $relationshipTypes->{$object};
 
     my $relationshipTypeId = $relationshipTypes->{$type};
     unless($relationshipTypeId) {
