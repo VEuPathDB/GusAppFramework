@@ -335,6 +335,8 @@ sub doRelationships {
   my $extDbRlsId = $self->getExtDbRls();
 
   my $relationships = $owlReader->getRelationships();
+	my $multifilters = $owlReader->getMultifilters();
+	push(@{$relationships}, @{$multifilters});
 
   foreach my $triple (@$relationships) {
     my ($subject, $type, $object) = ($triple->{subject},$triple->{type}, $triple->{object});
@@ -428,7 +430,7 @@ sub getRelationshipTypes {
 
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
 
-  $sql = "select name, source_id, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf')";
+  $sql = "select name, source_id, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf','termType')";
   my $sh = $self->getQueryHandle()->prepare($sql);
   $sh->execute();
 
