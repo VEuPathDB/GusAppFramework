@@ -23,42 +23,42 @@ my $argsDeclaration =
 [
 
  fileArg({name           => 'inFile',
-	  descr          => 'A file of Representing Ontology Terms and Relationships.  Currently owl format is Supported.',
-	  reqd           => 1,
-	  mustExist      => 1,
-	  format         => 'rdf statements',
-	  constraintFunc => undef,
-	  isList         => 0, 
-	 }),
+    descr          => 'A file of Representing Ontology Terms and Relationships.  Currently owl format is Supported.',
+    reqd           => 1,
+    mustExist      => 1,
+    format         => 'rdf statements',
+    constraintFunc => undef,
+    isList         => 0, 
+   }),
 
 
  stringArg({ descr => 'Name of the External Database',
-	     name  => 'extDbRlsSpec',
-	     isList    => 0,
-	     reqd  => 1,
-	     constraintFunc => undef,
-	   }),
+       name  => 'extDbRlsSpec',
+       isList    => 0,
+       reqd  => 1,
+       constraintFunc => undef,
+     }),
 
  stringArg({ descr => 'Owl Reader Class',
-	     name  => 'owlReader',
-	     isList    => 0,
-	     reqd  => 0,
-	     constraintFunc => undef,
-	   }),
+       name  => 'owlReader',
+       isList    => 0,
+       reqd  => 0,
+       constraintFunc => undef,
+     }),
 
 
  stringArg({ descr => '',
-	     name  => 'relTypeExtDbRlsSpec',
-	     isList    => 0,
-	     reqd  => 1,
-	     constraintFunc => undef,
-	   }),
+       name  => 'relTypeExtDbRlsSpec',
+       isList    => 0,
+       reqd  => 1,
+       constraintFunc => undef,
+     }),
      enumArg({name => 'isPreferred',
                  descr => 'set the name and definition in ontologyterm; mark ontologysynonym as is_preferred; value must be either true or false',
                  reqd           => 0,
                  isList         => 0,
                  enum => "true,false",
-	  constraintFunc => undef,
+    constraintFunc => undef,
                }),
 
 
@@ -92,12 +92,12 @@ my $failureCases = <<FAIL_CASES;
 FAIL_CASES
 
 my $documentation = { purpose          => $purpose,
-		      purposeBrief     => $purposeBrief,
-		      notes            => $notes,
-		      tablesAffected   => $tablesAffected,
-		      tablesDependedOn => $tablesDependedOn,
-		      howToRestart     => $howToRestart,
-		      failureCases     => $failureCases };
+          purposeBrief     => $purposeBrief,
+          notes            => $notes,
+          tablesAffected   => $tablesAffected,
+          tablesDependedOn => $tablesDependedOn,
+          howToRestart     => $howToRestart,
+          failureCases     => $failureCases };
 
 my $numRelationships = 0;
 
@@ -109,10 +109,10 @@ sub new {
   bless($self,$class);
 
   $self->initialize({ requiredDbVersion => 4.0,
-		      cvsRevision       => '$Revision$',
-		      name              => ref($self),
-		      argsDeclaration   => $argsDeclaration,
-		      documentation     => $documentation});
+          cvsRevision       => '$Revision$',
+          name              => ref($self),
+          argsDeclaration   => $argsDeclaration,
+          documentation     => $documentation});
 
   return $self;
 }
@@ -143,7 +143,7 @@ sub run {
   my ($self) = @_;
 
   my $file = $self->getArg('inFile');
-	
+  
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   $self->setExtDbRls($extDbRlsId);
   my $owlReaderClass = $self->getArg('owlReader') || "ApiCommonData::Load::OwlReader";
@@ -246,44 +246,44 @@ sub doTerms {
 
       my $definition;
       if(ref $term->{def} eq 'ARRAY'){
-	  $definition = join(",",@{$term->{def}});
+    $definition = join(",",@{$term->{def}});
       }
       else{
-	  $definition = $term->{def};
+    $definition = $term->{def};
       }
       my $uri = $term->{uri};
       
       my $length = length($name);
       if ($length > 400) {
-	  $name = substr($name,0,397) . "...";
-	  print STDERR "Term $name was $length chars, truncated to 400\n";
+    $name = substr($name,0,397) . "...";
+    print STDERR "Term $name was $length chars, truncated to 400\n";
       }
 
       $length = length($definition); 
       if ($length > 2000) {
-	  $definition = substr($definition,0,2000) . " ...";
-	  print STDERR "Definiton for term $name was $length chars, trucated to 2000\n";
+    $definition = substr($definition,0,2000) . " ...";
+    print STDERR "Definiton for term $name was $length chars, trucated to 2000\n";
       }
 
       my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-	  new({           source_id => $sourceId,
-	      });
+    new({           source_id => $sourceId,
+        });
 
       if($ontologyTerm->retrieveFromDB()) {
 
-	  if($isPreferred) {
-	      my $dbName = $ontologyTerm->getName();
-	      my $dbDef = $ontologyTerm->getDefinition();
+    if($isPreferred) {
+        my $dbName = $ontologyTerm->getName();
+        my $dbDef = $ontologyTerm->getDefinition();
 
-	      $ontologyTerm->setName($name);
-	      $ontologyTerm->setDefinition($definition);
-	      print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
-	  }
+        $ontologyTerm->setName($name);
+        $ontologyTerm->setDefinition($definition);
+        print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
+    }
       }
       else {
-	  $ontologyTerm->setName($name);
-	  $ontologyTerm->setUri($uri);
-	  $ontologyTerm->setDefinition($definition);
+    $ontologyTerm->setName($name);
+    $ontologyTerm->setUri($uri);
+    $ontologyTerm->setDefinition($definition);
 
       }
 
@@ -335,8 +335,8 @@ sub doRelationships {
   my $extDbRlsId = $self->getExtDbRls();
 
   my $relationships = $owlReader->getRelationships();
-	my $multifilters = $owlReader->getMultifilters();
-	push(@{$relationships}, @{$multifilters});
+  my $multifilters = $owlReader->getMultifilters();
+  push(@{$relationships}, @{$multifilters});
 
   foreach my $triple (@$relationships) {
     my ($subject, $type, $object) = ($triple->{subject},$triple->{type}, $triple->{object});
@@ -344,6 +344,7 @@ sub doRelationships {
 
     my $subjectTermId = $$termIds{$subject};
     my $objectTermId = $$termIds{$object};
+    $objectTermId ||= $relationshipTypes->{$type};
 
     my $relationshipTypeId = $relationshipTypes->{$type};
     unless($relationshipTypeId) {
@@ -370,6 +371,7 @@ sub doRelationships {
       $self->log("Skipped Relationship $line");
     }
   }
+  $self->log("Inserted $count SRes::OntologyRelationships");
 
   return \@relationships;
 }
