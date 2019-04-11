@@ -340,7 +340,7 @@ sub doRelationships {
 
   foreach my $triple (@$relationships) {
     my ($subject, $type, $object) = ($triple->{subject},$triple->{type}, $triple->{object});
-    my $line = join(" ", $subject, $type, $object);
+    my $line = join(",", $subject, $type, $object);
 
     my $subjectTermId = $$termIds{$subject};
     my $objectTermId = $$termIds{$object};
@@ -430,7 +430,7 @@ sub getRelationshipTypes {
 
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
 
-  $sql = "select name, source_id, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf','termType')";
+  $sql = "select name, source_id, ontology_term_id from SRes.ONTOLOGYTERM where source_id in ('subClassOf','EUPATH_0000271','EUPATH_0001005')";
   my $sh = $self->getQueryHandle()->prepare($sql);
   $sh->execute();
 
