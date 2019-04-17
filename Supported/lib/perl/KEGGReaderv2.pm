@@ -93,8 +93,18 @@ sub read {
           $pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $id;
           $pathway->{NODES}->{$uniqId}->{UNIQ_ID} = $uniqId;
           $pathway->{NODES}->{$uniqId}->{VERBOSE_NAME} = $verboseName;
-          $pathway->{NODES}->{$uniqId}->{TYPE} = $type;
-          $pathway->{NODES}->{$uniqId}->{ENTRY_ID} = $entry->getAttribute('id');
+          
+		 if($type eq 'reaction'){
+			$pathway->{NODES}->{$uniqId}->{TYPE} = 'enzyme';
+		 } # ROSS - added in as the rn .xml files reaction reaction here. Need 'enzyme' for nodes to be loaded correctly. 
+		 else{
+
+		 	$pathway->{NODES}->{$uniqId}->{TYPE} = $type;
+		 }
+
+
+          
+		  $pathway->{NODES}->{$uniqId}->{ENTRY_ID} = $entry->getAttribute('id');
           $pathway->{NODES}->{$uniqId}->{REACTION} = $entry->getAttribute('reaction');
           $pathway->{NODES}->{$uniqId}->{LINK} = $entry->getAttribute('link');
 
@@ -318,8 +328,8 @@ sub read {
               my $ecCount = scalar(@ecNumbers);
 
             for(my $i = 0; $i < $ecCount; $i++){
-              my $tempLevel = $level->{'NODES'}->{$id};
-              my $replacementID = $id . "_" . $i;
+              my $tempLevel = dclone $level->{'NODES'}->{$id};
+              my $replacementID = $id . "000" . $i;
 
               # Update NODES hash.
               $level->{'NODES'}->{$replacementID} = $tempLevel;
@@ -328,9 +338,11 @@ sub read {
               $level->{'NODES'}->{$replacementID}->{'SOURCE_ID'} = $insertedEC;
               $level->{'NODES'}->{$replacementID}->{'ENTRY_ID'} = $replacementID;
               $level->{'NODES'}->{$replacementID}->{'UNIQ_ID'} = $replacementID;
-              ###~~~ If wanting to change the X,Y of the box add in here.~~~###
-
-              #Update REACTIONS hash.
+			  ###~~~ If wanting to change the X,Y of the box add in here.~~~###
+			  print STDERR "Added enzyme node: "; 
+              print STDERR Dumper $level->{'NODES'}->{$replacementID};
+			  
+			  #Update REACTIONS hash.
               if(%{$level->{'REACTIONS'}}){
                 if($level->{'REACTIONS'}->{$id}){
                   my $tempReaction = dclone $level->{'REACTIONS'}->{$id};
