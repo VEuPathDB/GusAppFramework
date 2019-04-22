@@ -435,7 +435,7 @@ sub getRelationshipTypes {
 	$sql ||= "SELECT ot.name,ot.source_id,ot.ONTOLOGY_TERM_ID FROM sres.ontologyterm ot
 LEFT JOIN sres.EXTERNALDATABASERELEASE edr ON ot.EXTERNAL_DATABASE_RELEASE_ID=edr.EXTERNAL_DATABASE_RELEASE_ID
 LEFT JOIN sres.EXTERNALDATABASE ed ON edr.external_database_id=ed.EXTERNAL_DATABASE_ID
-WHERE ed.name='Ontology_Relationship_Types_RSRC';";
+WHERE ed.name='Ontology_Relationship_Types_RSRC'";
 
   my $sh = $self->getQueryHandle()->prepare($sql);
   $sh->execute();
