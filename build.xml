@@ -129,7 +129,8 @@
   </target>
 
   <target name="GUS/Model-Installation" depends="ProjectTree, 
-                                                 PerlModel">
+                                                 PerlModel,
+                                                 JavaModel">
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="Model"/>
