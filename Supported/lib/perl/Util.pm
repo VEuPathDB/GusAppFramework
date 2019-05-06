@@ -132,6 +132,22 @@ sub getNaFeatureIdsFromSourceId {
   return $plugin->{_sourceIdNaFeatureIdMap}->{$sourceId};
 }
 
+sub getReporterIdFromSourceId {
+  my ($plugin, $sourceId, $probeExtDbRlsId) = @_;
+
+  if (!$plugin->{_sourceIdReporterIdMap}) {
+    $plugin->{_sourceIdReporterIdMap} = {};
+    my $sql = "select source_id, reporter_id from platform.reporter where external_database_release_id = $probeExtDbRlsId";
+    my $stmt = $plugin->prepareAndExecute($sql);
+    while ( my($source_id, $reporter_id) = $stmt->fetchrow_array()) {
+	die "Number of probes returned should be 1\n" if exists $plugin->{_sourceIdReporterIdMap}->{$source_id};
+	$plugin->{_sourceIdReporterIdMap}->{$source_id}=$reporter_id;
+    }
+    $stmt->finish();
+  }
+  return $plugin->{_sourceIdReporterIdMap}->{$sourceId};
+}
+
 
 # return null if not found:  be sure to check handle that condition!!
 # NOTE: the provided source_id must be an AAFeature source_id, not a 
