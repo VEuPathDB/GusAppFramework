@@ -657,7 +657,7 @@ sub quote_and_insert {
     #      &confess("\n No value($value) for attribute $key for table insertion. \n");
     #    }
     $insert_clause .= " $key,";
-    if ($value =~ /^\s*(sysdate|getdate|now).{0,2}\s*$/i) {
+    if ($value =~ /^\s*(sysdate|getdate|now)\(\)\s*$/i) {
       $values_clause .= " $value,"; 
       $cacheKey .= $key;
     } elsif ($value eq '') {    ##oracle treats this like NULL but others may not..
@@ -704,7 +704,7 @@ sub quote_and_update {
     #    if (!defined $value || ( $dbh->getNoEmptyStrings() && $value =~ /^\s*$|^"\s*"$/ ) ) { ## NULL CHECK
     #      &confess("\n$key is empty string($value) for set clause of $table update. \n");
     #    }
-    if ($value =~ /^\s*(sysdate|getdate|now).{0,2}\s*$/i) {
+    if ($value =~ /^\s*(sysdate|getdate|now)\(\)\s*$/i) {
       $set_clause .= "\n\t$key = $value,";
       $cacheKey .= $key;
     } elsif ($value eq '') {
