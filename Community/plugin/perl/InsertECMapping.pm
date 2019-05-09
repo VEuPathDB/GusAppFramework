@@ -107,7 +107,8 @@ sub new {
 sub run {
   my ($self) = @_;
   my $mappingFile = $self->getArg('ECMappingFile');
-
+  
+  $self->getAlgInvocation()->setMaximumNumberOfObjects(100000);
   my $sql = $self->getArg('aaSeqLocusTagMappingSql');
   my $queryHandle = $self->getQueryHandle();
   my $sth = $queryHandle->prepare($sql);
