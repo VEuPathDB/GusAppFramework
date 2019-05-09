@@ -106,22 +106,13 @@
   </target>  
 
   <target name="GUS/DBAdmin-Installation" depends="ProjectTree">
+
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="DBAdmin"/>
     </ant>
 
-    <!-- IMPORTANT CAUTION:  if you update the ojdbc driver here,
-	 do so in all other build.xml files that import the driver,
-	 to prevent conflicts in gus_home
-    -->
-    <property environment="env"/>
-    
-    <available file="${env.ORACLE_HOME}/jdbc/lib/ojdbc6.jar" type="file"  property="ojdbc6.present" />
-    <antcall target="copyLocal6Driver"/>
-    
-    <available file="${env.ORACLE_HOME}/jdbc/lib/ojdbc8.jar" type="file"  property="ojdbc8.present" />
-    <antcall target="copyLocal8Driver"/>
+    <ant target="installOracleDriver"/>
 
   </target>  
 
@@ -397,28 +388,6 @@
       <property name="component" value="ReportMaker"/>
     </ant>
   </target>
-  
-
-  <target name="copyLocal6Driver" if="ojdbc6.present">
-    <echo>Installing local ojdbc6.jar from ${env.ORACLE_HOME}/jdbc/lib/ojdbc6.jar</echo>
-    <delete failonerror="false">
-      <fileset dir="${targetDir}/lib/java/db_driver" includes="*.jar"/>
-    </delete>
-    <copy  file="${env.ORACLE_HOME}/jdbc/lib/ojdbc6.jar"
-     toDir="${targetDir}/lib/java/db_driver"
-     overwrite="true"/>
-  </target>
-
-  <target name="copyLocal8Driver" if="ojdbc8.present">
-    <echo>Installing local ojdbc8.jar from ${env.ORACLE_HOME}/jdbc/lib/ojdbc8.jar</echo>
-    <delete failonerror="false">
-     <fileset dir="${targetDir}/lib/java/db_driver" includes="*.jar"/>
-   </delete>
-    <copy  file="${env.ORACLE_HOME}/jdbc/lib/ojdbc8.jar"
-     toDir="${targetDir}/lib/java/db_driver"
-     overwrite="true"/>
-  </target>
-
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
