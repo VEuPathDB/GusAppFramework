@@ -20,20 +20,20 @@ $| = 1;
 
 my $argsDeclaration =  [
  fileArg({name => 'inputFile',
-	  descr => 'name of the inputFile file',
-	  constraintFunc => undef,
-	  reqd => 1,
-	  isList => 0,
-	  mustExist => 1,
-	  format => 'Text'
+    descr => 'name of the inputFile file',
+    constraintFunc => undef,
+    reqd => 1,
+    isList => 0,
+    mustExist => 1,
+    format => 'Text'
         }),
 
  stringArg({ descr => 'Name of the External Database',
-	     name  => 'extDbRlsSpec',
-	     isList    => 0,
-	     reqd  => 1,
-	     constraintFunc => undef,
-	   }),
+       name  => 'extDbRlsSpec',
+       isList    => 0,
+       reqd  => 1,
+       constraintFunc => undef,
+     }),
 
  ];
 
@@ -65,13 +65,13 @@ The input file to this plugin is a two-column tab-delimited file.  The first col
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
-		     purpose => $purpose,
-		     tablesAffected => $tablesAffected,
-		     tablesDependedOn => $tablesDependedOn,
-		     howToRestart => $howToRestart,
-		     failureCases => $failureCases,
-		     notes => $notes
-		    };
+         purpose => $purpose,
+         tablesAffected => $tablesAffected,
+         tablesDependedOn => $tablesDependedOn,
+         howToRestart => $howToRestart,
+         failureCases => $failureCases,
+         notes => $notes
+        };
 
 
 sub getExtDbRls {$_[0]->{ext_db_rls_id}}
@@ -83,63 +83,47 @@ sub new {
     bless($self, $class);
 
     $self->initialize({requiredDbVersion => 4.0,
-		       cvsRevision =>  '$Revision$', #CVS fills this in
-		       name => ref($self),
-		       argsDeclaration   => $argsDeclaration,
-		       documentation     => $documentation
-		      });
+           cvsRevision =>  '$Revision$', #CVS fills this in
+           name => ref($self),
+           argsDeclaration   => $argsDeclaration,
+           documentation     => $documentation
+          });
     return $self;
 }
 
 sub run {
-    my ($self) = @_;
-
-    my $term;
-    my $definition;
-    my $count = 0;
-
-    my $relationshipTypeFile = $self->getArg('inputFile');
-    my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
-    $self->setExtDbRls($extDbRlsId);
-
-    open(RT_FILE, $relationshipTypeFile) || die "Couldn't open file '$relationshipTypeFile'\n";
-
-    while (<RT_FILE>){
-	chomp;
-	
-	my @data = split (/\t/, $_);
-	if (scalar(@data) != 2)  {
-	    die "inputFile $relationshipTypeFile does not contain 2 columns."
-	}
-	
-	my $term = $data[0];
-	my $is_native = $data[1];
-	
-	my $relType = $self->makeOntologyRelType($term,$is_native);
-	$relType->submit();
-	
-	undef $term;
-	undef $is_native;
-	$count++
-	}  
-    return "Inserted $count terms into OntologyRelationshipType";
+  my ($self) = @_;
+  my $count = 0;
+  my $relationshipTypeFile = $self->getArg('inputFile');
+  my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
+  $self->setExtDbRls($extDbRlsId);
+  open(RT_FILE, $relationshipTypeFile) || die "Couldn't open file '$relationshipTypeFile'\n";
+  while (<RT_FILE>){
+    chomp;
+    my @data = split (/\t/, $_);
+    ## array must be: term(or source_id), is_native, name(optional)
+    if (scalar(@data) < 2){
+      die "inputFile $relationshipTypeFile does not contain at least 2 columns."
+    }
+    my $relType = $self->makeOntologyRelType(@data);
+    $relType->submit();
+    $count++;
+  }
+  return "Inserted $count terms into OntologyRelationshipType";
 }
 
 sub makeOntologyRelType {
-   my ($self, $term, $is_native) = @_;
-   my $extDbRls = $self->getExtDbRls();
-
-   my $termObj = GUS::Model::SRes::OntologyTerm->new({
-       'source_id' => $term,
-                                                  });
-
-   $termObj->retrieveFromDB();
-
-   $termObj->setName($term);
-   $termObj->setExternalDatabaseReleaseId($extDbRls);
-
-   
-   return $termObj;
+  my ($self, $term, $is_native, $name) = @_;
+  my $extDbRls = $self->getExtDbRls();
+  $name ||= $term; # use term if name is not used
+  my $termObj = GUS::Model::SRes::OntologyTerm->new({
+   'source_id' => $term,
+   'name' => $name || $term,
+  });
+  $termObj->retrieveFromDB();
+  $termObj->setName($term);
+  $termObj->setExternalDatabaseReleaseId($extDbRls);
+  return $termObj;
 }
 
 sub undoTables {
