@@ -1,4 +1,3 @@
-<!-- $Author$ $Revision$  $Date$ -->
 <project name="GUS" default="Installation" basedir=".">
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
@@ -7,58 +6,18 @@
 
   <target name="CBIL-Installation">
     <ant antfile="../CBIL/build.xml" target="CBIL-Installation">
-      <property name="project" value="CBIL"/>
+      <property name="project" value="CBIL" />
       <!-- <property name="version" value="2.1.2"/> -->
     </ant>
-  </target>  
+  </target>
 
-  <target name="GusSchema-Installation" >
+  <target name="GusSchema-Installation">
     <ant antfile="../GusSchema/build.xml" target="GusSchema-Installation">
-      <property name="project" value="GusSchema"/>
+      <property name="project" value="GusSchema" />
       <!-- <property name="version" value="3.5"/> -->
     </ant>
-  </target>  
-
-  <target name="GusSchema-Checkout" unless="GusSchema.present"> 
-    <ant target="defaultProjectCheckout" inheritAll="false">
-      <property name="svnurl" value="https://cbilsvn.pmacs.upenn.edu/svn/gus/GusSchema" />
-      <property name="project" value="GusSchema"/>
-      <!-- <property name="version" value="3-6-dev"/> -->
-    </ant>
-  </target>  
-
-  <target name="CBIL-Checkout" unless="CBIL.present"> 
-    <ant target="defaultProjectCheckout" inheritAll="false">
-      <property name="svnurl" value="https://cbilsvn.pmacs.upenn.edu/svn/gus/CBIL" />
-      <property name="project" value="CBIL"/>
-      <!-- <property name="version" value="1.7"/> -->
-    </ant>
-  </target>  
-  
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooo    Checkout    oooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-
-  <target name="GUS-ChildCheckout">
-    <available file="../GusSchema" type="dir" property="GusSchema.present" />
-    <available file="../CBIL" type="dir" property="CBIL.present" />
-    <antcall target="GusSchema-Checkout" />
-    <antcall target="CBIL-Checkout" />
   </target>
-  
-  
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooo    Update    oooooooooooooooooooooooooo -->
-  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
-  <target name="GUS-ChildUpdate" >
-    <ant target="defaultProjectUpdate">
-      <property name="project" value="GusSchema"/>
-    </ant>
-    <ant target="defaultProjectUpdate">
-      <property name="project" value="CBIL"/>
-    </ant>
-  </target>
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
@@ -67,325 +26,352 @@
   <target name="GUS-Distributable" depends="ProjectTree ">
 
     <copy todir="${targetDir}">
-      <fileset dir="${projectsDir}" >
+      <fileset dir="${projectsDir}">
         <exclude name="**/CVS/*" />
       </fileset>
-    </copy>  
-  </target>  
+    </copy>
+  </target>
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
- 
+
   <target name="GUS-Installation" depends="CBIL-Installation,
                                            GUS/Supported-Installation,
                                            GUS/Community-Installation,
-                                           GUS/DBAdmin-Installation, 
-                                           GUS/GOPredict-Installation, 
-					   GusSchema-Installation,
-                                           GUS/Model-Installation, 
-                                           GUS/ObjRelP-Installation, 
-                                           GUS/Pipeline-Installation, 
-                                           GUS/PluginMgr-Installation, 
+                                           GUS/DBAdmin-Installation,
+                                           GUS/GOPredict-Installation,
+             GusSchema-Installation,
+                                           GUS/Model-Installation,
+                                           GUS/ObjRelP-Installation,
+                                           GUS/Pipeline-Installation,
+                                           GUS/PluginMgr-Installation,
                                            GUS/ReportMaker-Installation">
-    <ant target="defaultProjectInstall"/>
+    <ant target="defaultProjectInstall" />
   </target>
 
   <target name="GUS/Supported-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="Supported"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="Supported" />
     </ant>
-  </target>  
+  </target>
 
   <target name="GUS/Community-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="Community"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="Community" />
     </ant>
-  </target>  
+  </target>
 
   <target name="GUS/DBAdmin-Installation" depends="ProjectTree">
 
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="DBAdmin"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="DBAdmin" />
     </ant>
 
-    <ant target="installOracleDriver"/>
+    <ant target="installOracleDriver" />
 
-  </target>  
+  </target>
 
   <target name="GUS/GOPredict-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="GOPredict"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="GOPredict" />
     </ant>
   </target>
 
-  <target name="GUS/Model-Installation" depends="ProjectTree, 
+  <target name="GUS/Model-Installation" depends="ProjectTree,
                                                  PerlModel,
                                                  JavaModel">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="Model"/>
-     </ant>
-  </target>  
-
-  <target name="JavaModel" depends = "checkJavaObjects,
-                                     javaGeneratedModel,
-	                             javaManuallyEditedModel">
-    <echo message="Starting target: JavaModel"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="Model" />
+    </ant>
   </target>
 
-  <target name="PerlModel" depends = "checkPerlObjects,
+  <target name="JavaModel" depends="checkJavaObjects,
+                                     javaGeneratedModel,
+                               javaManuallyEditedModel">
+    <echo message="Starting target: JavaModel" />
+  </target>
+
+  <target name="PerlModel" depends="checkPerlObjects,
                                       perlGeneratedModel,
-                                      perlManuallyEditedModel"/>
-                                     
+                                      perlManuallyEditedModel" />
+
   <target name="javaGeneratedModel" unless="javaObjectsAlreadyGenerated"
-                                    depends="ProjectTree, GUS/ObjRelJ-Installation">
-     <echo message="starting target: javaGeneratedModel"/>
-     
-     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core"/>
-     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes"/>
-     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study"/>
-     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/PROT"/>
+          depends="ProjectTree, GUS/ObjRelJ-Installation">
+    <echo message="starting target: javaGeneratedModel" />
+
+    <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core" />
+    <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" />
+    <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes" />
+    <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS" />
+    <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study" />
+    <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/PROT" />
 
 
-      <delete>
-        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core" includes="*.java, *.class"/>
-        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" includes="*.java, *.class"/>
-        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes" includes="*.java, *.class"/>
-        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS" includes="*.java, *.class"/>
-        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study" includes="*.java, *.class"/>
-        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/PROT" includes="*.java, *.class"/>
-      </delete>
-      <echo message="generating java objects"/>
+    <delete>
+      <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core"
+               includes="*.java, *.class" />
+      <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS"
+               includes="*.java, *.class" />
+      <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes"
+               includes="*.java, *.class" />
+      <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS"
+               includes="*.java, *.class" />
+      <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study"
+               includes="*.java, *.class" />
+      <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/PROT"
+               includes="*.java, *.class" />
+    </delete>
+    <echo message="generating java objects" />
 
-      <exec executable="generateGusObjects" 
-            failonerror="true">
-        <arg value="--javaOrPerl=java"/>
-      </exec>
+    <exec executable="generateGusObjects"
+          failonerror="true">
+      <arg value="--javaOrPerl=java" />
+    </exec>
 
-   </target>
+  </target>
 
   <target name="javaManuallyEditedModel" depends="ProjectTree">
 
-        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Core"/>
-        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS"/>
-        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes"/>
-        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS"/>
-        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Study"/>
-        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/PROT"/>
+    <mkdir
+      dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Core" />
+    <mkdir
+      dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS" />
+    <mkdir
+      dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes" />
+    <mkdir
+      dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS" />
+    <mkdir
+      dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Study" />
+    <mkdir
+      dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/PROT" />
 
-        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" overwrite="true">
-           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS"/>
-           <mapper type="glob" from="*.java.man" to="*.java"/>
-        </copy>
-        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes" overwrite="true">
-           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes"/>
-           <mapper type="glob" from="*.java.man" to="*.java"/>
-        </copy>
-        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core" overwrite="true">
-           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Core"/>
-           <mapper type="glob" from="*.java.man" to="*.java"/>
-        </copy>
-        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS" overwrite="true">
-           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS"/>
-           <mapper type="glob" from="*.java.man" to="*.java"/>
-        </copy>
-        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/PROT" overwrite="true">
-           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/PROT"/>
-           <mapper type="glob" from="*.java.man" to="*.java"/>
-        </copy>
-        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study" overwrite="true">
-           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Study"/>
-           <mapper type="glob" from="*.java.man" to="*.java"/>
-        </copy>
+    <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS"
+          overwrite="true">
+      <fileset
+        dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS" />
+      <mapper type="glob" from="*.java.man" to="*.java" />
+    </copy>
+    <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes"
+          overwrite="true">
+      <fileset
+        dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes" />
+      <mapper type="glob" from="*.java.man" to="*.java" />
+    </copy>
+    <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core"
+          overwrite="true">
+      <fileset
+        dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Core" />
+      <mapper type="glob" from="*.java.man" to="*.java" />
+    </copy>
+    <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS"
+          overwrite="true">
+      <fileset
+        dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS" />
+      <mapper type="glob" from="*.java.man" to="*.java" />
+    </copy>
+    <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/PROT"
+          overwrite="true">
+      <fileset
+        dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/PROT" />
+      <mapper type="glob" from="*.java.man" to="*.java" />
+    </copy>
+    <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Study"
+          overwrite="true">
+      <fileset
+        dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Study" />
+      <mapper type="glob" from="*.java.man" to="*.java" />
+    </copy>
   </target>
-	                                 
-  <target name="perlGeneratedModel" unless="perlObjectsAlreadyGenerated" 
-                                    depends="ProjectTree,
+
+  <target name="perlGeneratedModel" unless="perlObjectsAlreadyGenerated"
+          depends="ProjectTree,
                                     GUS/ObjRelP-Installation">
 
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/PROT"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Study"/>
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/PROT" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Study" />
 
-     <mkdir dir="${targetDir}/lib/perl/GUS/Model/Core"/>
-     <mkdir dir="${targetDir}/lib/perl/GUS/Model/DoTS"/>
-     <mkdir dir="${targetDir}/lib/perl/GUS/Model/SRes"/>
-     <mkdir dir="${targetDir}/lib/perl/GUS/Model/TESS"/>
-     <mkdir dir="${targetDir}/lib/perl/GUS/Model/PROT"/>
-     <mkdir dir="${targetDir}/lib/perl/GUS/Model/Study"/>
+    <mkdir dir="${targetDir}/lib/perl/GUS/Model/Core" />
+    <mkdir dir="${targetDir}/lib/perl/GUS/Model/DoTS" />
+    <mkdir dir="${targetDir}/lib/perl/GUS/Model/SRes" />
+    <mkdir dir="${targetDir}/lib/perl/GUS/Model/TESS" />
+    <mkdir dir="${targetDir}/lib/perl/GUS/Model/PROT" />
+    <mkdir dir="${targetDir}/lib/perl/GUS/Model/Study" />
 
-     <delete>
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core" includes="*.pm"/>
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS" includes="*.pm"/>
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes" includes="*.pm"/>
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS" includes="*.pm"/>
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/Study" includes="*.pm"/>
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/PROT" includes="*.pm"/>
-       <fileset dir="${targetDir}/lib/perl/GUS/Model/Core" includes="*.pm"/>
-       <fileset dir="${targetDir}/lib/perl/GUS/Model/DoTS" includes="*.pm"/>
-       <fileset dir="${targetDir}/lib/perl/GUS/Model/SRes" includes="*.pm"/>
-       <fileset dir="${targetDir}/lib/perl/GUS/Model/TESS" includes="*.pm"/>
-       <fileset dir="${targetDir}/lib/perl/GUS/Model/PROT" includes="*.pm"/>
-       <fileset dir="${targetDir}/lib/perl/GUS/Model/Study" includes="*.pm"/>
-     </delete>
-     <echo message="generating Perl Objects"/>
+    <delete>
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core" includes="*.pm" />
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS" includes="*.pm" />
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes" includes="*.pm" />
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS" includes="*.pm" />
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/Study" includes="*.pm" />
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/PROT" includes="*.pm" />
+      <fileset dir="${targetDir}/lib/perl/GUS/Model/Core" includes="*.pm" />
+      <fileset dir="${targetDir}/lib/perl/GUS/Model/DoTS" includes="*.pm" />
+      <fileset dir="${targetDir}/lib/perl/GUS/Model/SRes" includes="*.pm" />
+      <fileset dir="${targetDir}/lib/perl/GUS/Model/TESS" includes="*.pm" />
+      <fileset dir="${targetDir}/lib/perl/GUS/Model/PROT" includes="*.pm" />
+      <fileset dir="${targetDir}/lib/perl/GUS/Model/Study" includes="*.pm" />
+    </delete>
+    <echo message="generating Perl Objects" />
 
-      <exec executable="generateGusObjects" 
-            failonerror="true">
-        <arg value="--javaOrPerl=perl"/>
-      </exec>
+    <exec executable="generateGusObjects"
+          failonerror="true">
+      <arg value="--javaOrPerl=perl" />
+    </exec>
 
-   </target>  
+  </target>
 
-   <target name="perlManuallyEditedModel" depends="ProjectTree,
+  <target name="perlManuallyEditedModel" depends="ProjectTree,
                                       GUS/ObjRelP-Installation">
 
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Study"/>
-     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/PROT"/>
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Study" />
+    <mkdir dir="${projectsDir}/GUS/Model/lib/perl/PROT" />
 
-     <copy todir="${projectsDir}/GUS/Model/lib/perl/Core">
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
-       <mapper type="glob" from="*.pm.man" to="*.pm"/>
-     </copy>
+    <copy todir="${projectsDir}/GUS/Model/lib/perl/Core">
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core" />
+      <mapper type="glob" from="*.pm.man" to="*.pm" />
+    </copy>
 
-     <copy todir="${projectsDir}/GUS/Model/lib/perl/DoTS">
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
-       <mapper type="glob" from="*.pm.man" to="*.pm"/>
-     </copy>
+    <copy todir="${projectsDir}/GUS/Model/lib/perl/DoTS">
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS" />
+      <mapper type="glob" from="*.pm.man" to="*.pm" />
+    </copy>
 
-     <copy todir="${projectsDir}/GUS/Model/lib/perl/SRes">
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
-       <mapper type="glob" from="*.pm.man" to="*.pm"/>
-     </copy>
+    <copy todir="${projectsDir}/GUS/Model/lib/perl/SRes">
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes" />
+      <mapper type="glob" from="*.pm.man" to="*.pm" />
+    </copy>
 
-     <copy todir="${projectsDir}/GUS/Model/lib/perl/TESS">
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
-       <mapper type="glob" from="*.pm.man" to="*.pm"/>
-     </copy>
+    <copy todir="${projectsDir}/GUS/Model/lib/perl/TESS">
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS" />
+      <mapper type="glob" from="*.pm.man" to="*.pm" />
+    </copy>
 
-     <copy todir="${projectsDir}/GUS/Model/lib/perl/PROT">
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/PROT"/>
-       <mapper type="glob" from="*.pm.man" to="*.pm"/>
-     </copy>
+    <copy todir="${projectsDir}/GUS/Model/lib/perl/PROT">
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/PROT" />
+      <mapper type="glob" from="*.pm.man" to="*.pm" />
+    </copy>
 
-     <copy todir="${projectsDir}/GUS/Model/lib/perl/Study">
-       <fileset dir="${projectsDir}/GUS/Model/lib/perl/Study"/>
-       <mapper type="glob" from="*.pm.man" to="*.pm"/>
-     </copy>
-   </target>  
+    <copy todir="${projectsDir}/GUS/Model/lib/perl/Study">
+      <fileset dir="${projectsDir}/GUS/Model/lib/perl/Study" />
+      <mapper type="glob" from="*.pm.man" to="*.pm" />
+    </copy>
+  </target>
 
   <target name="checkPerlObjects">
-    <uptodate property="perlObjectsAlreadyGenerated" 
+    <uptodate property="perlObjectsAlreadyGenerated"
               targetfile="${projectsDir}/GUS/Model/lib/perl/generated">
-       <srcfiles dir= "${projectsDir}/GusSchema/Definition/config" includes="gus_schema.xml"/>
-       <srcfiles dir= "${projectsDir}/GUS/Model/data" includes="modelSpecialCases.txt"/>
+      <srcfiles dir="${projectsDir}/GusSchema/Definition/config"
+                includes="gus_schema.xml" />
+      <srcfiles dir="${projectsDir}/GUS/Model/data"
+                includes="modelSpecialCases.txt" />
     </uptodate>
   </target>
 
   <target name="checkJavaObjects">
-    <uptodate property="javaObjectsAlreadyGenerated" 
+    <uptodate property="javaObjectsAlreadyGenerated"
               targetfile="${projectsDir}/GUS/Model/src/java/org/gusdb/model/generated">
-       <srcfiles dir= "${projectsDir}/GusSchema/Definition/config" includes="gus_schema.xml"/>
-       <srcfiles dir= "${projectsDir}/GUS/Model/data" includes="modelSpecialCases.txt"/>
+      <srcfiles dir="${projectsDir}/GusSchema/Definition/config"
+                includes="gus_schema.xml" />
+      <srcfiles dir="${projectsDir}/GUS/Model/data"
+                includes="modelSpecialCases.txt" />
     </uptodate>
   </target>
- 
-   <target name="GUS/ObjRelP-Installation" depends="ProjectTree">
+
+  <target name="GUS/ObjRelP-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="ObjRelP"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="ObjRelP" />
     </ant>
 
     <!-- Hack to do replace immediately after ObjRelP is installed -->
     <!-- so objects can be generated without breaking              -->
 
-    <replace dir="${targetDir}/bin" 
-             propertyFile="${targetDir}/config/gus.config" > 
+    <replace dir="${targetDir}/bin"
+             propertyFile="${targetDir}/config/gus.config">
       <include name="**/*" />
-      <replacefilter token="@perl@" property="perl"/>
-    </replace> 
+      <replacefilter token="@perl@" property="perl" />
+    </replace>
 
     <!-- because the replace task clobbers permissions.  see ant bug #5661 -->
     <chmod perm="+x">
-      <fileset dir="${targetDir}/bin"/>
+      <fileset dir="${targetDir}/bin" />
     </chmod>
 
-  </target>  
-
+  </target>
 
 
   <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
 
-<!-- was doing rmic compiling here, but for the time being, not necessary -->
+    <!-- was doing rmic compiling here, but for the time being, not necessary -->
 
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="ObjRelJ"/>
-   </ant>
-    
+      <property name="project" value="GUS" />
+      <property name="component" value="ObjRelJ" />
+    </ant>
+
   </target>
 
   <target name="GUS/ObjRelJ-RMIC" unless="skipJavaCompiling">
-    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"  
-      classname="org.gusdb.objrelj.RemoteJDBCServer"> 
-        <classpath> 
-           <fileset dir="${targetDir}/lib/java/"> 
-              <include name="*.jar"/>  
-            </fileset>  
-         </classpath>     
-      </rmic>  
+    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"
+          classname="org.gusdb.objrelj.RemoteJDBCServer">
+      <classpath>
+        <fileset dir="${targetDir}/lib/java/">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+    </rmic>
 
-    
-     <rmic base="${projectsDir}/GUS/ObjRelJ/src/java" 
- 	 classname="org.gusdb.objrelj.RemoteDatabaseConnection"> 
- 	<classpath> 
-            <fileset dir="${targetDir}/lib/java/"> 
-               <include name="*.jar"/> 
-            </fileset> 
-         </classpath>      
-     </rmic>    
-  
-     <move todir="${projectsDir}/GUS/ObjRelJ/classes/org/gusdb/objrelj"> 
-       <fileset dir="${projectsDir}/GUS/ObjRelJ/src/java/org/gusdb/objrelj"> 
-          <include name="*.class"/> 
-       </fileset>  
-   </move>  
+
+    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"
+          classname="org.gusdb.objrelj.RemoteDatabaseConnection">
+      <classpath>
+        <fileset dir="${targetDir}/lib/java/">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+    </rmic>
+
+    <move todir="${projectsDir}/GUS/ObjRelJ/classes/org/gusdb/objrelj">
+      <fileset dir="${projectsDir}/GUS/ObjRelJ/src/java/org/gusdb/objrelj">
+        <include name="*.class" />
+      </fileset>
+    </move>
   </target>
 
 
   <target name="GUS/Pipeline-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="Pipeline"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="Pipeline" />
     </ant>
-  </target>  
+  </target>
 
   <target name="GUS/PluginMgr-Installation" depends="GUS/ObjRelP-Installation,
                                                      ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="PluginMgr"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="PluginMgr" />
     </ant>
   </target>
 
   <target name="GUS/ReportMaker-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="ReportMaker"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="ReportMaker" />
     </ant>
   </target>
 
@@ -393,25 +379,24 @@
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
-  <target name="GUS-WebInstallation" depends="GUS/DBAdmin-WebInstallation"/>
+  <target name="GUS-WebInstallation" depends="GUS/DBAdmin-WebInstallation" />
 
 
   <target name="GUS/DBAdmin-WebInstallation" depends="ProjectTree">
     <ant target="defaultWebComponentInstall">
-       <property name="project" value="GUS"/>
-       <property name="component" value="DBAdmin"/>
+      <property name="project" value="GUS" />
+      <property name="component" value="DBAdmin" />
     </ant>
-  </target>  
+  </target>
 
 
-  
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  ProjectTree  ooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="ProjectTree" if="${checkout}">
-    <ant target="projectCheckOut"/>
-  </target>  
+    <ant target="projectCheckOut" />
+  </target>
 
 </project>
 
