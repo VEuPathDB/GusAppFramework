@@ -11,6 +11,8 @@ package.  C<GUS::PluginMgr::GusApplication> has a few different run
 modes that affect whether the plugin application is actually run, or
 if meta data about the application is updated or displayed.
 
+IMPORTANT: A change below at line ~145 disables the check for plugin version. See notes below.
+
 =cut
 
 # ========================================================================
@@ -143,9 +145,14 @@ SQL
      $self->tooManyImpsError($imps,$plugin);
    }
 
-   elsif ($plugin->getArgs->{commit} &&
-	    $imps->[0]->{EXECUTABLE_MD5} ne $plugin->getCheckSum()) {
-     $self->wrongChecksumError($plugin);
+   elsif ($plugin->getArgs->{commit} && 0) {
+
+# The following line has been commented out, so that an updated plugin does not need to be checked in
+# for the workflow.  We are transitioning to GitHub, where this versioning mechanism will be difficult. Also,
+# people very rarely used the plugin version to help with debugging. 
+#	    $imps->[0]->{EXECUTABLE_MD5} ne $plugin->getCheckSum()) {
+ 
+    $self->wrongChecksumError($plugin);
 
    }
 
