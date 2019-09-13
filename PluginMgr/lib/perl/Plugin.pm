@@ -345,9 +345,7 @@ B<Return type:> C<string>
 # parse out revision from string of the form '$Revision 1.2 $'
 sub getCVSRevision {
   my ($self) = @_;
-
-  $self->{cvsRevision} =~ /Revision:\s+(\S+)\s+/ || die "The plugin has an illegal cvs revision: '$self->{cvsRevision}'.  If that doesn't include a revision number, then the plugin has never been checked into CVS.  Please do so to give it an intial revision";
-  return $1;
+  return "dont-care";   # no longer care about cvs revisions
 }
 
 =item C<getResultDescr>
