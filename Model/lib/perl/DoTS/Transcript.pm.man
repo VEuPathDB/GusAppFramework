@@ -68,6 +68,7 @@ sub getFeatureLength {
   return $self->{'featurelength'};
 }
 
+## the method does not work in gus4
 ##returns the start and stop of the cds
 sub getTranslationStartStop {
   my $self = shift;
