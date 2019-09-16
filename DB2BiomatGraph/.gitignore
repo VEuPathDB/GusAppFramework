@@ -1,0 +1,44 @@
+# IntelijIdea Project Junk
+.idea/
+*.iml
+
+
+# Eclipse Project Junk
+.settings/
+.project
+.classpath
+.vscode
+
+
+# Build directories
+/build/
+/out/
+/target/
+/*/target/
+
+# Dependencies
+node_modules/
+
+
+# Gradle meta
+.gradle/
+
+
+# Compiled things
+*.class
+
+
+# Other version control
+.svn/
+
+#
+# Exported from svn:ignore
+#
+*.dot
+*.gif
+*.html
+*.log
+DB2BiomatGraph.jar
+build
+classes
+doc
