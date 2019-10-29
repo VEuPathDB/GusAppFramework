@@ -1029,6 +1029,7 @@ sub set_defaults {
    # global parameters
    $OtherPlugIn->setCommitOff()     unless $self->getArg('commit');
    $OtherPlugIn->setDebuggingOn()   if $self->getArg('debug');
+   $OtherPlugIn->getDatabase()->setGlobalNoVersion(1)   if $self->getArg('globalNoVersion');
 
    # default values for GUS overhead columns
    $OtherPlugIn->setDefaultAlgoInvoId($self->getArg('algoinvo'));
@@ -1170,7 +1171,7 @@ VALUES ($next_val, $cla->{workflowstepid}, $alg_inv_id)";
    foreach my $param_name (sort keys %$cla) {
 
       # skip CBIL::Util::EasyCsp options which we do not record.
-      next if $param_name =~ /(debug|verbose|veryVerbose|sqlVerbose|usage|help|helpHTML)/;
+      next if $param_name =~ /(debug|verbose|veryVerbose|globalNoVersion|sqlVerbose|usage|help|helpHTML)/;
 
       # get the Core.AlgorithmParamKey object
       my $apk_go      = $key_to_obj{$param_name};
@@ -1352,6 +1353,13 @@ sub getStandardArgsDeclaration {
                  default  => 0,
                }),
 
+    booleanArg({ name     => 'globalNoVersion',
+                 descr    => 'Use this flag to turn off versioning of updated rows globally',
+                 reqd     => 0,
+                 isList   => 0,
+                 default  => 0,
+               }),
+
     stringArg({name  => 'user',
                descr => 'Set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]',
                reqd  => 0,
@@ -1427,6 +1435,11 @@ sub getGlobalEasyCspOptions {
      { h => 'Use this flag to enable output of logVeryVerbose and logVerbose messages from the plugin.',
        t => 'boolean',
        o => 'veryVerbose',
+     },
+
+     { h => 'Use this flag to turn off versioning of updated rows globally',
+       t => 'boolean',
+       o => 'globalNoVersion',
      },
 
      { h => 'set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]',
