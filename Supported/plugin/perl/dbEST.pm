@@ -339,7 +339,7 @@ sub updateAllEST {
 
   my $count = 0;
 
-  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est > ? and library.id_lib = est.id_lib and library.organism in ($nameStrings) order by est.id_est");
+  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est > ? and library.id_lib = est.id_lib and library.organism in ($nameStrings) and replaced_by is null order by est.id_est");
 
   my $min = 0;
   # Set the restart entry id if defined
