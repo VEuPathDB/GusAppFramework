@@ -29,6 +29,8 @@ if(!$gusConfigFile) {
   
 }
 
+my $CHUNK_SIZE;
+
 my @properties = ();
 
 ##set the defaults
@@ -65,20 +67,27 @@ open(OUT,">>$outFile");
 
 print STDERR "SQL: $idSQL\n" if $verbose;
 my $count = 0;
-my $idStmt = $dbh->prepare($idSQL);
+my $idStmt = $dbh->prepare($idSQL, { ora_auto_lob => 0 })  or die "Can't prepare SQL statement: " . $dbh->errstr();
 $idStmt->execute();
 my @ids;
 while(my (@row) = $idStmt->fetchrow_array()){
   $count++;
   print STDERR "Getting id for $count\n" if $verbose && $count % 10000 == 0;
   next if exists $done{$row[0]};  ##don't put into hash if already have...
-  &printSequence(@row)
+  &printSequence($dbh, \@row);
 }
 
-sub printSequence{
-	my @row = @_;
+sub printSequence {
+	my ($dbh, $row) = @_;
 #	print STDERR "$gene_id,$na_id,$description,$number,$taxon,$assembly_id,$length,$seq_ver\n";
-  my $sequence = pop(@row);
+
+  my @row = @$row;
+
+  my $lobLoc = pop(@row);
+
+  my $sequence = &readClob($lobLoc, $dbh);
+
+
   if(length($sequence) < $minLength){
     print STDERR "ERROR: $row[0] too short: ",length($sequence),"\n";
     return;
@@ -87,3 +96,21 @@ sub printSequence{
 	print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
 }
 
+sub readClob {
+  my ($lobLocator, $dbh) = @_;
+
+  my $chunkSize = defined $CHUNK_SIZE ? $CHUNK_SIZE : $dbh->ora_lob_chunk_size($lobLocator);
+
+  my $offset = 1;   # Offsets start at 1, not 0
+
+  my $output;
+
+  while(1) {
+    my $data = $dbh->ora_lob_read($lobLocator, $offset, $chunkSize );
+    last unless length $data;
+    $output .= $data;
+    $offset += $chunkSize;
+  }
+
+  return $output;
+}
