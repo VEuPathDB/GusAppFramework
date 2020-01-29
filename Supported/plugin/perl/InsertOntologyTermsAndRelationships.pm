@@ -275,6 +275,8 @@ sub doTerms {
         my $dbName = $ontologyTerm->getName();
         my $dbDef = $ontologyTerm->getDefinition();
 
+        # GUS does not allow name to be null
+        $name ||= "NULL";
         $ontologyTerm->setName($name);
         $ontologyTerm->setDefinition($definition);
         print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
