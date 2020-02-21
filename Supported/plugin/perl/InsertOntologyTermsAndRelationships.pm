@@ -242,7 +242,7 @@ sub doTerms {
       next if($seen{$sourceId}); # in case there are dups
       $seen{$sourceId} = 1;
       next if($isObsolete eq 'true');
-      next unless($name);
+      next unless($name && uc($name) ne "NULL");
 
       my $definition;
       if(ref $term->{def} eq 'ARRAY'){
@@ -275,8 +275,6 @@ sub doTerms {
         my $dbName = $ontologyTerm->getName();
         my $dbDef = $ontologyTerm->getDefinition();
 
-        # GUS does not allow name to be null
-        $name ||= "NULL";
         $ontologyTerm->setName($name);
         $ontologyTerm->setDefinition($definition);
         print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
