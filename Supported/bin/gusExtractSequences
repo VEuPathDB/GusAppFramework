@@ -45,6 +45,8 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 
 my $dbh = $db->getQueryHandle();
 
+my $dbVendor = $gusconfig->{props}->{dbVendor};
+
 $dbh->{LongReadLen} = 512 * 512 * 1024;
 
 ##want to be able to restart it....
@@ -65,7 +67,15 @@ open(OUT,">>$outFile") || die "Can't open $outFile to append output\n Check writ
 print STDERR "SQL: $idSQL\n" if $verbose;
 my $count = 0;
 my $skip = 0;
-my $idStmt = $dbh->prepare($idSQL);
+
+my $idStmt;
+if($dbVendor eq 'Oracle') {
+ $idStmt = $dbh->prepare($idSQL, { ora_auto_lob => 0 })  or die "Can't prepare SQL statement: " . $dbh->errstr();
+}
+else {
+  $idStmt = $dbh->prepare($idSQL)  or die "Can't prepare SQL statement: " . $dbh->errstr();
+}
+
 $idStmt->execute();
 my @ids;
 while(my (@row) = $idStmt->fetchrow_array()){
@@ -73,7 +83,7 @@ while(my (@row) = $idStmt->fetchrow_array()){
   my $time = localtime(time());
   print STDERR "[$time] Getting id for $count\n" if $verbose && $count % 10000 == 0;
   next if exists $done{$row[0]};  ##don't put into hash if already have...
-  &printSequence(@row)
+  &printSequence($dbh, \@row, $dbVendor);
 }
 
 $count = 2 * $count if ($posStrand && $negStrand);
@@ -85,9 +95,24 @@ die "Inconsistant number of sequences between query results and outputs in $outF
 die "No sequences extracted. (Check your idSQL.)" unless ($count || $allowEmptyOutput);
 
 sub printSequence{
-	my @row = @_;
+	my ($dbh, $row, $dbVendor) = @_;
+
+  my @row = @$row;
 #	print STDERR "$gene_id,$na_id,$description,$number,$taxon,$assembly_id,$length,$seq_ver\n";
-  my $sequence = pop(@row) unless $noSeq;
+
+
+  my $lobLocOrSeq = pop(@row);
+
+  my $sequence;
+  if($noSeq) {}
+  elsif($dbVendor eq 'Oracle') {
+    $sequence = &readClob($lobLocOrSeq, $dbh);
+  }
+  else {
+    $sequence = $lobLocOrSeq;
+  }
+
+
   if(!$noSeq && length($sequence) < $minLength){
     print STDERR "Skipping: $row[0] too short: ",length($sequence),"\n";
     $skip++;
@@ -115,6 +140,26 @@ sub printSequence{
 	  print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($negSeq,60) unless $noSeq;
 	}
 }
+
+sub readClob {
+  my ($lobLocator, $dbh) = @_;
+
+  my $chunkSize = defined $CHUNK_SIZE ? $CHUNK_SIZE : $dbh->ora_lob_chunk_size($lobLocator);
+
+  my $offset = 1;   # Offsets start at 1, not 0
+
+  my $output;
+
+  while(1) {
+    my $data = $dbh->ora_lob_read($lobLocator, $offset, $chunkSize );
+    last unless length $data;
+    $output .= $data;
+    $offset += $chunkSize;
+  }
+
+  return $output;
+}
+
 
 
 

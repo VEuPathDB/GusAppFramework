@@ -50,6 +50,8 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->{props}->{dbiDsn},
 
 my $dbh = $db->getQueryHandle();
 
+my $dbVendor = $gusconfig->{props}->{dbVendor};
+
 ##want to be able to restart it....
 my %done;
 if(-e $outFile){
@@ -67,26 +69,39 @@ open(OUT,">>$outFile");
 
 print STDERR "SQL: $idSQL\n" if $verbose;
 my $count = 0;
-my $idStmt = $dbh->prepare($idSQL, { ora_auto_lob => 0 })  or die "Can't prepare SQL statement: " . $dbh->errstr();
+my $idStmt;
+if($dbVendor eq 'Oracle') {
+ $idStmt = $dbh->prepare($idSQL, { ora_auto_lob => 0 })  or die "Can't prepare SQL statement: " . $dbh->errstr();
+}
+else {
+  $idStmt = $dbh->prepare($idSQL)  or die "Can't prepare SQL statement: " . $dbh->errstr();
+}
+
+
 $idStmt->execute();
 my @ids;
 while(my (@row) = $idStmt->fetchrow_array()){
   $count++;
   print STDERR "Getting id for $count\n" if $verbose && $count % 10000 == 0;
   next if exists $done{$row[0]};  ##don't put into hash if already have...
-  &printSequence($dbh, \@row);
+  &printSequence($dbh, \@row, $dbVendor);
 }
 
 sub printSequence {
-	my ($dbh, $row) = @_;
+	my ($dbh, $row, $dbVendor) = @_;
 #	print STDERR "$gene_id,$na_id,$description,$number,$taxon,$assembly_id,$length,$seq_ver\n";
 
   my @row = @$row;
 
-  my $lobLoc = pop(@row);
+  my $lobLocOrSeq = pop(@row);
 
-  my $sequence = &readClob($lobLoc, $dbh);
-
+  my $sequence;
+  if($dbVendor eq 'Oracle') {
+    $sequence = &readClob($lobLocOrSeq, $dbh);
+  }
+  else {
+    $sequence = $lobLocOrSeq;
+  }
 
   if(length($sequence) < $minLength){
     print STDERR "ERROR: $row[0] too short: ",length($sequence),"\n";
