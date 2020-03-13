@@ -45,6 +45,8 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 
 my $dbh = $db->getQueryHandle();
 
+my $CHUNK_SIZE;
+
 my $dbVendor = $gusconfig->{props}->{dbVendor};
 
 $dbh->{LongReadLen} = 512 * 512 * 1024;
