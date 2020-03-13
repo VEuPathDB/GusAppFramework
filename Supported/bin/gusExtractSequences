@@ -12,6 +12,7 @@ use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
 use GUS::Supported::GusConfig;
 
+
 my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent, $noSeq,$posStrand,$negStrand,$allowEmptyOutput);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
@@ -47,7 +48,7 @@ my $dbh = $db->getQueryHandle();
 
 my $CHUNK_SIZE;
 
-my $dbVendor = $gusconfig->{props}->{dbVendor};
+my $dbVendor = $gusconfig->getDatabaseVendor();
 
 $dbh->{LongReadLen} = 512 * 512 * 1024;
 
@@ -71,6 +72,9 @@ my $count = 0;
 my $skip = 0;
 
 my $idStmt;
+
+
+
 if($dbVendor eq 'Oracle') {
  $idStmt = $dbh->prepare($idSQL, { ora_auto_lob => 0 })  or die "Can't prepare SQL statement: " . $dbh->errstr();
 }
