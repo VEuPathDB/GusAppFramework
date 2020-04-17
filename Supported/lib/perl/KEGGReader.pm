@@ -522,9 +522,7 @@ sub read {
   my ($self) = @_;
 	my $filename = $self->getFile();
 
-	my $workspacePath = $filename;
-	my @workspacePath = split(/rn|ec/, $workspacePath, 2);
-	$workspacePath = @workspacePath[0];
+    my ($rnFileName, $workspacePath, $suffix) = fileparse($filename);
 
 	my $ECFile = $filename;
 	$ECFile =~m/([\d]{5})/;
