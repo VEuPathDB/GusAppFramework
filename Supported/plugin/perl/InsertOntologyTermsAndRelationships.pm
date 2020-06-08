@@ -232,64 +232,64 @@ sub doTerms {
 
   my $terms = $owlReader->getTerms();
   my $displayOrder = $owlReader->getDisplayOrder();
+  my $variable = $owlReader->getVariable();
 
   my %termIds;
   foreach my $term (@$terms) {
-      my $sourceId = $term->{sid};
-      my $name = $term->{name};
-      my $isObsolete = $term->{obs};
+    my $sourceId = $term->{sid};
+    my $name = $term->{name};
+    my $isObsolete = $term->{obs};
 
-      next if($seen{$sourceId}); # in case there are dups
-      $seen{$sourceId} = 1;
-      next if($isObsolete eq 'true');
-      next unless($name && uc($name) ne "NULL");
+    next if($seen{$sourceId}); # in case there are dups
+    $seen{$sourceId} = 1;
+    next if($isObsolete eq 'true');
+    next unless($name && uc($name) ne "NULL");
 
-      my $definition;
-      if(ref $term->{def} eq 'ARRAY'){
-    $definition = join(",",@{$term->{def}});
-      }
-      else{
-    $definition = $term->{def};
-      }
-      my $uri = $term->{uri};
+    my $definition;
+    if(ref $term->{def} eq 'ARRAY'){
+      $definition = join(",",@{$term->{def}});
+    }
+    else{
+      $definition = $term->{def};
+    }
+    my $uri = $term->{uri};
       
-      my $length = length($name);
-      if ($length > 400) {
-    $name = substr($name,0,397) . "...";
-    print STDERR "Term $name was $length chars, truncated to 400\n";
-      }
+    my $length = length($name);
+    if ($length > 400) {
+      $name = substr($name,0,397) . "...";
+      print STDERR "Term $name was $length chars, truncated to 400\n";
+    }
 
-      $length = length($definition); 
-      if ($length > 2000) {
-    $definition = substr($definition,0,2000) . " ...";
-    print STDERR "Definiton for term $name was $length chars, trucated to 2000\n";
-      }
+    $length = length($definition); 
+    if ($length > 2000) {
+      $definition = substr($definition,0,2000) . " ...";
+      print STDERR "Definiton for term $name was $length chars, trucated to 2000\n";
+    }
 
-      my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-    new({           source_id => $sourceId,
-        });
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({source_id => $sourceId});
 
-      if($ontologyTerm->retrieveFromDB()) {
+    if($ontologyTerm->retrieveFromDB()) {
 
-    if($isPreferred) {
+      if($isPreferred) {
         my $dbName = $ontologyTerm->getName();
         my $dbDef = $ontologyTerm->getDefinition();
 
+        # GUS does not allow name to be null
+        $name ||= "NULL";
         $ontologyTerm->setName($name);
         $ontologyTerm->setDefinition($definition);
         print STDERR "updated term and Definition for $sourceId: $dbName to $name and $dbDef to $definition\n" if($dbName ne $name || $dbDef ne $definition);
+      }
     }
-      }
-      else {
-    $ontologyTerm->setName($name);
-    $ontologyTerm->setUri($uri);
-    $ontologyTerm->setDefinition($definition);
-
-      }
-
-      my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
-      $ontologySynonym->setParent($ontologyTerm);
-      $ontologySynonym->setIsPreferred(1) if($isPreferred);
+    else {
+      $ontologyTerm->setName($name);
+      $ontologyTerm->setUri($uri);
+      $ontologyTerm->setDefinition($definition);
+    }
+    $variable->{$sourceId} =~ s/^(.{1495}).+$/$1.../; # max field size 1500 chars
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, variable => $variable->{$sourceId}, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
+    $ontologySynonym->setParent($ontologyTerm);
+    $ontologySynonym->setIsPreferred(1) if($isPreferred);
 
     # my @synArr = split(/,/, $synonyms);
     # for (my $i=0; $i<@synArr; $i++) {
@@ -298,9 +298,9 @@ sub doTerms {
     #   $ontologySynonym->setParent($ontologyTerm);
     # }
 
-      $ontologyTerm->submit();
-      $termIds{$ontologyTerm->getSourceId()}=$ontologyTerm->getId();
-      $self->undefPointerCache();
+    $ontologyTerm->submit();
+    $termIds{$ontologyTerm->getSourceId()}=$ontologyTerm->getId();
+    $self->undefPointerCache();
   }
 
   return \%termIds;
