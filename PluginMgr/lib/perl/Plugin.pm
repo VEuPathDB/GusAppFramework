@@ -345,7 +345,11 @@ B<Return type:> C<string>
 # parse out revision from string of the form '$Revision 1.2 $'
 sub getCVSRevision {
   my ($self) = @_;
-  return "dont-care";   # no longer care about cvs revisions
+  my $time = localtime();
+  if ($time =~/^[A-Za-z]+ (.+)$/) {
+      $time = $1;
+  }
+  return $time;   # no longer care about cvs revisions, but need a way to track versions
 }
 
 =item C<getResultDescr>
