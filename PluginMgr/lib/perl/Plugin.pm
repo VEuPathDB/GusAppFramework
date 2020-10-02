@@ -346,8 +346,9 @@ B<Return type:> C<string>
 sub getCVSRevision {
   my ($self) = @_;
   my $time = localtime();
-  if ($time =~/^[A-Za-z]+ (.+)$/) {
-      $time = $1;
+  $time =~ s/  / /g;
+  if ($time =~/^[A-Za-z]+ (.+:[0-9]{1,2}):.+( [0-9]{2,4})$/) {
+      $time = $1.$2;
   }
   return $time;   # no longer care about cvs revisions, but need a way to track versions
 }
