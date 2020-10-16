@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use strict;
+use warnings;
 
 use lib "$ENV{GUS_HOME}/lib/perl/";
 
