@@ -543,7 +543,7 @@ sub getBlatAlignmentIds {
    . "from DoTS.BlatAlignment "
    . "where query_table_id = $queryTableId "
    . "and query_taxon_id = $queryTaxonId "
-   . ($queryExtDbRelId ? "and query_external_db_release_id = $queryExtDbRelId " : "")
+   . ($queryExtDbRelId ? "and query_external_db_release_id = $queryExtDbRelId " : "and query_external_db_release_id is null ")
    . "and target_table_id = $targetTableId "
    . "and target_taxon_id = $targetTaxonId "
    . "and target_external_db_release_id = $targetExtDbRelId";
