@@ -6,11 +6,6 @@ use Bio::Location::Simple;
 use Bio::Coordinate::Pair;
 use Bio::Coordinate::GeneMapper;
 
-use Bio::SeqFeature::Generic;
-
-use Bio::SeqFeature::Gene::UTR;
-use Bio::SeqFeature::Gene::Exon;
-use Bio::SeqFeature::Gene::Transcript;
 
 use Data::Dumper;
 
@@ -115,11 +110,11 @@ sub bioperlFeaturesFromGeneSourceId {
 
   my $geneModelHash = $self->getGeneModelHashFromGeneSourceId($geneSourceId);
 
-  my $geneFeature = new Bio::SeqFeature::Generic ( -start => $geneModelHash->{start}, 
+  my $geneFeature = GUS::Community::GeneModelLocations::Gene->new( -start => $geneModelHash->{start}, 
                                                    -end => $geneModelHash->{end}, 
                                                    -seq_id => $geneModelHash->{sequence_source_id},
                                                    -strand => $geneModelHash->{strand}, 
-                                                   -primary => 'gene',
+                                                   -primary => $geneModelHash->{sequence_ontology_term},
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $geneSourceId,
                                                                 NA_FEATURE_ID => $geneModelHash->{na_feature_id},
@@ -149,11 +144,11 @@ sub bioperlFeaturesFromGeneSourceId {
  #     $transcriptEnd =  $exonEnd if($exonEnd > $transcriptEnd);
  #   }
 
-    my $transcriptFeature = new Bio::SeqFeature::Gene::Transcript ( -start => $transcriptHash->{start},
+    my $transcriptFeature = GUS::Community::GeneModelLocations::Transcript->new ( -start => $transcriptHash->{start},
                                                            -end => $transcriptHash->{end},
                                                    -seq_id => $geneModelHash->{sequence_source_id},
                                                    -strand => $transcriptHash->{gene_strand}, 
-                                                   -primary => 'transcript',
+                                                   -primary => $transcriptHash->{sequence_ontology_term},
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $transcriptSourceId,
                                                                 NA_FEATURE_ID => $transcriptHash->{na_feature_id},
@@ -202,7 +197,7 @@ sub bioperlFeaturesFromGeneSourceId {
 
         my $cdsId = "${proteinSourceId}-CDS$cdsCount";
 
-        my $cdsFeature = new Bio::SeqFeature::Generic ( -start => $pExon->{cds_start},
+        my $cdsFeature = GUS::Community::GeneModelLocations::CDS->new ( -start => $pExon->{cds_start},
                                                         -end => $pExon->{cds_end}, 
                                                         -seq_id => $geneModelHash->{sequence_source_id},
                                                         -strand => $pExon->{strand},
@@ -242,7 +237,7 @@ sub bioperlFeaturesFromGeneSourceId {
 
         $utrCount++;
         my $utrId = "utr_${transcriptSourceId}_$utrCount";
-        my $utrFeature = new Bio::SeqFeature::Gene::UTR ( -start => $utr->[0],
+        my $utrFeature = GUS::Community::GeneModelLocations::UTR->new ( -start => $utr->[0],
                                                           -end => $utr->[1],
                                                           -strand => $utr->[2],
                                                           -source_tag => $sourceTag,
@@ -267,7 +262,7 @@ sub bioperlFeaturesFromGeneSourceId {
     my $parent = join(",", @{$exonHash->{transcripts}});
 
 
-    my $exonFeature = new Bio::SeqFeature::Gene::Exon ( -start => $exonHash->{start}, 
+    my $exonFeature = GUS::Community::GeneModelLocations::Exon->new ( -start => $exonHash->{start}, 
                                                    -end => $exonHash->{end}, 
                                                    -seq_id => $exonHash->{sequence_source_id},
                                                    -strand => $exonHash->{strand}, 
@@ -306,6 +301,8 @@ sub bioperlFeaturesFromGeneSourceId {
 sub utrDirection {
   my ($minCdsLoc, $maxCdsLoc, $utrStart, $utrEnd, $utrStrand, $transcriptSourceId) = @_;
 
+
+  # utr5prime and utr3prime are what the bioperl object expects for primary_tag (although not what gff3 wants argh;  must deal with that downstream)
   if($utrStrand == -1) {
     if($utrStart <= $minCdsLoc && $utrEnd <= $minCdsLoc) {
       return 'utr3prime';
@@ -568,7 +565,8 @@ sub _initAllModelsHash {
      , p.coding_start
      , p.coding_end
      , gf.na_sequence_id 
-     , so.name as so_term
+     , so.name as gene_so_term
+     , tso.name as transcript_so_term
      , s.taxon_id
 from dots.genefeature gf
    , dots.nalocation gfl
@@ -578,6 +576,7 @@ from dots.genefeature gf
    , dots.transcript t
    , dots.rnafeatureexon rfe
    , sres.ontologyterm so
+   , sres.ontologyterm tso
    , (select taf.na_feature_id 
            , taf.translation_start
            , taf.translation_stop
@@ -604,6 +603,7 @@ and rfe.exon_feature_id = p.exon_feature_id (+)
 and rfe.rna_feature_id = p.na_feature_id (+)
 and gf.external_database_release_id = ?
 and gf.sequence_ontology_id = so.ontology_term_id
+and t.sequence_ontology_id = tso.ontology_term_id
 order by gf.na_feature_id, t.na_feature_id, l.start_min
 ";
 
@@ -658,7 +658,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $codingEnd = $arr->[19];
     my $naSequenceId = $arr->[20];
     my $gfSoTerm = $arr->[21];
-    my $taxonId = $arr->[22];
+    my $transcriptSoTerm = $arr->[22];
+    my $taxonId = $arr->[23];
 
     my $strand = $geneIsReversed ? -1 : 1;
 
@@ -678,6 +679,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                  'start' => $geneLocation->start,
                                  'end' => $geneLocation->end,
                                  'strand' => $geneLocation->strand,
+                                 'sequence_ontology_term' => $gfSoTerm,
                                  'sequence_is_piece' => $geneLocation->{_sequence_is_piece},
       };
 
@@ -692,6 +694,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     unless($seenTranscript) {
       $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId} = {'source_id' => $transcriptSourceId,
                                                                             'na_feature_id' => $transcriptNaFeatureId,
+                                                                            'sequence_ontology_term' => $transcriptSoTerm,
                                                                             'na_sequence_id' => $geneModels->{$geneSourceId}->{na_sequence_id}, # GET FROM THE GENE
                                                                             'sequence_source_id' => $geneModels->{$geneSourceId}->{sequence_source_id}, # GET FROM THE GENE
       };
@@ -968,4 +971,50 @@ sub findAgpFromPieceLocation {
   die "Could not find a virtual sequence for piece $sourceId w/ start=$start and end=$end";
 }
 
+# this is a static function
+sub getShortFeatureType {
+  my ($featureObject) = @_;
+
+  my $className = ref $featureObject;
+
+  my $featureType;
+  if($className =~ /GUS::Community::GeneModelLocations::(.+)/) {
+    $featureType = $1;
+  }
+  else {
+    die "Expected Classname to start with GUS::Community::GeneModelLocations but found: $className";
+  }
+  return $featureType;
+}
+
+
 1;
+
+package GUS::Community::GeneModelLocations::Gene;
+use base qw(Bio::SeqFeature::Generic);
+
+1;
+
+package GUS::Community::GeneModelLocations::CDS;
+use base qw(Bio::SeqFeature::Generic);
+1;
+
+package GUS::Community::GeneModelLocations::Transcript;
+use base qw(Bio::SeqFeature::Gene::Transcript);
+1;
+
+package GUS::Community::GeneModelLocations::UTR;
+use base qw(Bio::SeqFeature::Gene::UTR);
+1;
+
+package GUS::Community::GeneModelLocations::Exon;
+use base qw(Bio::SeqFeature::Gene::Exon);
+1;
+
+
+
+
+1;
+
+
+
