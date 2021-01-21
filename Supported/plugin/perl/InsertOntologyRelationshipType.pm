@@ -118,10 +118,10 @@ sub makeOntologyRelType {
   $name ||= $term; # use term if name is not used
   my $termObj = GUS::Model::SRes::OntologyTerm->new({
    'source_id' => $term,
-   'name' => $name || $term,
+   'name' => $name,
   });
   $termObj->retrieveFromDB();
-  $termObj->setName($term);
+  $termObj->setName($name);
   $termObj->setExternalDatabaseReleaseId($extDbRls);
   return $termObj;
 }
