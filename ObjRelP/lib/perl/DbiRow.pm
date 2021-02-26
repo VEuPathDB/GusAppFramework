@@ -280,11 +280,13 @@ sub retrieveFromDB {
     #		$sth->finish() if $exists > 1;
   }
   #	print STDERR "\nretrieveFromDB: $exists\n";
-  if ($exists == 1 || $retrieveIfMoreThanOne) {
+  if ($exists == 1 || ($exists > 1 && $retrieveIfMoreThanOne)) {
     $self->setAttributes($attributeHash);
     $self->synch();
-  } elsif ($exists > 1) {
-    #print STDERR "\nERROR ".$self->getTableName().": retrieveFromDB: $sql\t$exists rows returned!\n";
+  } 
+
+  if (!$retrieveIfMoreThanOne && $exists > 1) {
+    &confess("\nERROR ".$self->getTableName().": retrieveFromDB: $sql\t$exists rows returned!\n");    
   }
 
   $self->setNumberOfDatabaseRows(($exists == 1 || $retrieveIfMoreThanOne) ? 1 : 0);
