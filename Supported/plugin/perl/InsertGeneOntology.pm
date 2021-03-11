@@ -274,13 +274,14 @@ sub _retrieveRelationshipPredicate {
   my ($self, $type, $extDbRlsId) = @_;
 
   my $predicateTerm = GUS::Model::SRes::OntologyTerm->new({
-    name                         => $type,
-    ontology_term_type_id        => $self->_getOntologyTermTypeId('relationship'),
     source_id                    => "GOPRED_$type"
   });
 
   # Try to retrieve, updateExtDbRls, submit
   $predicateTerm->retrieveFromDB();
+
+  $predicateTerm->setOntologyTermTypeId($self->_getOntologyTermTypeId('relationship'));
+  $predicateTerm->setName($type);
   $predicateTerm->setExternalDatabaseReleaseId($extDbRlsId);
   $predicateTerm->submit();    
 
@@ -295,7 +296,7 @@ sub _retrieveOntologyTerm {
 
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
     source_id                    => $id,
-    ontology_term_type_id        => $self->_getOntologyTermTypeId('class'),
+#    ontology_term_type_id        => $self->_getOntologyTermTypeId('class'),
 #    external_database_release_id => $extDbRlsId,
   });
 
@@ -310,7 +311,8 @@ sub _retrieveOntologyTerm {
   $ontologyTerm->setDefinition($def) if length($def);
   $ontologyTerm->setNotes($comment) if length($comment);
   $ontologyTerm->setIsObsolete(1) if ($isObsolete && $isObsolete eq "true");
-
+  $ontologyTerm->setOntologyTermTypeId($self->_getOntologyTermTypeId('class'));
+  
   $self->_setOntologyTermSynonyms($ontologyTerm, $synonyms, $extDbRlsId) if $synonyms;
 
   $ontologyTerm->submit();
