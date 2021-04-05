@@ -4,6 +4,7 @@ use strict;
 
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::TranslatedAASequence;
+use GUS::Model::DoTS::GeneFeature;
 
 use Bio::Tools::GFF;
 
@@ -99,6 +100,42 @@ and    nl.na_feature_id = t.na_feature_id
     }
 
     $stmt->finish();
+
+    my $prefStmt = $plugin->prepareAndExecute($sql_preferred);
+    while ( my($source_id, $na_feature_id) = $prefStmt->fetchrow_array()) {
+     $plugin->{_sourceIdGeneFeatureIdMap}->{$source_id} = $na_feature_id;
+    }
+    $prefStmt->finish();
+
+  }
+
+  return $plugin->{_sourceIdGeneFeatureIdMap}->{$sourceId};
+}
+
+## get na_feature_id but dont check aliases
+sub getGeneFeatureIdWithoutAliases {
+  my ($plugin, $sourceId, $geneExtDbRlsId) = @_;
+
+  if (!$plugin->{_sourceIdGeneFeatureIdMap}) {
+
+    $plugin->{_sourceIdGeneFeatureIdMap} = {};
+
+    my $sql_preferred = "
+SELECT source_id, na_feature_id
+FROM Dots.GeneFeature
+WHERE (is_predicted is null or is_predicted != 1)
+";
+
+    if($geneExtDbRlsId){
+
+    $sql_preferred = "
+SELECT source_id, na_feature_id
+FROM Dots.GeneFeature
+where external_database_release_id in ($geneExtDbRlsId)
+";
+
+    }
+    my %transcriptLength;
 
     my $prefStmt = $plugin->prepareAndExecute($sql_preferred);
     while ( my($source_id, $na_feature_id) = $prefStmt->fetchrow_array()) {
