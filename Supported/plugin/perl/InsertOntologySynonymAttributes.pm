@@ -24,20 +24,24 @@ use Text::CSV;
 
 my $argsDeclaration =
 [
-
  fileArg({name           => 'attributesFile',
-	  descr          => 'A tab-delimited file with headers matching SRes.OntologySynonym column names',
-	  reqd           => 1,
-	  mustExist      => 1,
-	  format         => 'tab-delimited txt file',
-	  constraintFunc => undef,
-	  isList         => 0, 
-	 }),
-stringArg({ name  => 'extDbRlsSpec',
-		  descr => "The ExternalDBRelease specifier for this Ontology Synonym. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 }),
+    descr          => 'A tab-delimited file with headers matching SRes.OntologySynonym column names',
+    reqd           => 1,
+    mustExist      => 1,
+    format         => 'tab-delimited txt file',
+    constraintFunc => undef,
+    isList         => 0, 
+   }),
+  stringArg({ name  => 'extDbRlsSpec',
+    descr => "The ExternalDBRelease specifier for this Ontology Synonym. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+    constraintFunc => undef,
+    reqd           => 1,
+    isList         => 0 }),
+  booleanArg({name => 'append',
+    descr => 'Will insert a new synonym if the ontology_term_id for SOURCE_ID exists', 
+    constraintFunc => undef,
+    reqd => 0,
+  }),
 ];
 
 my $purpose = <<PURPOSE;
@@ -115,7 +119,8 @@ sub run {
   my $extDbRlsSpec = $self->getArg('extDbRlsSpec');
   my $extDbRlsId = $self->getExtDbRlsId( $extDbRlsSpec );
   my $file = $self->getArg('attributesFile');
-  my $synonymsCount = $self->loadSynonyms($file,$extDbRlsId);
+  my $append = $self->getArg('append');
+  my $synonymsCount = $self->loadSynonyms($file,$extDbRlsId,$append);
   return "Updated $synonymsCount rows in SRes::OntologySynonym";
 }
 
@@ -123,7 +128,7 @@ sub run {
 
 
 sub loadSynonyms {
-  my ($self, $file, $extDbRlsId) = @_;
+  my ($self, $file, $extDbRlsId, $append) = @_;
 
   unless(-e $file){
     $self->log(sprintf("WARN: file %s does not exist", $file));
@@ -153,27 +158,31 @@ sub loadSynonyms {
   foreach my $ontologyTermSourceId(keys %data){
     my $attrs = $data{$ontologyTermSourceId};
 
-  	next unless($ontologyTermSourceId);
-  	my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ source_id =>  $ontologyTermSourceId });
-    unless ( $ontologyTerm->retrieveFromDB()) {
+    next unless($ontologyTermSourceId);
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ source_id =>  $ontologyTermSourceId });
+    unless ( $ontologyTerm->retrieveFromDB() || $append ) {
       $self->error("unable to find ontology term $ontologyTermSourceId");
+    }
+    else {
+      $ontologyTerm->submit();
     }
     my $synonym = GUS::Model::SRes::OntologySynonym->new({
       external_database_release_id => $extDbRlsId,
       ontology_term_id => $ontologyTerm->getId,
     });
     # $synonym->setParent($ontologyTerm);
-    unless( $synonym->retrieveFromDB() ){
+    unless( $synonym->retrieveFromDB() || $append ) { 
       $self->error("unable to find ontology synonym for $ontologyTermSourceId in $extDbRlsId");
     }
   
     my $validAttrs = $synonym->getAttributes();
     
     foreach my $attr ( keys %$attrs ){
-      unless(exists($validAttrs->{$attr})){
-        # $self->log("$attr not a valid attribute, skipping");
-        next;
-      }
+   #  unless(exists($validAttrs->{$attr})){
+   #    $self->log("$attr not a valid attribute, skipping");
+   #    next;
+   #  }
+      $self->log("SETTING: $attr = $attrs->{$attr}");
       $synonym->set($attr, $attrs->{$attr});
     }
     my $status = $synonym->submit();
