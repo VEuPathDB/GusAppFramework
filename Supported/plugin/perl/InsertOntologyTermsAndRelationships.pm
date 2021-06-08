@@ -231,8 +231,8 @@ sub doTerms {
   my $isPreferred = $self->getArg('isPreferred') eq 'true' ? 1 : 0;
 
   my $terms = $owlReader->getTerms();
-  my $displayOrder = $owlReader->getDisplayOrder();
-  my $variable = $owlReader->getVariable();
+  # my $displayOrder = $owlReader->getDisplayOrder();
+  # my $variable = $owlReader->getVariable();
 
   my %termIds;
   foreach my $term (@$terms) {
@@ -286,8 +286,10 @@ sub doTerms {
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($definition);
     }
-    $variable->{$sourceId} =~ s/^(.{1495}).+$/$1.../; # max field size 1500 chars
-    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, variable => $variable->{$sourceId}, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
+    # $variable->{$sourceId} =~ s/^(.{1495}).+$/$1.../; # max field size 1500 chars
+    # if($displayOrder->{$sourceId} =~ /NA/i) { delete($displayOrder->{$sourceId}) }
+    # my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, variable => $variable->{$sourceId}, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId});
     $ontologySynonym->setParent($ontologyTerm);
     $ontologySynonym->setIsPreferred(1) if($isPreferred);
 
