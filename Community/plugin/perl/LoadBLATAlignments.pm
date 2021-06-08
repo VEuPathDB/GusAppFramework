@@ -621,11 +621,11 @@ sub keepBestAlignments {
    my $tot_sq = @$blatIds;
    my ($tot_al, $tot_bs) = (0,0);
 
-   foreach my $sid (@$blatIds) {
-     $dbh->do("update DoTS.BlatAlignment set is_best_alignment = 0 "
-		  . "where blat_alignment_id = $sid and is_best_alignment != 0" );
-   }
-   $dbh->commit() if $self->getArg('commit');
+   # foreach my $sid (@$blatIds) {
+   #   $dbh->do("update DoTS.BlatAlignment set is_best_alignment = 0 "
+   #      	  . "where blat_alignment_id = $sid and is_best_alignment != 0" );
+   # }
+   # $dbh->commit() if $self->getArg('commit');
 
    foreach my $sid (@$blatIds) {
      my $alnGrps = $self->getAlignmentGroups($sid);
