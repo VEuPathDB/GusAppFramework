@@ -469,4 +469,22 @@ sub undoTables {
   return ('SRes.OntologyRelationship', 'SRes.OntologySynonym');
 }
 
+sub undoPreprocess {
+  # clean up SRes.OntologySynonym rows that were edited by downstream steps
+  my ($self, $dbh, $rowAlgInvocationList) = @_;
+  my $rowAlgInvocations = join(',', @{$rowAlgInvocationList});
+  $self->log("Cleaning up SRes.OntologySynonym using row_alg_invocation_id(s)=$rowAlgInvocations");
+  my $sql = <<CLEANUP;
+DELETE FROM SRES.ONTOLOGYSYNONYM WHERE ROW_ALG_INVOCATION_ID IN (
+  SELECT DISTINCT o2.ROW_ALG_INVOCATION_ID
+  FROM sres.ONTOLOGYSYNONYM o 
+  LEFT JOIN sres.ONTOLOGYSYNONYM o2 ON o.EXTERNAL_DATABASE_RELEASE_ID = o2.EXTERNAL_DATABASE_RELEASE_ID 
+  WHERE o.ROW_ALG_INVOCATION_ID IN ($rowAlgInvocations)
+  AND o2.ROW_ALG_INVOCATION_ID NOT IN ($rowAlgInvocations)
+)
+CLEANUP
+  $dbh->do($sql) or die $dbh->errstr;
+}
+
+
 1;
