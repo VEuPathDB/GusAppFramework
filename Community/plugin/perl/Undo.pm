@@ -156,16 +156,8 @@ sub run{
    my $plugin = eval "require $pluginName; $pluginName->new()";
 
    $self->error("Failed trying to create new plugin '$pluginName' with error '$@'") unless $plugin;
-   my @tables;
 
-   if ($self->getArg('undoTables'))
-   {
-       @tables = split (/,/,$self->getArg('undoTables'));
-
-   }else{
-       @tables = $plugin->undoTables();
-   }
-
+### do preprocess
    eval {
      $plugin->undoPreprocess($self->{'dbh'}, $self->getArg('algInvocationId'));
      if ($self->{commit} == 1) {
@@ -179,7 +171,19 @@ sub run{
      $self->error($@);
    }
    else {}
+### done preprocessing
    
+### get tables
+   my @tables;
+   if ($self->getArg('undoTables'))
+   {
+       @tables = split (/,/,$self->getArg('undoTables'));
+
+   }else{
+       @tables = $plugin->undoTables();
+   }
+### done getting tables
+
    foreach my $table (@tables) {
 
       $self->deleteFromTable($table,'row_alg_invocation_id', $self->getArg('limit'));
