@@ -9,6 +9,8 @@ use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::GeneticCode;
 use GUS::PluginMgr::Plugin;
+use GUS::Model::SRes::Taxon_Table;
+use Data::Dumper;
 
 sub new {
   my ($class) = @_;
@@ -141,78 +143,96 @@ sub run {
 sub mergeTaxons {
   my $self   = shift;
   $self->log("Merging taxons");
+
+  my $taxonTable = GUS::Model::SRes::Taxon_Table->new();
+
+  my @childrenTables;
+  foreach my $childArray (@{$taxonTable->{children}}) {
+    my $childTable = $childArray->[0];
+    my $childField = $childArray->[2];
+
+    $childTable =~ s/GUS::Model:://;
+    $childTable =~ s/::/./;
+
+    push @childrenTables, [$childTable, $childField];
+  }
+
+  $self->getDb()->manageTransaction(0, 'begin');
+
+  my $dbh = $self->getDbHandle();
+  my $updateTaxonRow = $dbh->prepare("update sres.taxon set ncbi_tax_id = ? where taxon_id = ?");
+
   my $merged = $self->getArg('merged');
   open (MERGED,$merged) || die "Can't open merged file '$merged': $!\n";
+
+  my $rowCount;
   while(<MERGED>) {
     chomp;
-    my @merged = split(/\s*\|\s*/, $_);
-    my $oldTax = $merged[0];
-    my $newTax = $merged[1];
-    my $oldTaxon = $self->getTaxon($oldTax);
-    if (! $oldTaxon) {
-#      $self->log("Doing merge and NCBI tax id '$oldTax' not in database, skipping");
+
+    my ($oldNcbiTaxId, $newNcbiTaxId) = split(/\s*\|\s*/, $_);
+
+    my $oldTaxonId = $self->getTaxon($oldNcbiTaxId);
+    if (! $oldTaxonId) {
+#      $self->log("Doing merge and NCBI tax id '$oldNcbiTaxId' not in database, skipping");
       next;
     }
-    my $newTaxon = $self->getTaxon($newTax);
-    $self->updateTaxonRow($oldTaxon,$newTax) if (! $newTaxon);
-    $self->updateTaxonAndChildRows ($oldTaxon,$newTaxon) if ($newTaxon);
+    my $newTaxonId = $self->getTaxon($newNcbiTaxId);
+
+    # replace ncbi_tax_id for old row where merged row prev didn't exist in db
+    if (! $newTaxonId) {
+      $rowCount++ if($self->updateTaxonRow($updateTaxonRow, $oldTaxonId, $oldNcbiTaxId, $newNcbiTaxId));
+    }
+
+    # if there is old and new, set children old->new and delete old row
+    $self->updateTaxonAndChildRows ($dbh, $oldTaxonId, $oldNcbiTaxId, $newTaxonId, $newNcbiTaxId, \@childrenTables) if ($newTaxonId);
+
+    if($rowCount++ % 2000 == 0) {
+      $self->getDb()->manageTransaction(0, 'commit');
+      $self->getDb()->manageTransaction(0, 'begin');
+    }
   }
+
+  $self->getDb()->manageTransaction(0, 'commit');
 }
 
 sub updateTaxonRow {
-  my ($self,$oldTaxon,$newTax) = @_;
-  my $taxonRow  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxon});
-  $taxonRow ->retrieveFromDB();
-  if ($taxonRow->get('ncbi_tax_id') != $newTax) {
-    ##deal with idcache
-    $self->{taxonIdMapping}->{$newTax} = $oldTaxon;
-    delete $self->{taxonIdMapping}->{$taxonRow->getNcbiTaxId()};
+  my ($self, $update, $oldTaxonId, $oldNcbiTaxId, $newNcbiTaxId) = @_;
 
-    $taxonRow->set('ncbi_tax_id',$newTax);
+  if($oldNcbiTaxId != $newNcbiTaxId) {
+    ##deal with idcache
+    $self->{taxonIdMapping}->{$newNcbiTaxId} = $oldTaxonId;
+    delete $self->{taxonIdMapping}->{$oldNcbiTaxId};
+
+    $self->log("update sres.taxon set ncbi_tax_id = $newNcbiTaxId where taxon_id = $oldTaxonId");
+    $update->execute($newNcbiTaxId, $oldTaxonId) or $self->error("Can't execute SQL statement: $DBI::errstr"); 
+
+    return 1;
   }
-  my $submit = $taxonRow->submit();
-  if ($submit == 1) {
-    $self->log("Taxon_id = $oldTaxon updated to ncbi_tax_id = $newTax");
-  }
-  else {
-    $self->log("Taxon_id = $oldTaxon FAILED to update to ncbi_tax_id = $newTax");
-  }
-  $self->undefPointerCache();
+  return 0;
 }
 
 sub updateTaxonAndChildRows {
-  my ($self,$oldTaxon,$newTaxon)= @_;
-  my $newTaxon = GUS::Model::SRes::Taxon->new({'taxon_id'=>$newTaxon});
-  $newTaxon ->retrieveFromDB();
-  my $newId = $newTaxon->getId();
-  my $oldTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxon});
-  $oldTaxon ->retrieveFromDB();
-  my $oldId = $oldTaxon->getId();
-  my @children = $oldTaxon->getAllChildren(1);
-  foreach my $child (@children) {
-    $child->removeParent($oldTaxon);
-    $child->setParent($newTaxon);
-  }
-  my $submit = $newTaxon->submit();
-  if ($submit == 1) {
-    $self->log("Taxon_id = $oldId merged with Taxon_id = $newId");
-  }
-  else {
-    $self->log("Taxon_id = $oldId FAILED to merge with Taxon_id = $newId");
-  }
-  ##deal with idcache
-  $self->{taxonIdMapping}->{$newTaxon->getNcbiTaxId()} = $newId;
-  delete $self->{taxonIdMapping}->{$oldTaxon->getNcbiTaxId()};
+  my ($self,$dbh, $oldTaxonId,$oldNcbiTaxId, $newTaxonId, $newNcbiTaxId, $childrenTables)= @_;
 
-  $oldTaxon->markDeleted(); 
-  my $delete = $oldTaxon->submit();
-  if ($delete == 1) {
-    $self->log("Taxon_id = $oldId deleted");
+  foreach my $tableArray (@$childrenTables) {
+    my $table = $tableArray->[0];
+    my $field = $tableArray->[1];
+
+    $self->log("update $table set $field = $newTaxonId where $field = $oldTaxonId");
+    my $update = $dbh->prepare("update $table set $field = ? where $field = ?");
+    $update->execute($newTaxonId, $oldTaxonId) or $self->error("Can't execute SQL statement: $DBI::errstr");
+    $self->getDb()->manageTransaction(0, 'commit');
+    $self->getDb()->manageTransaction(0, 'begin');
   }
-  else {
-    $self->log("Taxon_id = $oldId FAILED to delete");
-  }
-  $self->undefPointerCache();
+
+  ##deal with idcache
+  $self->{taxonIdMapping}->{$newNcbiTaxId} = $newTaxonId;
+  delete $self->{taxonIdMapping}->{$oldNcbiTaxId};
+
+  $self->log("delete sres.taxon where taxon_id = $oldTaxonId");
+  $dbh->do("delete sres.taxon where taxon_id = $oldTaxonId") or $self->error("Can't execute SQL statement: $DBI::errstr");
+
+  return 1;
 }
 
 sub makeGeneticCode {
@@ -439,19 +459,20 @@ sub deleteTaxonName {
   my ($TaxonNameIdHash,$TaxonIdHash) = @_;
   $self->log("Deleting TaxonNames when redundant");
   my $num = 0;
+  my $dbh = $self->getDbHandle();
+  $self->getDb()->manageTransaction(0,'begin');
   my $st = $self->prepareAndExecute("select taxon_name_id, taxon_id, name_class from sres.taxonname");
   while (my ($taxon_name_id,$taxon_id,$name_class) = $st->fetchrow_array()) {
     if ($TaxonNameIdHash->{$taxon_name_id}==1) {
       next();
     }
     elsif ($TaxonIdHash->{$taxon_id}->{$name_class}==1) {
-      my $newTaxonName = GUS::Model::SRes::TaxonName->new({'taxon_name_id'=>$taxon_name_id});
-      $newTaxonName->retrieveFromDB();
-      $newTaxonName->markDeleted();
-      $self->getDb()->manageTransaction(0,'begin') if $num % 100 == 0;
-      $num += $newTaxonName->submit(0,1);
-      $self->getDb()->manageTransaction(0,'commit') if $num % 100 == 0;
-      $newTaxonName->undefPointerCache();
+
+      $num += $dbh->do("delete sres.taxonname where taxon_name_id = $taxon_name_id") or $self->error("Can't execute SQL statement: $DBI::errstr");
+      if($num % 1000 == 0) {
+        $self->getDb()->manageTransaction(0,'commit');
+        $self->getDb()->manageTransaction(0,'begin');
+      }
      }
   }
   $self->getDb()->manageTransaction(0,'commit');
