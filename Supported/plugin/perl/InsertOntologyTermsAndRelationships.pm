@@ -231,8 +231,8 @@ sub doTerms {
   my $isPreferred = $self->getArg('isPreferred') eq 'true' ? 1 : 0;
 
   my $terms = $owlReader->getTerms();
-  my $displayOrder = $owlReader->getDisplayOrder();
-  my $variable = $owlReader->getVariable();
+  # my $displayOrder = $owlReader->getDisplayOrder();
+  # my $variable = $owlReader->getVariable();
 
   my %termIds;
   foreach my $term (@$terms) {
@@ -286,8 +286,10 @@ sub doTerms {
       $ontologyTerm->setUri($uri);
       $ontologyTerm->setDefinition($definition);
     }
-    $variable->{$sourceId} =~ s/^(.{1495}).+$/$1.../; # max field size 1500 chars
-    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, variable => $variable->{$sourceId}, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
+    # $variable->{$sourceId} =~ s/^(.{1495}).+$/$1.../; # max field size 1500 chars
+    # if($displayOrder->{$sourceId} =~ /NA/i) { delete($displayOrder->{$sourceId}) }
+    # my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, variable => $variable->{$sourceId}, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId});
     $ontologySynonym->setParent($ontologyTerm);
     $ontologySynonym->setIsPreferred(1) if($isPreferred);
 
@@ -466,5 +468,23 @@ sub undoTables {
 
   return ('SRes.OntologyRelationship', 'SRes.OntologySynonym');
 }
+
+sub undoPreprocess {
+  # clean up SRes.OntologySynonym rows that were edited by downstream steps
+  my ($self, $dbh, $rowAlgInvocationList) = @_;
+  my $rowAlgInvocations = join(',', @{$rowAlgInvocationList});
+  $self->log("Cleaning up SRes.OntologySynonym using row_alg_invocation_id(s)=$rowAlgInvocations");
+  my $sql = <<CLEANUP;
+DELETE FROM SRES.ONTOLOGYSYNONYM WHERE ROW_ALG_INVOCATION_ID IN (
+  SELECT DISTINCT o2.ROW_ALG_INVOCATION_ID
+  FROM sres.ONTOLOGYSYNONYM o 
+  LEFT JOIN sres.ONTOLOGYSYNONYM o2 ON o.EXTERNAL_DATABASE_RELEASE_ID = o2.EXTERNAL_DATABASE_RELEASE_ID 
+  WHERE o.ROW_ALG_INVOCATION_ID IN ($rowAlgInvocations)
+  AND o2.ROW_ALG_INVOCATION_ID NOT IN ($rowAlgInvocations)
+)
+CLEANUP
+  $dbh->do($sql) or die $dbh->errstr;
+}
+
 
 1;
