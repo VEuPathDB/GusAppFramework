@@ -233,6 +233,9 @@ sub doTerms {
   my $terms = $owlReader->getTerms();
   # my $displayOrder = $owlReader->getDisplayOrder();
   # my $variable = $owlReader->getVariable();
+  
+  my $annotationProps = $owlReader->getAnnotationPropertiesJSON();
+  # hash of {termId} = json formatted hash 
 
   my %termIds;
   foreach my $term (@$terms) {
@@ -289,7 +292,7 @@ sub doTerms {
     # $variable->{$sourceId} =~ s/^(.{1495}).+$/$1.../; # max field size 1500 chars
     # if($displayOrder->{$sourceId} =~ /NA/i) { delete($displayOrder->{$sourceId}) }
     # my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, variable => $variable->{$sourceId}, external_database_release_id => $extDbRlsId, display_order => $displayOrder->{$sourceId}});
-    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, external_database_release_id => $extDbRlsId});
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $name, definition => $definition, annotation_properties => $annotationProps->{$sourceId}, external_database_release_id => $extDbRlsId});
     $ontologySynonym->setParent($ontologyTerm);
     $ontologySynonym->setIsPreferred(1) if($isPreferred);
 
