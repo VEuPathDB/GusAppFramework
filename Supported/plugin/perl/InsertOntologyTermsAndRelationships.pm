@@ -46,6 +46,12 @@ my $argsDeclaration =
        constraintFunc => undef,
      }),
 
+ booleanArg({ descr => 'populate annotation properties field',
+       name  => 'loadAnnotationProperties',
+       isList    => 0,
+       reqd  => 0,
+       constraintFunc => undef,
+     }),
 
  stringArg({ descr => '',
        name  => 'relTypeExtDbRlsSpec',
@@ -143,6 +149,7 @@ sub run {
   my ($self) = @_;
 
   my $file = $self->getArg('inFile');
+  my $loadAnnotationProperties = $self->getArg('loadAnnotationProperties');
   
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   $self->setExtDbRls($extDbRlsId);
@@ -152,7 +159,7 @@ sub run {
   if($@){ die "Cannot load $owlReaderClass: $@";}
   my $owlReader = $owlReaderClass->new($file);
   die "Cannot use $owlReaderClass" unless $owlReader;
-  my $termIds = $self->doTerms($owlReader);
+  my $termIds = $self->doTerms($owlReader, $loadAnnotationProperties);
   
   my $termCount = keys %$termIds;
   $self->undefPointerCache();
@@ -222,7 +229,7 @@ B<Return Type:>
 =cut
 
 sub doTerms {
-  my ($self, $owlReader) = @_;
+  my ($self, $owlReader, $loadAnnotationProperties) = @_;
 
   my $extDbRlsId = $self->getExtDbRls();
 
@@ -234,7 +241,7 @@ sub doTerms {
   # my $displayOrder = $owlReader->getDisplayOrder();
   # my $variable = $owlReader->getVariable();
   
-  my $annotationProps = $owlReader->getAnnotationPropertiesJSON();
+  my $annotationProps = $loadAnnotationProperties ? $owlReader->getAnnotationPropertiesJSON() : {};
   # hash of {termId} = json formatted hash 
 
   my %termIds;
