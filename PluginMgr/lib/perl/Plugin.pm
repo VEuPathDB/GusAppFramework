@@ -350,7 +350,8 @@ sub getCVSRevision {
   if ($time =~/^[A-Za-z]+ (.+:[0-9]{1,2}):.+( [0-9]{2,4})$/) {
       $time = $1.$2;
   }
-  return $time;   # no longer care about cvs revisions, but need a way to track versions
+  #return $time;   # no longer care about cvs revisions, but need a way to track versions
+  return "dont-care";
 }
 
 =item C<getResultDescr>
