@@ -120,20 +120,21 @@ sub findSomeImplementation {
 
    my $pluginNm = $plugin->getName;
    my $cvsRevision = $plugin->getCVSRevision;
+   my $checkSum = $plugin->getCheckSum();
 
    # can either be done in +create/+update mode as ga or in +run mode as plugin
-   my $sql = <<SQL;
+   my $sql = "
     SELECT *
       FROM Core.AlgorithmImplementation
      WHERE executable = '$pluginNm'
        AND cvs_revision    = '$cvsRevision'
-SQL
-
+       AND executable_md5 = '$checkSum'
+";
 
    my $imps = $plugin->sql_get_as_hash_refs($sql);
 
    if (scalar @$imps == 0) {
-     $self->registerPlugin($plugin, $sql);  # try registering
+     $self->registerPlugin($plugin);  # try registering
 
      # try again
      $imps = $plugin->sql_get_as_hash_refs($sql);
@@ -146,7 +147,6 @@ SQL
    }
 
    elsif ($plugin->getArgs->{commit} && 0) {
-
 # The following line has been commented out, so that an updated plugin does not need to be checked in
 # for the workflow.  We are transitioning to GitHub, where this versioning mechanism will be difficult. Also,
 # people very rarely used the plugin version to help with debugging. 
@@ -169,6 +169,7 @@ sub registerPlugin {
   my $pluginNm = $plugin->getName;
 
   my $sql = "select * from core.algorithmimplementation where executable = '$pluginNm'";
+
   my $imps = $plugin->sql_get_as_hash_refs($sql);
 
   my $gaCmd;
@@ -178,6 +179,7 @@ sub registerPlugin {
     $gaCmd = "ga +update $pluginNm --commit";
     $gaCmd = "ga +create $pluginNm --commit" if (scalar @$imps == 0);
   }
+
   $self->runRegisterCmd($gaCmd, $pluginNm);
 }
 
@@ -444,7 +446,7 @@ sub doMajorMode_Meta {
 
    my $name = $self->getName();
    my $cvsRevision = $self->getCVSRevision();
-
+   my $executableMd5 = $self->getCheckSum();
    my $imp_go = GUS::Model::Core::AlgorithmImplementation
    ->new({ cvs_revision   => $self->getCVSRevision,
            executable     => $self->getName,
@@ -468,7 +470,8 @@ sub doMajorMode_Meta {
    "SELECT *
      FROM Core.AlgorithmImplementation
      WHERE executable = '$name'
-     AND cvs_revision    = '$cvsRevision'";
+     AND cvs_revision    = '$cvsRevision'
+     AND executable_md5 = '$executableMd5'";
 
    # the following is done in a transaction to ensure consistency.
    # this avoids a race condition when multiple ga's are running in parallel
@@ -896,6 +899,7 @@ sub create_or_update_implementation {
    $self->findAlgorithm($pu);
    my $alg_gus = $pu->getAlgorithm;
    my $cvsRevision = $pu->getCVSRevision;
+   my $checkSum = $pu->getCheckSum();
 
    # we want to create a new Algorithm
    if ($U ) {
@@ -908,7 +912,8 @@ sub create_or_update_implementation {
       "SELECT *
        FROM Core.AlgorithmImplementation
        WHERE executable = '$plugin_name_s'
-       AND cvs_revision    = '$cvsRevision'";
+       AND cvs_revision    = '$cvsRevision'
+       AND executable_md5 = '$checkSum'";
 
       my $imps = $self->sql_get_as_hash_refs($sql);
 
