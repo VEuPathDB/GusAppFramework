@@ -120,6 +120,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                                 NA_FEATURE_ID => $geneModelHash->{na_feature_id},
                                                                 NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                                 SEQUENCE_IS_PIECE => $geneModelHash->{sequence_is_piece}, 
+                                                                EBI_BIOTYPE => $geneModelHash->{ebi_biotype},
                                                    });
 
   push @rv, $geneFeature;
@@ -155,6 +156,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                                 PARENT => $geneModelHash->{source_id},
                                                                 PARENT_NA_FEATURE_ID => $geneModelHash->{na_feature_id},
                                                                 NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
+                                                                GENE_EBI_BIOTYPE => $geneModelHash->{ebi_biotype},
                                                    });
 
     $transcriptMap{$transcriptSourceId} = $transcriptFeature;
@@ -568,6 +570,7 @@ sub _initAllModelsHash {
      , so.name as gene_so_term
      , tso.name as transcript_so_term
      , s.taxon_id
+     , gf.name
 from dots.genefeature gf
    , dots.nalocation gfl
    , dots.nasequence s
@@ -660,6 +663,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $gfSoTerm = $arr->[21];
     my $transcriptSoTerm = $arr->[22];
     my $taxonId = $arr->[23];
+    my $ebiBiotype = $arr->[24];
 
     my $strand = $geneIsReversed ? -1 : 1;
 
@@ -681,6 +685,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                  'strand' => $geneLocation->strand,
                                  'sequence_ontology_term' => $gfSoTerm,
                                  'sequence_is_piece' => $geneLocation->{_sequence_is_piece},
+                                 'ebi_biotype' => $ebiBiotype,
       };
 
 
