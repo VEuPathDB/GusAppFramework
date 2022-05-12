@@ -362,6 +362,12 @@ sub _process {
       $ez_class_h->{"ec_number_$i"} = $ec->getList->[$i-1];
    }
    my $ez_class_g = GUS::Model::SRes::EnzymeClass->new($ez_class_h);
+
+   # reset description for root
+   if ($ec_key == '-.-.-.-') {
+       $ez_class_g->setDescription('Unknown Enzyme');
+   }
+
    $self->_incEnzymeClass;
 
    # process attribues
@@ -415,6 +421,7 @@ sub _process {
          }
       }
    }
+
 
    #  if ($self->getArg('Survey')) {
    #    print '-' x 70, "\n";
