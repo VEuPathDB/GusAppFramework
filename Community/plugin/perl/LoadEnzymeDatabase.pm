@@ -365,7 +365,7 @@ sub _process {
 
    # reset description for root
    if ($ec_key == '-.-.-.-') {
-       $ez_class_g->setDescription('Unknown Enzyme');
+       $ez_class_g->setDescription('Unknown enzyme');
    }
 
    $self->_incEnzymeClass;
