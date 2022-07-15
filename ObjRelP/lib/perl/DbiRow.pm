@@ -20,6 +20,8 @@ use GUS::ObjRelP::DbiDbHandle;
 use GUS::ObjRelP::DbiTable;
 use Carp;
 
+use Data::Dumper;
+
 ############################################################
 #                      Constructor
 ############################################################
@@ -647,33 +649,29 @@ sub insert {
 sub quote_and_insert {
   ## INSERT HASH REF PASSED IN
   my ($self, $insert ) = @_;
-  my ($insert_clause, $values_clause, $key, $value); ## locals
 
   ##deal with clob types....actually any long strings...>500 chars...
-  my $valuesArr;
-  my $cacheKey;
+  my @columns = sort keys %$insert;
+  my (@values, @cacheKeys, @params);
 
-  ##binding all values except date....dbi will do quoting..
-  while ( ($key, $value) = each(%$insert) ) {
-    #    if ( !defined $value ) {
-    #      &confess("\n No value($value) for attribute $key for table insertion. \n");
-    #    }
-    $insert_clause .= " $key,";
+  foreach my $key (@columns) {
+    my $value = $insert->{$key};
     if ($value =~ /^\s*(sysdate|getdate|now\(\))\s*$/i) {
-      $values_clause .= " $value,"; 
-      $cacheKey .= $key;
-    } elsif ($value eq '') {    ##oracle treats this like NULL but others may not..
-      $values_clause .= " null,";
-      $cacheKey .= $key;
+      push(@values, $value);
+      push(@cacheKeys, $key);
+    } elsif ($value eq '') {    ##oracle treats this like NULL but others may not.
+      push(@values, 'null');
+      push(@cacheKeys, $key);
     } else {
-      $values_clause .= ' ?,';
-      push(@$valuesArr,($value =~ /^null$/i ? undef : $value));
-      $cacheKey .= "b$key";
+      push(@values, '?');
+      push(@params, ($value =~ /^null$/i ? undef : $value));  
+      push(@cacheKeys, "b$key");
     }
   }
 
-  ## chop off commas at end
-  chop($insert_clause);  chop($values_clause);
+  my $insert_clause = join(',', @columns);
+  my $cacheKey = join(',', @cacheKeys);
+  my $values_clause = join(',', @values);
 
   my $sql_cmd = "
     INSERT INTO ".$self->getTable()->getOracleTableName()." ( $insert_clause )
@@ -681,14 +679,14 @@ sub quote_and_insert {
 
   #have the DbiTable cache statement handles
   my $stmt;
-  $stmt = $self->getTable()->getCachedStatement('insert',$cacheKey);
+  $stmt = $self->getTable()->getCachedStatement('insert', $cacheKey);
   if (!$stmt) {
     #    print STDERR "Creating new statement $sql_cmd\n";
     $stmt = $self->getDbHandle()->prepare($sql_cmd);
     $self->getTable()->cacheStatement('insert',$cacheKey,$stmt);
   }
 
-  return $self->getDbHandle()->sqlExec($stmt,$valuesArr,$sql_cmd);
+  return $self->getDbHandle()->sqlExec($stmt, \@params, $sql_cmd);
 
   #  return $self->getDbHandle()->sqlexecIns($sql_cmd,$valuesArr);
 }
