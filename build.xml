@@ -4,7 +4,13 @@
   <!-- oooooooooooooooooooooooooo  Dependencies  oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
-	<target name="CBIL-Installation">
+  <!--| Note: Imports are not used here because in some project groups, the full
+     -|     GUS_Installation target is not required.  ant parses the depends
+     -|     targets up front, so if GusSchema is not required and thus is not
+     -|     present, the build will fail.  Using the explicit calls below, callers
+     -|     can call individual GUS component builds without including GusSchema -->
+
+  <target name="CBIL-Installation">
     <ant antfile="../CBIL/build.xml" target="CBIL-Installation">
       <property name="project" value="CBIL" />
     </ant>
