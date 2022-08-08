@@ -4,8 +4,17 @@
   <!-- oooooooooooooooooooooooooo  Dependencies  oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
-  <import file="${projectsDir}/CBIL/build.xml" optional="true" />
-  <import file="${projectsDir}/GusSchema/build.xml" optional="true" />
+	<target name="CBIL-Installation">
+    <ant antfile="../CBIL/build.xml" target="CBIL-Installation">
+      <property name="project" value="CBIL" />
+    </ant>
+  </target>
+
+  <target name="GusSchema-Installation">
+    <ant antfile="../GusSchema/build.xml" target="GusSchema-Installation">
+      <property name="project" value="GusSchema" />
+    </ant>
+  </target>
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
