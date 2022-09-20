@@ -30,7 +30,7 @@ my $algInvocationId = $res{'AlgInvocationId'};
 
 unless($plugin && $algInvocationId) {
   if($force) {
-    print "WARN:  Skipping file because we could not find plugin namd and algInvocationId: $errFile\n";
+    print STDERR "WARN:  Skipping file because we could not find plugin namd and algInvocationId: $errFile\n";
     exit;
   }
   else {
