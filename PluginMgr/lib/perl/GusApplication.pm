@@ -615,7 +615,8 @@ sub doMajorMode_RunOrReport {
       $pu->setResultDescr($resultDescrip) unless $pu->getResultDescr();
 
       $self->logTime($startTime, $pu);
-      $self->logAlert("RESULT", $pu->getResultDescr());
+#      $self->logAlert("RESULT", $pu->getResultDescr());
+      $self->logData("RESULT", $pu->getResultDescr());
 
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
