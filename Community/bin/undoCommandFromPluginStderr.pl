@@ -14,21 +14,24 @@ my $force = $ARGV[1];
 
 open(FILE, $errFile) or die "Cannot open $errFile for reading: $!";
 
-my %res;
+
+my ($plugin, $count);
 while(<FILE>) {
   chomp;
-
-  if(/PLUGIN|AlgInvocationId/) {
-    my @a = split(/\t/, $_);
-    $res{$a[1]} = $a[2];
+  my @a = split(/\t/, $_);
+  if(/PLUGIN/) {
+    $plugin = $a[2];
+  }
+  if(/AlgInvocationId/ && $plugin) {
+    print "ga GUS::Community::Plugin::Undo --plugin $plugin --algInvocationId $a[2] --commit\n";
+    $plugin = undef;
+    $count++;
   }
 }
 close FILE;
 
-my $plugin = $res{'PLUGIN'};
-my $algInvocationId = $res{'AlgInvocationId'};
 
-unless($plugin && $algInvocationId) {
+unless($count) {
   if($force) {
     print STDERR "WARN:  Skipping file because we could not find plugin namd and algInvocationId: $errFile\n";
     exit;
@@ -38,5 +41,5 @@ unless($plugin && $algInvocationId) {
   }
 }
 
-print "ga GUS::Community::Plugin::Undo --plugin $plugin --algInvocationId $algInvocationId --commit\n";
+
 
