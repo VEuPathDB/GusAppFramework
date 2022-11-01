@@ -42,6 +42,11 @@ my $argsDeclaration =
     constraintFunc => undef,
     reqd => 0,
   }),
+  booleanArg({name => 'enableUndo',
+    descr => 'Rows will be deleted during undo', 
+    constraintFunc => undef,
+    reqd => 0,
+  }),
 ];
 
 my $purpose = <<PURPOSE;
@@ -160,10 +165,12 @@ sub loadSynonyms {
 
     next unless($ontologyTermSourceId);
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({ source_id =>  $ontologyTermSourceId });
-    unless ( $ontologyTerm->retrieveFromDB() || $append ) {
+    my $isLoaded = $ontologyTerm->retrieveFromDB();
+    if(!( $isLoaded || $append )) {
       $self->error("unable to find ontology term $ontologyTermSourceId");
     }
-    else {
+    elsif($append &! $isLoaded ){
+      $ontologyTerm->setName($ontologyTermSourceId);
       $ontologyTerm->submit();
     }
     my $synonym = GUS::Model::SRes::OntologySynonym->new({
@@ -182,7 +189,7 @@ sub loadSynonyms {
    #    $self->log("$attr not a valid attribute, skipping");
    #    next;
    #  }
-      $self->log("SETTING: $attr = $attrs->{$attr}");
+      $self->log("SETTING: $ontologyTermSourceId $attr = $attrs->{$attr}");
       $synonym->set($attr, $attrs->{$attr});
     }
     my $status = $synonym->submit();
@@ -209,6 +216,39 @@ sub undoTables {
   my ($self) = @_;
   # we only update here! no deletions
   return ();
+}
+
+sub undoPreprocess {
+  my($self, $dbh, $rowAlgInvocationList) = @_;
+  my ($enableUndo) = $self->getAlgorithmParam($dbh, $rowAlgInvocationList,'enableUndo');
+  if($enableUndo){
+    $self->{_undo_tables} = [
+      'SRes.OntologySynonym',
+    ];
+  }
+}
+
+sub getAlgorithmParam {
+  my ($self, $dbh, $rowAlgInvocationList, $paramKey) = @_;
+  my $pluginName = ref($self);
+  my %paramValues;
+  foreach my $rowAlgInvId (@$rowAlgInvocationList){
+    my $sql  = "SELECT p.STRING_VALUE
+      FROM core.ALGORITHMPARAMKEY k
+      LEFT JOIN core.ALGORITHMIMPLEMENTATION a ON k.ALGORITHM_IMPLEMENTATION_ID = a.ALGORITHM_IMPLEMENTATION_ID 
+      LEFT JOIN core.ALGORITHMPARAM p ON k.ALGORITHM_PARAM_KEY_ID = p.ALGORITHM_PARAM_KEY_ID 
+      WHERE a.EXECUTABLE = ? 
+      AND p.ROW_ALG_INVOCATION_ID = ?
+      AND k.ALGORITHM_PARAM_KEY = ?";
+    my $sh = $dbh->prepare($sql);
+    $sh->execute($pluginName,$rowAlgInvId, $paramKey);
+    while(my ($name) = $sh->fetchrow_array){
+      $paramValues{ $name } = 1;
+    }
+    $sh->finish();
+  }
+  my @values = keys %paramValues;
+  return \@values;
 }
 
 1;
