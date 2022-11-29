@@ -105,21 +105,22 @@ die "Inconsistant number of sequences between query results and outputs in $outF
 die "No sequences extracted. (Check your idSQL.)" unless ($count || $allowEmptyOutput);
 
 sub printSequence{
-	my ($dbh, $row, $dbVendor) = @_;
+  my ($dbh, $row, $dbVendor) = @_;
 
   my @row = @$row;
 #	print STDERR "$gene_id,$na_id,$description,$number,$taxon,$assembly_id,$length,$seq_ver\n";
 
+  my ($lobLocOrSeq, $sequence);
 
-  my $lobLocOrSeq = pop(@row);
+  if(!$noSeq) {
+    $lobLocOrSeq = pop(@row);
 
-  my $sequence;
-  if($noSeq) {}
-  elsif($dbVendor eq 'Oracle') {
-    $sequence = &readClob($lobLocOrSeq, $dbh);
-  }
-  else {
-    $sequence = $lobLocOrSeq;
+    if($dbVendor eq 'Oracle') {
+      $sequence = &readClob($lobLocOrSeq, $dbh);
+    }
+    else {
+      $sequence = $lobLocOrSeq;
+    }
   }
 
 
