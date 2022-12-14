@@ -261,10 +261,8 @@ sub bioperlFeaturesFromGeneSourceId {
   foreach my $exonHash (sort { $a->{start} * $a->{strand} <=> $b->{start} * $b->{strand} } values %{$geneModelHash->{exons}}) {
     die "exon strand cannot be set to 0" if($exonHash->{strand} == 0);
 
-    my $parent = join(",", @{$exonHash->{transcripts}});
-
-
-    my $exonFeature = GUS::Community::GeneModelLocations::Exon->new ( -start => $exonHash->{start}, 
+    foreach my $transcriptSourceId (@{$exonHash->{transcripts}}) {
+      my $exonFeature = GUS::Community::GeneModelLocations::Exon->new ( -start => $exonHash->{start}, 
                                                    -end => $exonHash->{end}, 
                                                    -seq_id => $exonHash->{sequence_source_id},
                                                    -strand => $exonHash->{strand}, 
@@ -272,18 +270,17 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $exonHash->{source_id},
                                                                 NA_FEATURE_ID => $exonHash->{na_feature_id},
-                                                                PARENT => $parent,
+                                                                PARENT => $transcriptSourceId,
+                                                                PARENT_NA_FEATURE_ID => $geneModelHash->{transcripts}{$transcriptSourceId}{na_feature_id},
                                                                 GENE_NA_FEATURE_ID => $geneModelHash->{na_feature_id},
                                                                 NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                    });
 
 
-    foreach my $transcriptId (@{$exonHash->{transcripts}}) {
-      my $transcriptFeature = $transcriptMap{$transcriptId};
+      my $transcriptFeature = $transcriptMap{$transcriptSourceId};
       $transcriptFeature->add_exon($exonFeature);
+      push @exonFeatures, $exonFeature;
     }
-
-    push @exonFeatures, $exonFeature
   }
 
   my @sortedExonFeatures = sort { $a->start <=> $b->start} @exonFeatures;
