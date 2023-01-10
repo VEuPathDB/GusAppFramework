@@ -19,6 +19,8 @@ use GUS::PluginMgr::Plugin;
 use GUS::PluginMgr::PluginUtilities;
 use GUS::PluginMgr::PluginUtilities::ConstraintFunction;
 
+use Data::Dumper;
+
 $| = 1;
 
 # ----------------------------------------------------------------------
@@ -358,13 +360,23 @@ sub _process {
                       description => $EnzymeClass->getDescription,
                     };
    my $depth = $ec->getDepth;
-   for (my $i = 1; $i <= $depth; $i++) {
-      $ez_class_h->{"ec_number_$i"} = $ec->getList->[$i-1];
-   }
+
+   # if this is a preliminary enzyme in the format 4.2.3.n10, don't load the 4th part
+   if ($depth == 4 && $ec_key =~ /n\d+$/) {
+        for (my $i = 1; $i <= 3; $i++) {
+            $ez_class_h->{"ec_number_$i"} = $ec->getList->[$i-1];
+        }
+    }
+    else {
+        for (my $i = 1; $i <= $depth; $i++) {
+            $ez_class_h->{"ec_number_$i"} = $ec->getList->[$i-1];
+        }
+    }
+
    my $ez_class_g = GUS::Model::SRes::EnzymeClass->new($ez_class_h);
 
    # reset description for root
-   if ($ec_key == '-.-.-.-') {
+   if ($ec_key eq '-.-.-.-') {
        $ez_class_g->setDescription('Unknown enzyme');
    }
 
