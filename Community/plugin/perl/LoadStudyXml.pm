@@ -217,14 +217,14 @@ sub getStudy {
 # This Util is Based on the eutils example from NCBI
 
 sub getPubmedXml {
-  my ($self, $pubmedId) = @_;
+  my ($self, $apiKey, $pubmedId) = @_;
 
   my $utils = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 
   my $db     = "pubmed";
   my $report = "xml";
 
-  my $esearch = "$utils/esearch.fcgi?api_key=f2006d7a9fa4e92b2931d964bb75ada85a08&db=$db&retmax=1&usehistory=y&term=";
+  my $esearch = "$utils/esearch.fcgi?api_key=$apiKey&db=$db&retmax=1&usehistory=y&term=";
   my $esearchResult = get($esearch . $pubmedId);
 
   $esearchResult =~ 
@@ -234,7 +234,7 @@ sub getPubmedXml {
   my $QueryKey = $2;
   my $WebEnv   = $3;
 
-  my $efetch = "$utils/efetch.fcgi?api_key=f2006d7a9fa4e92b2931d964bb75ada85a08&rettype=$report&retmode=text&retmax=1&db=$db&query_key=$QueryKey&WebEnv=$WebEnv";
+  my $efetch = "$utils/efetch.fcgi?api_key=$apiKey&rettype=$report&retmode=text&retmax=1&db=$db&query_key=$QueryKey&WebEnv=$WebEnv";
 	
   my $pubmedXml = get($efetch);
   return($pubmedXml);
