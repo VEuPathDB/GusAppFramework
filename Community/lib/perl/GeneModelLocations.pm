@@ -668,8 +668,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
     unless($seenGenes{$geneSourceId}) {
 
-      next if($soTerm && $gfSoTerm ne $soTerm && !$soExclude); # only rows for this so term
-      next if($soTerm && $gfSoTerm eq $soTerm && $soExclude); # only rows which are not this so term
+      next if($soTerm && $transcriptSoTerm ne $soTerm && !$soExclude); # only rows for this so term
+      next if($soTerm && $transcriptSoTerm eq $soTerm && $soExclude); # only rows which are not this so term
 
       my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand, $wantTopLevel);
 
