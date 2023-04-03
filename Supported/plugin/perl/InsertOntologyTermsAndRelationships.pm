@@ -243,6 +243,10 @@ sub doTerms {
   
   my $annotationProps = $loadAnnotationProperties ? $owlReader->getAnnotationPropertiesJSON() : {};
   # hash of {termId} = json formatted hash 
+  # too long for SRes.OntologySynonym
+  while(my ($iri, $props) = each %$annotationProps){
+    $annotationProps->{$iri} = substr($props,0,4000);
+  }
 
   my %termIds;
   foreach my $term (@$terms) {
