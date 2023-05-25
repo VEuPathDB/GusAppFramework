@@ -220,6 +220,7 @@ sub insertTerms {
 
   my $line = <$fh> if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
+    next if ($line =~ /^#/);
     chomp($line);
     my ($id, $name, $definition, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete =~/^false$/i ? 0 : 1;
@@ -277,6 +278,7 @@ sub insertRelationships {
 
   my $line = <$fh>  if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
+    next if ($line =~ /^#/);
     chomp($line);
     my ($subjectId, $predicateId, $objectId, $relationshipTypeId) = split(/\t/, $line);
 
