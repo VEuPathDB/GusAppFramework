@@ -220,7 +220,7 @@ sub insertTerms {
 
   my $line = <$fh> if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
-    next if ($line =~ /^#/);
+    next if ($line =~ /^#|^\s*$/);
     chomp($line);
     my ($id, $name, $definition, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete =~/^false$/i ? 0 : 1;
