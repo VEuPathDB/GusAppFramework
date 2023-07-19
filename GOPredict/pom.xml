@@ -12,15 +12,4 @@
   <artifactId>gus-app-framework-gopredict</artifactId>
   <packaging>jar</packaging>
 
-
-<!--  <dependencyManagement>-->
-<!--    <dependencies>-->
-<!--      <dependency>-->
-<!--        <groupId>org.gusdb</groupId>-->
-<!--        <artifactId>reflow-graphparser</artifactId>-->
-<!--        <version>${project.version}</version>-->
-<!--      </dependency>-->
-<!--    </dependencies>-->
-<!--  </dependencyManagement>-->
-
 </project>
