@@ -45,8 +45,6 @@
       <version>1.10.13</version>
     </dependency>
 
-    <!--commons-beanutils-1.8.3.jar-->
-    <!--commons-collections-3.1.jar-->
   </dependencies>
 
 </project>
