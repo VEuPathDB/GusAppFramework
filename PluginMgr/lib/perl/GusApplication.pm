@@ -172,12 +172,14 @@ sub registerPlugin {
 
   my $imps = $plugin->sql_get_as_hash_refs($sql);
 
+  my $gusConfigFile = "--gusConfigFile " . $self->getArgs()->{gusConfigFile};
+
   my $gaCmd;
   if ($pluginNm eq "GUS::PluginMgr::GusApplication") {
-    $gaCmd = "ga +meta --commit";
+    $gaCmd = "ga +meta $gusConfigFile --commit";
   } else {
-    $gaCmd = "ga +update $pluginNm --commit";
-    $gaCmd = "ga +create $pluginNm --commit" if (scalar @$imps == 0);
+    $gaCmd = "ga +update $pluginNm $gusConfigFile --commit";
+    $gaCmd = "ga +create $pluginNm $gusConfigFile --commit" if (scalar @$imps == 0);
   }
 
   $self->runRegisterCmd($gaCmd, $pluginNm);
@@ -211,8 +213,10 @@ sub wrongChecksumError {
   my $pluginNm = $plugin->getName;
   my $cvsRevision = $plugin->getCVSRevision;
 
-  my $run = "ga +update $pluginNm";
-  $run = "ga +meta" if $pluginNm =~ /GusApplication/;
+  my $gusConfigFile = "--gusConfigFile " . $self->getArgs()->{gusConfigFile};
+
+  my $run = "ga +update $gusConfigFile $pluginNm";
+  $run = "ga +meta $gusConfigFile" if $pluginNm =~ /GusApplication/;
   $self->userError(<<ChecksumMessage);
 
   The md5 checksum of ${pluginNm}'s executable file (cvs revision
@@ -379,7 +383,7 @@ sub getConfig {
 
    if (!$self->{config}) {
       my $cla = $self->getArgs();
-      $self->{config} = GUS::Supported::GusConfig->new($cla->{gusconfigfile});
+      $self->{config} = GUS::Supported::GusConfig->new($cla->{gusConfigFile});
    }
 
    $self->{config};
@@ -532,12 +536,6 @@ sub doMajorMode_RunOrReport {
 
    my $pu = $self->newFromPluginName($PluginClass);
 
-   # connect to the database
-   $self->connect_to_database($pu);
-   $self->initDb($pu->getDb());
-
-   $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
-
    my $argsHash;
    if ($pu->getArgsDeclaration) {
       my $argDecl = [@{$pu->getArgsDeclaration()},
@@ -567,15 +565,16 @@ sub doMajorMode_RunOrReport {
       $argsHash = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
    }
 
-   # what versions does the plugin want?
-#   $self->connect_to_database($self);
+  $pu->initArgs($argsHash);
+  $self->initArgs($argsHash);
 
-   $self->_check_database_version_requirements($pu);
+  # connect to the database
+  $self->connect_to_database($pu);
+  $self->initDb($pu->getDb());
+  $self->_check_database_version_requirements($pu);
 
-   $pu->initArgs($argsHash);
-   $self->initArgs($argsHash);
-
-   $pu->getDb()->setVerbose($self->getArg('sqlVerbose'));
+  $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
+  $pu->getDb()->setVerbose($self->getArg('sqlVerbose'));
 
    # get the algorithm
    #$Run && $self->findAlgorithm($pu);
@@ -1148,7 +1147,7 @@ sub openInvocation {
    if ($cla->{commit} && $cla->{workflowstepid}) {
      my $alg_inv_id = $alg_inv_gus->getId();
      my $next_val = $plugin->getDb->getDbPlatform->nextVal('apidb.WorkflowStepAlgInvocation');
-     my $sql = 
+     my $sql =
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
 (workflow_step_alg_inv_id, workflow_step_id, algorithm_invocation_id)
 VALUES ($next_val, $cla->{workflowstepid}, $alg_inv_id)";
@@ -1156,8 +1155,6 @@ VALUES ($next_val, $cla->{workflowstepid}, $alg_inv_id)";
      $handle->prepareAndExecute($sql);
      $handle->disconnect();
    }
-
-
 
    # set parameter values in the DB.
    # ......................................................................
@@ -1401,7 +1398,7 @@ sub getStandardArgsDeclaration {
                 constraintFunc=>undef,
                 isList=>0,
                }),
-    fileArg   ({name  => 'gusconfigfile',
+    fileArg   ({name  => 'gusConfigFile',
                 descr => 'The gus config file to use [note: the default is your $GUS_HOME/config/gus.config]',
                 reqd  => 0,
                 default=> "$ENV{GUS_HOME}/config/gus.config",
@@ -1482,7 +1479,7 @@ sub getGlobalEasyCspOptions {
 
      { h => 'the gus config file to use [default is $GUS_HOME/config/gus.config]',
        t => 'string',
-       o => 'gusconfigfile',
+       o => 'gusConfigFile',
        d => "$ENV{GUS_HOME}/config/gus.config",
      },
     )
