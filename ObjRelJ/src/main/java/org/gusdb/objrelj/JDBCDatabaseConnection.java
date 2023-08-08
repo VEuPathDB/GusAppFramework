@@ -698,6 +698,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     public GUSRow retrieveChild(GUSRow parent, String owner, String tname, String childAtt)
 	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
+     // FIXME: This is very broken; retrieveChildren_aux returns Vector<Hashtable<String, Object>> so the retrieval below will be a ClassCastException
 	Vector kids = retrieveChildren_aux(parent, owner, tname, childAtt);
 	int nKids = (kids == null) ? 0 : kids.size();
 	if (nKids != 1) {
