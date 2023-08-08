@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.DatabaseObject;
@@ -26,8 +28,10 @@ import org.gusdb.dbadmin.model.View;
  */
 public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
+    private static final Logger log = LogManager.getLogger(RelationalDatabaseWriter.class);
+
     protected Random         random;
-    protected ArrayList<DatabaseObject> written = new ArrayList<DatabaseObject>( );
+    protected ArrayList<DatabaseObject> written = new ArrayList<>( );
 
     /**
      * DOCUMENT ME!
@@ -146,11 +150,11 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      * @param columns DOCUMENT ME!
      * @throws IOException DOCUMENT ME!
      */
-    protected void writeColumnList( Collection columns ) throws IOException {
+    protected <C extends Column> void writeColumnList( Collection<C> columns ) throws IOException {
 
         boolean first = true;
 
-        for ( Iterator i = columns.iterator( ); i.hasNext( ); ) {
+        for ( Iterator<C> i = columns.iterator( ); i.hasNext( ); ) {
 
             if ( !first ) {
                 oStream.write( ", " );

@@ -2,8 +2,8 @@ package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author msaffitz
@@ -12,14 +12,14 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Constraint extends DatabaseObject {
 
-    protected final Log           log                  = LogFactory.getLog( Constraint.class );
+    private static final Logger log = LogManager.getLogger( Constraint.class );
 
-    private ArrayList<String>    constrainedColumnRef = new ArrayList<String>( );
+    private ArrayList<String>    constrainedColumnRef = new ArrayList<>();
     private String               constrainedTableRef;
     private String               referencedTableRef;
-    private ArrayList<String>    referencedColumnRef  = new ArrayList<String>( );
-    private ArrayList<GusColumn> referencedColumn     = new ArrayList<GusColumn>( );
-    private ArrayList<Column>    constrainedColumn    = new ArrayList<Column>( );
+    private ArrayList<String>    referencedColumnRef  = new ArrayList<>();
+    private ArrayList<GusColumn> referencedColumn     = new ArrayList<>();
+    private ArrayList<Column>    constrainedColumn    = new ArrayList<>();
     private ConstraintType       type;
     private GusTable             referencedTable;
     private GusTable             constrainedTable;
@@ -80,9 +80,9 @@ public class Constraint extends DatabaseObject {
 
     public void setConstrainedTable( GusTable table ) {
         if ( this.constrainedTable != table ) {
-            String name = "null";
-            if ( table != null ) name = table.getName( );
-            log.debug( "Setting Table: '" + name + "' for Constraint: '" + getName( ) + "' of Type: '" + getType( )
+            String tableName = "null";
+            if ( table != null ) tableName = table.getName( );
+            log.debug( "Setting Table: '" + tableName + "' for Constraint: '" + getName( ) + "' of Type: '" + getType( )
                     + "'" );
 
             if ( this.constrainedTable != null && this.type != ConstraintType.PRIMARY_KEY ) {
@@ -171,22 +171,22 @@ public class Constraint extends DatabaseObject {
 
     void resolveReferences( Database db ) {
         for ( String ref : getConstrainedColumnRefs( ) ) {
-            addConstrainedColumn( Column.getColumnFromRef( db, ref ) );
+            addConstrainedColumn( db.getColumnFromRef( ref ) );
         }
         if ( getType( ) == ConstraintType.FOREIGN_KEY ) {
             for ( String ref : getReferencedColumnRefs( ) ) {
-                addReferencedColumn( (GusColumn) Column.getColumnFromRef( db, ref ) );
+                addReferencedColumn( (GusColumn) db.getColumnFromRef( ref ) );
             }
             if ( getReferencedTableRef( ) == null ) log.error( "Null ref for " + getName( ) );
-            setReferencedTable( (GusTable) Table.getTableFromRef( db, getReferencedTableRef( ) ) );
+            setReferencedTable( (GusTable) db.getTableFromRef( getReferencedTableRef( ) ) );
         }
     }
 
     @Override
-    public boolean equals( DatabaseObject o ) {
-        Constraint other = (Constraint) o;
-
-        if ( type != other.getType( ) ) return false;
-        return super.equals( o );
+    public boolean equals( Object o ) {
+        if (!(o instanceof Constraint)) return false;
+        Constraint c = (Constraint)o;
+        if ( type != c.getType() ) return false;
+        return super.equals( c );
     }
 }

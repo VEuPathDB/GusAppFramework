@@ -119,13 +119,13 @@ public class GoGraph {
 
     public GoTerm getGoTermFromGusGoId(int gusGoId){
 
-	GoTerm goTerm = gusIdHash.get(new Integer(gusGoId));
+	GoTerm goTerm = gusIdHash.get(Integer.valueOf(gusGoId));
 	return goTerm;
     }
 
     public void addGoTerm(GoTerm goTerm){
 
-	Integer gusId = new Integer(goTerm.getGusId());
+	Integer gusId = Integer.valueOf(goTerm.getGusId());
 	String realId = goTerm.getRealId();
 
 	if (realId != null){ //if not adding as a child
@@ -164,7 +164,7 @@ public class GoGraph {
 
     @SuppressWarnings("unused")
     private void addGoTermToGusIdHash(GoTerm goTerm){
-	Integer gusId = new Integer(goTerm.getGusId());
+	Integer gusId = Integer.valueOf(goTerm.getGusId());
 	gusIdHash.put(gusId, goTerm);
     }
 

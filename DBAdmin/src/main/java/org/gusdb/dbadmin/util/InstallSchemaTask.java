@@ -13,8 +13,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.gusdb.dbadmin.model.Database;
@@ -32,7 +32,7 @@ import org.gusdb.dbadmin.writer.SchemaWriter;
  */
 public class InstallSchemaTask extends Task {
 
-    private static Log log = LogFactory.getLog( InstallSchemaTask.class );
+    private static final Logger log = LogManager.getLogger( InstallSchemaTask.class );
 
     private Database   db;
     private Connection conn;

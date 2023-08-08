@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
 
-import org.apache.commons.digester.Digester;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.digester3.Digester;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Category;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
@@ -27,7 +27,7 @@ import org.xml.sax.SAXException;
  */
 public class CategoryReader {
 
-    protected static final Log log = LogFactory.getLog( CategoryReader.class );
+    private static final Logger log = LogManager.getLogger( CategoryReader.class );
 
     /**
      * @param db Database to populate
@@ -77,14 +77,15 @@ public class CategoryReader {
         }
     }
     
-    public static ArrayList readCategories( String categoryXMLFile ) {
+    @SuppressWarnings("unchecked")
+    public static ArrayList<SuperCategory> readCategories( String categoryXMLFile ) {
         FileInputStream xmlFile;
         Digester digester = getDigester( );
-        ArrayList categories;
+        ArrayList<SuperCategory> categories;
 
         try {
             xmlFile = new FileInputStream( new File( categoryXMLFile ) );
-            categories = (ArrayList) digester.parse( xmlFile );
+            categories = (ArrayList<SuperCategory>) digester.parse( xmlFile );
             xmlFile.close( );
         }
         catch ( FileNotFoundException e ) {

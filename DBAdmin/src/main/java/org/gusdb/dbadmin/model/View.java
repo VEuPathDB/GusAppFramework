@@ -9,7 +9,7 @@ import org.gusdb.dbadmin.util.ColumnPair;
  * @version $Revision$ $Date: 2005-06-16 16:35:04 -0400 (Thu, 16 Jun
  *          2005) $
  */
-public abstract class View extends DatabaseObject implements Comparable {
+public abstract class View extends DatabaseObject {
 
     private String                sql;
     private boolean               materialized;
@@ -17,8 +17,8 @@ public abstract class View extends DatabaseObject implements Comparable {
     private Schema                schema;
 
     private View                  superclass;
-    private ArrayList<View>       subclass  = new ArrayList<View>( );
-    private ArrayList<ColumnPair> column    = new ArrayList<ColumnPair>( );
+    private ArrayList<View>       subclass  = new ArrayList<>( );
+    private ArrayList<ColumnPair> column    = new ArrayList<>( );
 
     private Table                 table;
 
@@ -36,11 +36,11 @@ public abstract class View extends DatabaseObject implements Comparable {
         return superclass;
     }
 
-    public void setSuperclass( View superclass ) {
-        if ( this.superclass != superclass ) {
+    public void setSuperclass( View view ) {
+        if ( this.superclass != view ) {
             if ( this.superclass != null ) this.superclass.removeSubclass( this );
-            this.superclass = superclass;
-            if ( superclass != null ) superclass.addSubclass( this );
+            this.superclass = view;
+            if ( view != null ) view.addSubclass( this );
         }
     }
 
@@ -62,20 +62,20 @@ public abstract class View extends DatabaseObject implements Comparable {
         this.column.remove( columnPair );
     }
 
-    public ArrayList<? extends View> getSubclasses( ) {
+    public ArrayList<View> getSubclasses( ) {
         return subclass;
     }
 
-    public void addSubclass( View subclass ) {
-        if ( !this.subclass.contains( subclass ) ) {
-            this.subclass.add( subclass );
-            subclass.setSuperclass( this );
+    public void addSubclass( View view ) {
+        if ( !this.subclass.contains( view ) ) {
+            this.subclass.add( view );
+            view.setSuperclass( this );
         }
     }
 
-    public void removeSubclass( View subclass ) {
-        boolean removed = this.subclass.remove( subclass );
-        if ( removed ) subclass.setSuperclass( (View) null );
+    public void removeSubclass( View view ) {
+        boolean removed = this.subclass.remove( view );
+        if ( removed ) view.setSuperclass( null );
     }
 
     public Schema getSchema( ) {
@@ -107,20 +107,11 @@ public abstract class View extends DatabaseObject implements Comparable {
     }
 
     @Override
-    public int compareTo( Object o ) {
-        View v = (View) o;
-        if ( v == null ) return 1;
-        if ( this.getName( ) == null ) {
-            if ( v.getName( ) == null ) return 0;
-            else return -1;
-        }
-        return this.getName( ).compareTo( v.getName( ) );
+    public boolean equals( Object other ) {
+        if (!(other instanceof View)) return false;
+        View v = (View)other;
+        if (!sql.equals(v.getSql())) return false;
+        return super.equals(v);
     }
 
-    @Override
-    public boolean equals( DatabaseObject o ) {
-        View other = (View) o;
-        if ( !sql.equals( other.getSql( ) ) ) return false;
-        return super.equals( o );
-    }
 }

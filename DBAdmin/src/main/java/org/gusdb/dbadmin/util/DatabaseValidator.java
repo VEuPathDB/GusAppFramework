@@ -4,12 +4,14 @@
  */
 package org.gusdb.dbadmin.util;
 
+import static org.gusdb.dbadmin.model.GusSchema.toGusTables;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
@@ -28,11 +30,10 @@ import org.gusdb.dbadmin.model.Table;
  */
 public class DatabaseValidator {
 
-	protected final static Log log  = LogFactory.getLog( DatabaseValidator.class );
-
+    private static final Logger log = LogManager.getLogger( DatabaseValidator.class );
 
 	/**
-	 *  Runs all checks agains the supplied database.
+	 *  Runs all checks against the supplied database.
 	 *
 	 *@param  db  The database to be validated
 	 *@return     False if any check failed
@@ -79,7 +80,7 @@ public class DatabaseValidator {
 
         for ( GusSchema schema : db.getGusSchemas() ) {
 			log.debug( "Checking FK Compatability for Schema '" + schema.getName() + "'" );
-			for ( GusTable table : schema.getTables() ) {
+			for ( GusTable table : toGusTables(schema.getTables())) {
 				valid = checkFkCompatabilityTo( table, fix );
 			}
 		}
@@ -131,7 +132,7 @@ public class DatabaseValidator {
 		
         for ( GusSchema schema : db.getGusSchemas() ) {
 			valid = checkLength(schema.getName(), length);
-			for ( GusTable table : schema.getTables() ) {
+			for ( GusTable table : toGusTables(schema.getTables())) {
 				valid = checkLength(table.getName(), length);
 				if ( table.getPrimaryKey() != null ) {
 					valid = checkLength(table.getPrimaryKey().getName() , length );

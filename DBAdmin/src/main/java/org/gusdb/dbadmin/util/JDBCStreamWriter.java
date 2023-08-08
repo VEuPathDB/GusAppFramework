@@ -20,7 +20,7 @@ public class JDBCStreamWriter extends Writer {
 
 	private Connection connection;
 	private String currentBuf;
-	private ArrayList sts          = new ArrayList();
+	private ArrayList<String> sts          = new ArrayList<>();
 
 
 	public JDBCStreamWriter( Connection connection ) {
@@ -45,9 +45,9 @@ public class JDBCStreamWriter extends Writer {
   public void flush() throws IOException {
 		extractStatements();
 
-		for ( Iterator i = sts.iterator(); i.hasNext();  ) {
+		for ( Iterator<String> i = sts.iterator(); i.hasNext();  ) {
 
-		String sql  = (String) i.next();
+		String sql  = i.next();
 
 			try {
 			Statement st  = connection.createStatement();
@@ -60,7 +60,7 @@ public class JDBCStreamWriter extends Writer {
 					"' Error: " + e.getLocalizedMessage() );
 			}
 		}
-		sts = new ArrayList();
+		sts = new ArrayList<>();
 	}
 
 

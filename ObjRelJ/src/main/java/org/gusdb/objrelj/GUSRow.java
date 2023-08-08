@@ -1,5 +1,6 @@
 package org.gusdb.objrelj;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -162,8 +163,9 @@ public abstract class GUSRow implements java.io.Serializable {
     public static GUSRow createGUSRow(GUSTable table) {
 	String rowClassName = GUSRow.MODEL_PACKAGE + "." + table.getSchemaName() + "." + table.getTableName();
 	try {
-	    Class rowClass = Class.forName(rowClassName);
-	    GUSRow gr = (GUSRow)rowClass.newInstance();
+	    @SuppressWarnings("unchecked")
+        Class<? extends GUSRow> rowClass = (Class<? extends GUSRow>) Class.forName(rowClassName);
+	    GUSRow gr = rowClass.getConstructor().newInstance();
 	    gr.initialize();
 	    return gr;
 	} 
@@ -178,6 +180,9 @@ public abstract class GUSRow implements java.io.Serializable {
 	catch (IllegalAccessException iae) {
 	    iae.printStackTrace(System.err);
 	}
+    catch (IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+        e.printStackTrace(System.err);
+    }
 
 	return null;
     }

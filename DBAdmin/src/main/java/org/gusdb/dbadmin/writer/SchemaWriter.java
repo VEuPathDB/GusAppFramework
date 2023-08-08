@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Properties;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.util.DatabaseValidator;
 
@@ -17,8 +17,9 @@ import org.gusdb.dbadmin.util.DatabaseValidator;
  * @version $Revision$ $Date$
  */
 public abstract class SchemaWriter {
-	
-    protected final Log log = LogFactory.getLog(SchemaWriter.class);
+
+    private static final Logger log = LogManager.getLogger(SchemaWriter.class);
+
     protected Properties properties = new Properties();
     protected Writer oStream;
 	

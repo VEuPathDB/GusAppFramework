@@ -1,10 +1,11 @@
 package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @version $Revision$ $Date: 2005-06-16 16:35:04 -0400 (Thu, 16 Jun
@@ -13,10 +14,11 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Database extends DatabaseObject {
 
-    protected final Log              log             = LogFactory.getLog( Database.class );
+    private static final Logger log = LogManager.getLogger( Database.class );
+
     private float                    version;
     private int                      patchLevel;
-    private TreeSet<Schema>          schema          = new TreeSet<Schema>( );
+    private TreeSet<Schema>     schema          = new TreeSet<>( );
     private ArrayList<SuperCategory> superCategories = new ArrayList<SuperCategory>( );
 
     public TreeSet<Schema> getAllSchemas( ) {
@@ -93,7 +95,7 @@ public class Database extends DatabaseObject {
         return categories;
     }
 
-    public void setSuperCategories( ArrayList superCategories ) {
+    public void setSuperCategories( ArrayList<SuperCategory> superCategories ) {
         for ( SuperCategory s : getSuperCategories( ) ) {
             removeSuperCategory( s );
         }
@@ -115,19 +117,60 @@ public class Database extends DatabaseObject {
     }
 
     public ArrayList<Table> getAllTables( ) {
-        ArrayList<Table> tables = new ArrayList<Table>( );
+        ArrayList<Table> tables = new ArrayList<>( );
         for ( Schema s : getAllSchemas( ) ) {
             tables.addAll( s.getTables( ) );
         }
         return tables;
     }
 
-    public ArrayList<GusTable> getGusTables( ) {
+    public List<GusTable> getGusTables( ) {
         ArrayList<GusTable> tables = new ArrayList<GusTable>( );
-        for ( GusSchema s : getGusSchemas( ) ) {
-            tables.addAll( s.getTables( ) );
-        }
+        getGusSchemas()
+          .forEach(schema -> schema.getTables().stream()
+              .map(t -> (GusTable)t)
+              .forEach(tables::add));
         return tables;
+    }
+
+    public Table getTableFromRef( String ref ) {
+      String[] path = ref.split( "/" );
+      if ( path.length != 2 ) {
+          log.error( "Invalid table ref: " + ref );
+          throw new RuntimeException( "Invalid table ref" );
+      }
+      Table table = getSchema( path[0] ).getTable( path[1] );
+      if ( table == null ) {
+          log.error( "Unable to find table for ref: " + ref );
+          throw new RuntimeException( "Invalid table ref" );
+      }
+      log.debug( "Resolved: " + table.getName( ) );
+      return table;
+    }
+
+    public Column getColumnFromRef( String ref ) {
+      String[] path = ref.split( "/" );
+
+      if ( path.length != 3 ) {
+          log.error( "Invalid column ref: '" + ref + "'" );
+          throw new RuntimeException( "Invalid column ref" );
+      }
+      try {
+          Schema schema = getSchema( path[0] );
+          Table table = schema.getTable( path[1] );
+          Column column = table.getColumn( path[2] );
+
+          if ( column == null ) {
+              throw new NullPointerException( "No column found. Table: '" + table.getName( ) + "', Column: '"
+                      + path[2] + "'" );
+          }
+          log.debug( "Resolved Column: '" + column.getName( ) + "'" );
+          return column;
+      }
+      catch ( NullPointerException e ) {
+          log.error( "Unable to parse ref: '" + ref + "'" );
+          throw new RuntimeException( e );
+      }
     }
 
     public void resolveReferences( ) {
@@ -137,12 +180,12 @@ public class Database extends DatabaseObject {
             schema.resolveReferences( this );
         }
     }
-   
-    @Override
-    public boolean equals( DatabaseObject o ) {
-        Database other = (Database) o;
 
-        if ( version != other.getVersion( ) ) return false;
-        return super.equals( o );
+    @Override
+    public boolean equals( Object o ) {
+        if (!(o instanceof Database)) return false;
+        Database d = (Database)o;
+        if ( version != d.getVersion() ) return false;
+        return super.equals( d );
     }
 }

@@ -522,7 +522,7 @@ public class AssociationGraph  {
 	    return;
 	}
 
-	//if the Association already exists in this AssociationGarph, and the child's
+	//if the Association already exists in this AssociationGraph, and the child's
 	//link has not been made with it, then make the link (replacing the parent
 	//in the temporary AssociationGraph with the parent in this AssociationGraph)
 	if (childAssoc != null && prevAssoc != null){
@@ -532,6 +532,7 @@ public class AssociationGraph  {
 	//check to see if this Association is already in this AssociationGraph
 	//(note:  this is the way it was in the perl version; I think there's a good
 	//reason we're not using find() to do this but can't remember right now)
+	// FIXME: This is broken; looking up String value in a map with Association keys
 	if (alreadyAdded.get(assoc.getGoTerm().getRealId()) != null){
 	    return;
 	}

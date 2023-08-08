@@ -3,10 +3,14 @@
  */
 package org.gusdb.dbadmin.writer;
 
+import static org.gusdb.dbadmin.model.GusSchema.toGusTables;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.TreeSet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
@@ -24,7 +28,9 @@ import org.gusdb.dbadmin.model.View;
  */
 public class XMLWriter extends SchemaWriter {
 
-	int indent  = 0;
+    private static final Logger log = LogManager.getLogger(XMLWriter.class);
+
+    int indent  = 0;
 
 	/**
 	 *@param  db               Database to be written
@@ -87,7 +93,7 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<tables>\n" );
 
-		TreeSet<GusTable> tables  = new TreeSet<>( schema.getTables() );
+		TreeSet<GusTable> tables  = new TreeSet<>( toGusTables(schema.getTables()) );
 
 		for ( Iterator<GusTable> i = tables.iterator(); i.hasNext();  ) {
 			writeTable( i.next() );
@@ -169,7 +175,7 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<subclasses>\n" );
 
-        for ( GusTable subclass : table.getSubclasses() ) {
+        for ( GusTable subclass : toGusTables(table.getSubclasses()) ) {
             writeSubclass(subclass);
 			oStream.flush();
 		}

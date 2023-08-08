@@ -63,11 +63,11 @@ public class GoResultSet{
 
     public void addGoTermInfo(String realGoId, int gusId, int childGusId){
 
-	Integer bigGusId = new Integer(gusId);
+	Integer bigGusId = Integer.valueOf(gusId);
 
 	Integer bigChildGusId = null;
 	if (childGusId != NULL_CHILD_ID){
-	     bigChildGusId = new Integer(childGusId);
+	     bigChildGusId = Integer.valueOf(childGusId);
 	}
 	GoTermInfo thisGoTerm = new GoTermInfo();
 	thisGoTerm.realGoId = realGoId;

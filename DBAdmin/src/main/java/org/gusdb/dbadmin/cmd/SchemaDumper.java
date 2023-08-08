@@ -9,9 +9,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Properties;
 
-import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -184,7 +184,7 @@ public class SchemaDumper {
     private static CommandLine parseOptions(String cmdName, Options options, 
                                             String[] args) {
 
-        CommandLineParser parser = new BasicParser();
+        CommandLineParser parser = new DefaultParser();
         CommandLine cmdLine = null;
 
         try {
@@ -263,7 +263,7 @@ public class SchemaDumper {
         for (Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext();) {
             Schema schema = i.next();
 
-            for (Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext();) {
+            for (Iterator<Table> j = schema.getTables().iterator(); j.hasNext();) {
                 Table table = j.next();
 
                 if (!table.getSubclasses().isEmpty() && 

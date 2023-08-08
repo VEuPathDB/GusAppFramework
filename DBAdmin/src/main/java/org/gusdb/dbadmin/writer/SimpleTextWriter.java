@@ -4,11 +4,15 @@
  */
 package org.gusdb.dbadmin.writer;
 
+import static org.gusdb.dbadmin.model.GusSchema.toGusTables;
+
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
@@ -25,7 +29,9 @@ import org.gusdb.dbadmin.model.Table;
  */
 public class SimpleTextWriter extends SchemaWriter {
 
-	private Collection written  = new HashSet();
+    protected final Logger log = LogManager.getLogger(SimpleTextWriter.class);
+
+    private Set<Table> written  = new HashSet<>();
 
 
 	@Override
@@ -41,12 +47,12 @@ public class SimpleTextWriter extends SchemaWriter {
 			writeTables( schema );
 			oStream.flush();
 		}
-		written = new HashSet();
+		written = new HashSet<>();
 	}
 
 
 	private void writeTables( GusSchema schema ) throws IOException {
-		for ( GusTable table : schema.getTables() ) {
+		for ( GusTable table : toGusTables(schema.getTables())) {
 			writeTable( table );
 			oStream.flush();
 		}
@@ -84,7 +90,7 @@ public class SimpleTextWriter extends SchemaWriter {
 		written.add( table );
 
 		if ( ! table.getSubclasses().isEmpty() ) {
-			for ( GusTable subclass : table.getSubclasses() ) {
+			for ( GusTable subclass : toGusTables(table.getSubclasses()) ) {
 		        writeTable(subclass);
 			}
 		}

@@ -9,8 +9,8 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TreeSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.GusColumn;
@@ -43,7 +43,8 @@ public class GusClassHierarchyConverter {
     private ArrayList<HousekeepingColumn> housekeepingColumns    = new ArrayList<HousekeepingColumn>( );
     private ArrayList<HousekeepingColumn> verHousekeepingColumns = new ArrayList<HousekeepingColumn>( );
     private Properties                    properties             = new Properties( );
-    private final Log                     log                    = LogFactory.getLog( GusClassHierarchyConverter.class );
+
+    private static final Logger log = LogManager.getLogger( GusClassHierarchyConverter.class );
 
     /**
      * Prepares to converts the given superclass into a GUSClassHierarchy,
@@ -61,7 +62,7 @@ public class GusClassHierarchyConverter {
         readProperties( );
         initHousekeeping( );
         this.superClassTable = superClassTable;
-        subClassTables = superClassTable.getSubclasses( );
+        subClassTables = new TreeSet<>(GusSchema.toGusTables(superClassTable.getSubclasses()));
         impTable = new GusTable( );
         impTable.setName( superClassTable.getName( ) + "Imp" );
         impTable.setHousekeeping( superClassTable.isHousekeeping( ) );
@@ -231,24 +232,24 @@ public class GusClassHierarchyConverter {
     private ArrayList<GusColumn> coalesceGenericColumns( TreeSet<GusTable> tables ) {
 
         HashMap<Column.ColumnType, Integer> columnCounts = new HashMap<Column.ColumnType, Integer>( );
-        columnCounts.put( Column.ColumnType.CHARACTER, new Integer( 0 ) );
-        columnCounts.put( Column.ColumnType.CLOB, new Integer( 0 ) );
-        columnCounts.put( Column.ColumnType.DATE, new Integer( 0 ) );
-        columnCounts.put( Column.ColumnType.FLOAT, new Integer( 0 ) );
-        columnCounts.put( Column.ColumnType.NUMBER, new Integer( 0 ) );
-        columnCounts.put( Column.ColumnType.STRING, new Integer( 0 ) );
+        columnCounts.put( Column.ColumnType.CHARACTER, Integer.valueOf(0) );
+        columnCounts.put( Column.ColumnType.CLOB, Integer.valueOf(0) );
+        columnCounts.put( Column.ColumnType.DATE, Integer.valueOf(0) );
+        columnCounts.put( Column.ColumnType.FLOAT, Integer.valueOf(0) );
+        columnCounts.put( Column.ColumnType.NUMBER, Integer.valueOf(0) );
+        columnCounts.put( Column.ColumnType.STRING, Integer.valueOf(0) );
 
         HashMap<String, Integer> columnSizes = new HashMap<String, Integer>( );
-        columnSizes.put( Column.ColumnType.CHARACTER + "L", new Integer( 0 ) );
-        columnSizes.put( Column.ColumnType.NUMBER + "L", new Integer( 0 ) );
-        columnSizes.put( Column.ColumnType.NUMBER + "P", new Integer( 0 ) );
-        columnSizes.put( Column.ColumnType.STRING + "L", new Integer( 0 ) );
+        columnSizes.put( Column.ColumnType.CHARACTER + "L", Integer.valueOf(0) );
+        columnSizes.put( Column.ColumnType.NUMBER + "L", Integer.valueOf(0) );
+        columnSizes.put( Column.ColumnType.NUMBER + "P", Integer.valueOf(0) );
+        columnSizes.put( Column.ColumnType.STRING + "L", Integer.valueOf(0) );
 
         ArrayList<GusColumn> newColumns = new ArrayList<GusColumn>( );
 
         for ( GusTable t : tables ) {
             for ( Column.ColumnType type : columnCounts.keySet( ) ) {
-                columnCounts.put( type, new Integer( Math.max( columnCounts.get( type ).intValue( ), getMaxColumnType(
+                columnCounts.put( type, Integer.valueOf( Math.max( columnCounts.get( type ).intValue( ), getMaxColumnType(
                         t, type ) ) ) );
             }
             for ( String key : columnSizes.keySet( ) ) {
@@ -256,7 +257,7 @@ public class GusClassHierarchyConverter {
                 String sizeType = key.substring( key.length( ) - 1 );
 
                 if ( columnSizes.get( type + sizeType ) != null ) {
-                    columnSizes.put( type + sizeType, new Integer( Math.max( columnSizes.get( type + sizeType )
+                    columnSizes.put( type + sizeType, Integer.valueOf( Math.max( columnSizes.get( type + sizeType )
                             .intValue( ), getLargestColumnLength( t, type, sizeType ) ) ) );
                 }
             }
@@ -266,7 +267,7 @@ public class GusClassHierarchyConverter {
             for ( int j = 0; j < columnCounts.get( type ); j++ ) {
 
                 GusColumn newColumn = new GusColumn( );
-                newColumn.setName( type.toString( ) + new Integer( j + 1 ) );
+                newColumn.setName( type.toString( ) + Integer.valueOf( j + 1 ) );
                 newColumn.setType( type );
                 newColumn.setNullable( true );
 
@@ -438,14 +439,14 @@ private GusView buildSuperClassView( ) {
 
         for ( Column column : table.getColumnsExcludeSuperclass( false ) ) {
             if ( !columnCounts.containsKey( column.getType( ) ) ) {
-                columnCounts.put( column.getType( ), new Integer( 1 ) );
+                columnCounts.put( column.getType( ), Integer.valueOf( 1 ) );
             }
 
             int columnCount = columnCounts.get( column.getType( ) ).intValue( );
             sql = sql.concat( ", " + column.getType( ).toString( ) + columnCount );
             sql = sql.concat( " AS " + column.getName( ) );
             subClass.addColumn( new ColumnPair( column.getName( ), column.getType( ).toString( ) + columnCount ) );
-            columnCounts.put( column.getType( ), new Integer( columnCount + 1 ) );
+            columnCounts.put( column.getType( ), Integer.valueOf( columnCount + 1 ) );
         }
 
         if ( impTable.isVersioned( ) ) {
@@ -506,8 +507,8 @@ private GusView buildSuperClassView( ) {
             HousekeepingColumn column = new HousekeepingColumn( );
             column.setName( housekeepingCols[i] );
             column.setType( Column.ColumnType.valueOf( columnSpecs[0].toUpperCase() ) );
-            column.setLength( (new Integer( columnSpecs[1] )).intValue( ) );
-            column.setPrecision( (new Integer( columnSpecs[2] )).intValue( ) );
+            column.setLength( Integer.valueOf( columnSpecs[1] ).intValue( ) );
+            column.setPrecision( Integer.valueOf( columnSpecs[2] ).intValue( ) );
             array.add( column );
         }
     }

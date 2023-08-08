@@ -1,7 +1,9 @@
 package org.gusdb.dbadmin.model;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.Objects;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author msaffitz
@@ -10,17 +12,18 @@ import org.apache.commons.logging.LogFactory;
  */
 public class HousekeepingColumn extends Column {
 
-    protected static final Log log = LogFactory.getLog( HousekeepingColumn.class );
+    private static final Logger log = LogManager.getLogger( HousekeepingColumn.class );
 
     public HousekeepingColumn( ) {}
 
     @Override
     public void setTable( Table table ) {
-        if ( getTable( ) != table ) {
-            if ( getTable( ) != null ) getTable( ).removeHousekeepingColumn( this );
+        Objects.requireNonNull(table);
+        if ( getTable() != table ) {
+            getTable().removeHousekeepingColumn( this );
             log.debug( "Setting table: '" + table.getName( ) + "' for HousekeepingColumn: '" + getName( ) + "'" );
             this.table = table;
-            if ( table != null ) table.addHousekeepingColumn( this );
+            table.addHousekeepingColumn( this );
         }
     }
 

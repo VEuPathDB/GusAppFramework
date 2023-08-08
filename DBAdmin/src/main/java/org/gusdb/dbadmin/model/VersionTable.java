@@ -32,7 +32,7 @@ public class VersionTable extends Table {
             }
         }
 
-        for ( GusTable gusSubclass : gusTable.getSubclasses( ) ) {
+        for ( GusTable gusSubclass : GusSchema.toGusTables(gusTable.getSubclasses()) ) {
             if ( !gusSubclass.isVersioned( ) ) {
                 gusSubclass.setVersioned( true );
             }

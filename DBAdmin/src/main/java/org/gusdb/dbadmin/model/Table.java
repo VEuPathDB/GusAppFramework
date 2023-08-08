@@ -3,8 +3,8 @@ package org.gusdb.dbadmin.model;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author msaffitz
@@ -13,15 +13,15 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class Table extends DatabaseObject {
 
-    protected static final Log            log                = LogFactory.getLog( Table.class );
+    private static final Logger log = LogManager.getLogger( Table.class );
 
     private String                        tablespace;
     private boolean                       housekeeping       = true;
     private boolean                       updatable          = true;
     private Schema                        schema;
-    private ArrayList<Column>             column             = new ArrayList<Column>( );
-    private ArrayList<HousekeepingColumn> housekeepingColumn = new ArrayList<HousekeepingColumn>( );
-    private TreeSet<Table>                subclass           = new TreeSet<Table>( );
+    private ArrayList<Column>             column             = new ArrayList<>( );
+    private ArrayList<HousekeepingColumn> housekeepingColumn = new ArrayList<>( );
+    private TreeSet<Table>                subclass           = new TreeSet<>( );
     private Table                         superclass;
 
     protected final String                verSuffix          = "Ver";
@@ -43,7 +43,7 @@ public abstract class Table extends DatabaseObject {
      * @return collection of columns specific to this table
      */
     public ArrayList<Column> getColumnsExcludeSuperclass( boolean housekeeping ) {
-        ArrayList<Column> columns = new ArrayList<Column>( );
+        ArrayList<Column> columns = new ArrayList<>( );
         columns.addAll( column );
         if ( housekeeping ) {
             columns.addAll( housekeepingColumn );
@@ -104,7 +104,7 @@ public abstract class Table extends DatabaseObject {
         if ( removed ) housekeepingColumn.setTable( null );
     }
 
-    private TreeSet<Table> getSubclasss( ) {
+    public TreeSet<Table> getSubclasss( ) {
         return subclass;
     }
 
@@ -113,7 +113,7 @@ public abstract class Table extends DatabaseObject {
      * 
      * @return
      */
-    public TreeSet<? extends Table> getSubclasses( ) {
+    public TreeSet<Table> getSubclasses( ) {
         return getSubclasss( );
     }
 
@@ -138,7 +138,7 @@ public abstract class Table extends DatabaseObject {
             log.debug( "Setting superclass: '" + table.getName( ) + "' for Table: '" + getName( ) + "'" );
             if ( this.superclass != null ) this.superclass.removeSubclass( this );
             this.superclass = table;
-            if ( table != null ) table.addSubclass( this );
+            table.addSubclass( this );
         }
     }
 
@@ -177,23 +177,8 @@ public abstract class Table extends DatabaseObject {
         this.updatable = updatable;
     }
 
-    public static Table getTableFromRef( Database db, String ref ) {
-        String[] path = ref.split( "/" );
-        if ( path.length != 2 ) {
-            log.error( "Invalid table ref: " + ref );
-            throw new RuntimeException( "Invalid table ref" );
-        }
-        Table table = db.getSchema( path[0] ).getTable( path[1] );
-        if ( table == null ) {
-            log.error( "Unable to find table for ref: " + ref );
-            throw new RuntimeException( "Invalid table ref" );
-        }
-        log.debug( "Resolved: " + table.getName( ) );
-        return table;
-    }
-
     @Override
-    public boolean equals( DatabaseObject o ) {
+    public boolean equals( Object o ) {
         Table other = (Table) o;
 
         if ( housekeeping != other.isHousekeeping( ) ) return false;
@@ -239,7 +224,6 @@ public abstract class Table extends DatabaseObject {
 
     public boolean indexesEqual( Table other ) {
         // TODO Implement
-
         return true;
     }
 

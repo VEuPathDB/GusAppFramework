@@ -5,11 +5,11 @@ package org.gusdb.dbadmin.util;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Table;
@@ -19,7 +19,8 @@ import org.gusdb.dbadmin.model.Table;
  */
 public class EqualityReport {
 
-    private Log              log = LogFactory.getLog( EqualityReport.class );
+    private static final Logger log = LogManager.getLogger( EqualityReport.class );
+
     private Database         leftDatabase;
     private Database         rightDatabase;
 
@@ -50,10 +51,10 @@ public class EqualityReport {
     private void writeRenamedReport( Writer writer ) throws IOException {
 
         writer.write( " == Renamed Tables ==\n\n" );
-        for ( Iterator i = comparator.findLeftRenamedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
-            Table table = (Table) i.next( );
+        for ( Iterator<Table> i = comparator.findLeftRenamedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
+            Table table = i.next( );
             writer.write( table.getSchema( ).getName( ) + "." + table.getName( ) + " renamed to " );
-            Collection newTables = comparator.findRenameMatches( table, 0 );
+            List<Table> newTables = comparator.findRenameMatches( table, 0 );
             if ( newTables.isEmpty( ) ) {
                 writer.write( "ERROR:  No Table\n" );
             }
@@ -63,8 +64,8 @@ public class EqualityReport {
             }
             else {
                 writer.write( "\n\t" );
-                for ( Iterator j = newTables.iterator( ); j.hasNext( ); ) {
-                    Table newTable = (Table) j.next( );
+                for ( Iterator<Table> j = newTables.iterator( ); j.hasNext( ); ) {
+                    Table newTable = j.next( );
                     writer.write( " " + newTable.getSchema( ).getName( ) + "." + newTable.getName( ) );
                 }
                 writer.write( "\n" );
@@ -79,8 +80,8 @@ public class EqualityReport {
     private void writeUnchangedReport( Writer writer ) throws IOException {
         writer.write( " == Unchanged Tables == \n\n" );
 
-        for ( Iterator i = comparator.findLeftIdenticalTables( ).iterator( ); i.hasNext( ); ) {
-            Table table = (Table) i.next( );
+        for ( Iterator<Table> i = comparator.findLeftIdenticalTables( ).iterator( ); i.hasNext( ); ) {
+            Table table = i.next( );
             writer.write( table.getSchema( ).getName( ) + "." + table.getName( ) + "\n" );
         }
         writer.write( "\n" );
@@ -89,8 +90,8 @@ public class EqualityReport {
 
     private void writeAddedReport( Writer writer ) throws IOException {
         writer.write( " == Added Tables == \n\n" );
-        for ( Iterator i = comparator.findRightAddedTables( ).iterator( ); i.hasNext( ); ) {
-            Table table = (Table) i.next( );
+        for ( Iterator<Table> i = comparator.findRightAddedTables( ).iterator( ); i.hasNext( ); ) {
+            Table table = i.next( );
             writer.write( table.getSchema( ).getName( ) + "." + table.getName( ) + "\n" );
         }
         writer.write( "\n" );
@@ -99,8 +100,8 @@ public class EqualityReport {
 
     private void writeDroppedReport( Writer writer ) throws IOException {
         writer.write( " == Dropped Tables == \n\n" );
-        for ( Iterator i = comparator.findLeftDroppedTables( ).iterator( ); i.hasNext( ); ) {
-            Table table = (Table) i.next( );
+        for ( Iterator<Table> i = comparator.findLeftDroppedTables( ).iterator( ); i.hasNext( ); ) {
+            Table table = i.next( );
             writer.write( table.getSchema( ).getName( ) + "." + table.getName( ) + "\n" );
         }
         writer.write( "\n" );
@@ -109,30 +110,30 @@ public class EqualityReport {
 
     private void writeChangedReport( Writer writer ) throws IOException {
         writer.write( " == Changed Tables (Columns, Indexes, Constraints)  == \n\n" );
-        for ( Iterator i = comparator.findLeftColChangedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( Iterator<GusTable> i = comparator.findLeftColChangedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
+            GusTable table = i.next( );
             writer.write( table.getSchema( ).getName( ) + "." + table.getName( ) + ":  \n" );
-            for ( Iterator j = ((Collection) comparator.findLeftColChangedTables( ).get( table )).iterator( ); j
+            for ( Iterator<String> j = comparator.findLeftColChangedTables( ).get( table ).iterator( ); j
                     .hasNext( ); ) {
-                writer.write( "\t" + (String) j.next( ) + "\n" );
+                writer.write( "\t" + j.next( ) + "\n" );
             }
         }
 
-        for ( Iterator i = comparator.findLeftIndChangedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( Iterator<GusTable> i = comparator.findLeftIndChangedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
+            GusTable table = i.next( );
             writer.write( table.getSchema( ).getName( ) + "." + table.getName( ) + " has changed indexes:\n" );
-            for ( Iterator j = ((Collection) comparator.findLeftIndChangedTables( ).get( table )).iterator( ); j
+            for ( Iterator<String> j = comparator.findLeftIndChangedTables( ).get( table ).iterator( ); j
                     .hasNext( ); ) {
-                writer.write( "\t" + (String) j.next( ) + "\n" );
+                writer.write( "\t" + j.next( ) + "\n" );
             }
         }
 
-        for ( Iterator i = comparator.findLeftConChangedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( Iterator<GusTable> i = comparator.findLeftConChangedTables( ).keySet( ).iterator( ); i.hasNext( ); ) {
+            GusTable table = i.next( );
             writer.write( table.getSchema( ).getName( ) + "." + table.getName( ) + " has changed constraints:\n" );
-            for ( Iterator j = ((Collection) comparator.findLeftConChangedTables( ).get( table )).iterator( ); j
+            for ( Iterator<String> j = comparator.findLeftConChangedTables( ).get( table ).iterator( ); j
                     .hasNext( ); ) {
-                writer.write( "\t" + (String) j.next( ) + "\n" );
+                writer.write( "\t" + j.next( ) + "\n" );
             }
         }
         writer.write( "\n" );

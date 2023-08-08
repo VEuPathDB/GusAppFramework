@@ -1,8 +1,5 @@
 package org.gusdb.dbadmin.model;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 /**
  * @author msaffitz
  * @version $Revision$ $Date: 2005-06-16 16:35:04 -0400 (Thu, 16 Jun
@@ -10,7 +7,6 @@ import org.apache.commons.logging.LogFactory;
  */
 public class VersionView extends View {
 
-    protected final Log log = LogFactory.getLog( VersionView.class );
     private GusView     gusView;
 
     public VersionView( GusView gusView ) {
@@ -20,11 +16,12 @@ public class VersionView extends View {
             setSchema( ((GusSchema) gusView.getSchema( )).getVersionSchema( ) );
         }
         if ( gusView.getSuperclass( ) != null ) {
-            setSuperclass( ((GusView) gusView.getSuperclass( )).getVersionView( ) );
+            setSuperclass( ((GusView)gusView.getSuperclass()).getVersionView( ) );
         }
-        for ( GusView subclass : gusView.getSubclasses() ) {
-            if ( subclass.getVersionView( ) != null ) {
-                addSubclass( subclass.getVersionView( ) );
+        for ( View subclass : gusView.getSubclasses() ) {
+            GusView view = (GusView)subclass;
+            if ( view.getVersionView( ) != null ) {
+                addSubclass( view.getVersionView( ) );
             }
         }
         setTable( gusView.getTable( ) );

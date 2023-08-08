@@ -1,9 +1,8 @@
 package org.gusdb.dbadmin.model;
 
-import java.util.TreeSet;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author msaffitz
@@ -12,8 +11,6 @@ import org.apache.commons.logging.LogFactory;
  */
 public class GusSchema extends Schema {
 
-    protected final Log   log = LogFactory.getLog( GusSchema.class );
-
     private String        documentation;
     private VersionSchema versionSchema;
 
@@ -21,11 +18,6 @@ public class GusSchema extends Schema {
         versionSchema = new VersionSchema( this );
     }
 
-    @Override
-    public TreeSet<GusTable> getTables() {
-        return (TreeSet<GusTable>) super.getTables();
-    }
-    
     public VersionSchema getVersionSchema( ) {
         return versionSchema;
     }
@@ -50,43 +42,55 @@ public class GusSchema extends Schema {
         versionSchema.setDatabase( database );
     }
 
-    public void addTable( GusTable table ) {
+    public void addGusTable( GusTable table ) {
         super.addTable( table );
         if ( table.getVersionTable( ) != null ) {
             versionSchema.addTable( table.getVersionTable( ) );
         }
     }
 
-    public void removeTable( GusTable table ) {
+    public void removeGusTable( GusTable table ) {
         super.removeTable( table );
         if ( table.getVersionTable( ) != null ) {
             versionSchema.removeTable( table.getVersionTable( ) );
         }
     }
 
-    public void addView( GusView view ) {
+    public static List<GusTable> toGusTables(Collection<Table> tables) {
+        return tables.stream()
+            .map(t -> (GusTable)t)
+            .collect(Collectors.toList());
+    }
+
+    public void addGusView( GusView view ) {
         super.addView( view );
         if ( view.getVersionView( ) != null ) {
             versionSchema.addView( view.getVersionView( ) );
         }
     }
 
-    public void removeView( GusView view ) {
+    public void removeGusView( GusView view ) {
         super.removeView( view );
         if ( view.getVersionView( ) != null ) {
             versionSchema.removeView( view.getVersionView( ) );
         }
     }
 
+    public static List<GusView> toGusViews(Collection<View> views) {
+      return views.stream()
+          .map(t -> (GusView)t)
+          .collect(Collectors.toList());
+    }
+
     void resolveReferences( Database db ) {
-        for ( GusTable table : getTables() ) {
+        for ( GusTable table : toGusTables(getTables()) ) {
             table.resolveReferences( db );
         }
         // This is clunky to avoid concurrent modification exception
         Object[] tables = getTables().toArray();
         for ( int i = 0; i < tables.length; i++ ) {
             GusTable table = (GusTable) tables[i];
-            for ( GusTable subclass : table.getSubclasses() ) {
+            for ( GusTable subclass : toGusTables(table.getSubclasses()) ) {
                 subclass.setSchema(this);
             }
         }

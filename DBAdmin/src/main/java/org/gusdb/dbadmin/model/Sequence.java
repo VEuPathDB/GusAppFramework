@@ -30,11 +30,11 @@ public class Sequence extends DatabaseObject {
     }
 
     @Override
-    public boolean equals( DatabaseObject o ) {
-        Sequence other = (Sequence) o;
-
-        if ( start != other.getStart( ) ) return false;
-        return super.equals( o );
+    public boolean equals( Object o ) {
+        if (!(o instanceof Sequence)) return false;
+        Sequence s = (Sequence) o;
+        if (start != s.getStart()) return false;
+        return super.equals(s);
     }
 
 }

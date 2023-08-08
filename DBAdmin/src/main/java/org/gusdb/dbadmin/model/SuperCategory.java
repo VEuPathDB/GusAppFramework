@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;

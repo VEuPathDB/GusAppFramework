@@ -1,16 +1,14 @@
-/**
- * 
- */
 package org.gusdb.dbadmin.util;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
-import java.util.Vector;
+import java.util.ArrayList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
@@ -24,32 +22,32 @@ import org.gusdb.dbadmin.model.Table;
  */
 public class SchemaComparator {
 
-    protected static final Log log                         = LogFactory.getLog( SchemaComparator.class );
+    private static final Logger log = LogManager.getLogger( SchemaComparator.class );
 
     private Database           leftDatabase;
     private Database           rightDatabase;
 
-    private Collection         leftIdenticalTables         = new Vector( );
+    private List<Table>         leftIdenticalTables         = new ArrayList<>( );
 
-    private HashMap            leftRenamedTables           = new HashMap( );
+    private HashMap<Table,List<Table>>          leftRenamedTables           = new HashMap<>( );
 
-    private HashMap            leftColChangedTables        = new HashMap( );
-    private HashMap            leftIndChangedTables        = new HashMap( );
-    private HashMap            leftConChangedTables        = new HashMap( );
+    private HashMap<GusTable,List<String>>            leftColChangedTables        = new HashMap<>( );
+    private HashMap<GusTable,List<String>>            leftIndChangedTables        = new HashMap<>( );
+    private HashMap<GusTable,List<String>>            leftConChangedTables        = new HashMap<>( );
 
-    private Collection         leftDroppedTables           = new Vector( );
+    private List<Table>         leftDroppedTables           = new ArrayList<>( );
 
-    private Collection         rightAddedTables            = new Vector( );
-    private Collection         potentialRightRenameTargets = new Vector( );
+    private List<Table>         rightAddedTables            = new ArrayList<>( );
+    private List<Table>         potentialRightRenameTargets = new ArrayList<>( );
 
-    private HashMap            potentialRenameMatches      = new HashMap( );
+    private HashMap<Table,List<Table>>            potentialRenameMatches      = new HashMap<>( );
 
     public SchemaComparator( Database leftDatabase, Database rightDatabase ) {
         this.leftDatabase = leftDatabase;
         this.rightDatabase = rightDatabase;
     }
 
-    public Collection findLeftIdenticalTables( ) {
+    public List<Table> findLeftIdenticalTables( ) {
         if ( ! leftIdenticalTables.isEmpty( ) ) return leftIdenticalTables;
         log.info("finding identical tables");
         
@@ -69,14 +67,14 @@ public class SchemaComparator {
         return leftIdenticalTables;
     }
 
-    public HashMap findLeftRenamedTables( ) {
+    public Map<Table,List<Table>> findLeftRenamedTables( ) {
         if ( !leftRenamedTables.isEmpty( ) ) return leftRenamedTables;
         log.info("finding renamed tables");
         for ( GusTable table : leftDatabase.getGusTables() ) {
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) != null
                     && rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) ) != null ) continue;
-            Collection renamedTables = findRenameMatches( table, 0 );
+            List<Table> renamedTables = findRenameMatches( table, 0 );
             if ( !renamedTables.isEmpty( ) ) {
                 potentialRightRenameTargets.addAll( renamedTables );
                 leftRenamedTables.put( table, renamedTables );
@@ -86,7 +84,7 @@ public class SchemaComparator {
         return leftRenamedTables;
     }
 
-    public HashMap findLeftColChangedTables( ) {
+    public Map<GusTable,List<String>> findLeftColChangedTables( ) {
         if ( !leftColChangedTables.isEmpty( ) ) return leftColChangedTables;
         log.info("finding tables with changed column sets");
         for ( GusTable table : leftDatabase.getGusTables() ) {
@@ -96,7 +94,7 @@ public class SchemaComparator {
                     || rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) ) == null ) continue;
             Table rightTable = rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) );
 
-            Collection colCompareResults = compareColumnSets( table.getColumnsExcludeSuperclass( false ), rightTable
+            List<String> colCompareResults = compareColumnSets( table.getColumnsExcludeSuperclass( false ), rightTable
                     .getColumnsExcludeSuperclass( false ) );
             if ( !colCompareResults.isEmpty( ) ) {
                 leftColChangedTables.put( table, colCompareResults );
@@ -105,7 +103,7 @@ public class SchemaComparator {
         return leftColChangedTables;
     }
 
-    public HashMap findLeftIndChangedTables( ) {
+    public Map<GusTable, List<String>> findLeftIndChangedTables( ) {
         if ( !leftIndChangedTables.isEmpty( ) ) return leftIndChangedTables;
         log.info("finding tables with changed indexes");
         for ( GusTable table : leftDatabase.getGusTables() ) {
@@ -117,13 +115,13 @@ public class SchemaComparator {
                     table.getName( ) );
 
             if ( !table.indexesEqual( rightTable ) ) {
-                leftIndChangedTables.put( table, new Vector( ) );
+                leftIndChangedTables.put( table, new ArrayList<>( ) );
             }
         }
         return leftIndChangedTables;
     }
 
-    public HashMap findLeftConChangedTables( ) {
+    public Map<GusTable, List<String>> findLeftConChangedTables( ) {
         if ( !leftConChangedTables.isEmpty( ) ) return leftConChangedTables;
         log.info("finding tables with changed constraints ");
         for ( GusTable table : leftDatabase.getGusTables() ) {
@@ -141,7 +139,7 @@ public class SchemaComparator {
         return leftConChangedTables;
     }
 
-    public Collection findLeftDroppedTables( ) {
+    public List<Table> findLeftDroppedTables( ) {
         if ( !leftDroppedTables.isEmpty( ) ) return leftDroppedTables;
         log.info("finding tables that have been dropped");
         for ( GusTable table : leftDatabase.getGusTables() ) {
@@ -155,7 +153,7 @@ public class SchemaComparator {
         return leftDroppedTables;
     }
 
-    public Collection findRightAddedTables( ) {
+    public List<Table> findRightAddedTables( ) {
         // Need a side affect of this for below
         if ( !rightAddedTables.isEmpty( ) ) return rightAddedTables;
         log.info("finding added tables");
@@ -169,10 +167,10 @@ public class SchemaComparator {
         return rightAddedTables;
     }
 
-    public Collection findRenameMatches( Table table, int maxModifiedColumns ) {
-        if ( potentialRenameMatches.get( table ) != null ) return (Collection) potentialRenameMatches.get( table );
+    public List<Table> findRenameMatches( Table table, int maxModifiedColumns ) {
+        if ( potentialRenameMatches.get( table ) != null ) return potentialRenameMatches.get( table );
 
-        Collection potentialMatches = new Vector( );
+        List<Table> potentialMatches = new ArrayList<>( );
 
         for ( GusTable targetTable : rightDatabase.getGusTables() ) {
             if ( targetTable.getSchema( ).getName( ) == table.getSchema( ).getName( )
@@ -182,8 +180,8 @@ public class SchemaComparator {
                     - table.getColumnsIncludeSuperclass( false ).size( );
             if ( foundModifiedColumns < 0 ) foundModifiedColumns = 0;
 
-            for ( Iterator k = table.getColumnsIncludeSuperclass( false ).iterator( ); k.hasNext( ); ) {
-                Column column = (Column) k.next( );
+            for ( Iterator<Column> k = table.getColumnsIncludeSuperclass( false ).iterator( ); k.hasNext( ); ) {
+                Column column = k.next( );
                 if ( targetTable.getColumn( column.getName( ) ) == null ) foundModifiedColumns++;
                 else if ( !column.equals( targetTable.getColumn( column.getName( ) ) ) ) foundModifiedColumns++;
             }
@@ -194,7 +192,7 @@ public class SchemaComparator {
         return potentialMatches;
     }
 
-    public static boolean compareColumnSetNames( Collection leftColumns, Collection rightColumns ) {
+    public static <C extends Column> boolean compareColumnSetNames( List<C> leftColumns, List<C> rightColumns ) {
         Object[] leftColumnsA = leftColumns.toArray( );
         Object[] rightColumnsA = rightColumns.toArray( );
 
@@ -211,8 +209,8 @@ public class SchemaComparator {
         return true;
     }
 
-    public static Collection compareColumnSets( Collection leftColumns, Collection rightColumns ) {
-        Collection results = new Vector( );
+    public static List<String> compareColumnSets( List<Column> leftColumns, List<Column> rightColumns ) {
+        List<String> results = new ArrayList<>( );
 
         Object[] leftColumnsA = leftColumns.toArray( );
         Object[] rightColumnsA = rightColumns.toArray( );
@@ -278,8 +276,8 @@ public class SchemaComparator {
         return results;
     }
 
-/*    private Collection getIndexDifferences( Index leftIndex, Index rightIndex ) {
-        Collection differences = new Vector( );
+/*    private List getIndexDifferences( Index leftIndex, Index rightIndex ) {
+        List differences = new ArrayList<>( );
 
         if ( leftIndex.getType( ) != rightIndex.getType( ) ) {
             differences.add( "types differ" );
@@ -291,11 +289,11 @@ public class SchemaComparator {
     }
 */
     
-    private Collection getConstraintDifferences( GusTable leftTable, GusTable rightTable ) {
-        Collection results = new Vector( );
+    private List<String> getConstraintDifferences( GusTable leftTable, GusTable rightTable ) {
+        List<String> results = new ArrayList<>( );
 
-        Object[] leftConstraints = new TreeSet( leftTable.getConstraints( ) ).toArray( );
-        Object[] rightConstraints = new TreeSet( rightTable.getConstraints( ) ).toArray( );
+        Object[] leftConstraints = new TreeSet<>( leftTable.getConstraints( ) ).toArray( );
+        Object[] rightConstraints = new TreeSet<>( rightTable.getConstraints( ) ).toArray( );
 
         int l = 0;
         int r = 0;

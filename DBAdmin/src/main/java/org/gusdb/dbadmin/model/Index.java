@@ -86,17 +86,17 @@ public class Index extends DatabaseObject {
 
     public void resolveReferences( Database db ) {
         for ( String ref : getColumnRefs() ) {
-            addColumn( (GusColumn) Column.getColumnFromRef( db, ref ) );
+            addColumn( (GusColumn) db.getColumnFromRef( ref ) );
         }
     }
 
     @Override
-    public boolean equals( DatabaseObject o ) {
-        Index other = (Index) o;
-        if ( !tablespace.equals( other.getTablespace( ) ) ) return false;
-        if ( type != other.getType( ) ) return false;
-
-        return super.equals( o );
+    public boolean equals( Object o ) {
+        if (!(o instanceof Index)) return false;
+        Index i = (Index)o;
+        if (!tablespace.equals(i.getTablespace())) return false;
+        if (type != i.getType()) return false;
+        return super.equals(i);
     }
 
 }

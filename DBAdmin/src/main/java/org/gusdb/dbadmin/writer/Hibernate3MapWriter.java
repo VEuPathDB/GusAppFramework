@@ -6,7 +6,6 @@ package org.gusdb.dbadmin.writer;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +14,8 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
@@ -37,6 +38,8 @@ import org.gusdb.dbadmin.model.VersionTable;
 public class Hibernate3MapWriter
 extends SchemaWriter
 {
+    private static final Logger log = LogManager.getLogger( Hibernate3MapWriter.class );
+
     /**
      * The base package for all hibernate generated classes
      * (default: org.gusdb.model).
@@ -213,54 +216,57 @@ extends SchemaWriter
         if (!(table instanceof GusTable))
             return;
 
-        Collection refs = ((GusTable)table).getReferentialConstraints();
-        Map chldrn = new TreeMap();
+        List<Constraint> refConstraints = ((GusTable)table).getReferentialConstraints();
+        Map<String,List<Constraint>> chldrn = new TreeMap<>();
 
-        /**
+        // pass 1: initialization
+        for (Iterator<Constraint> i = refConstraints.iterator(); i.hasNext(); ) {
+          Constraint next = i.next();
+          String name = getCollectionName(next, 0);
+          List<Constraint> l = chldrn.get(name);
+          chldrn.put(name, (l = new ArrayList<>()));
+          l.add(next);
+        }
+
+      /**
          * various naming conflicts require multiple
          * passes over the child tables, the first implementation
          * attempted just had 5 very similar loops, is this better?
          *
-         * pass 1: initializtion
          * pass 2: resolve conflicts using pre/suffix
          * pass 3: resolve conflicts using schema name
          * pass 4: resolve conflicts using both previous methods
          * pass 5: write the mappings
          */
-        for (int pass = 0; pass < 5; pass++) {
-            for (Iterator i = refs.iterator(); i.hasNext(); ) {
-                Object next = i.next();
-                String name = (pass > 0) ? (String)next :
-                    getCollectionName((Constraint)next, pass);
-                List l = (List)chldrn.get(name);
+        for (int pass = 1; pass < 5; pass++) {
+            List<String> refs = new ArrayList<>(chldrn.keySet());
+            for (Iterator<String> i = refs.iterator(); i.hasNext(); ) {
+                String next = i.next();
+                String name = next;
+                List<Constraint> l = chldrn.get(name);
                 switch (pass) {
-                    case 0:
-                        chldrn.put(name, (l = new ArrayList()));
-                        l.add(next);
-                        break;
                     case 1:
                     case 2:
                     case 3:
                         if (l.size() == 1)
                             break;
                         chldrn.remove(name);
-                        for (Iterator j = l.iterator(); j.hasNext(); ) {
-                            Constraint c = (Constraint)j.next();
+                        for (Iterator<Constraint> j = l.iterator(); j.hasNext(); ) {
+                            Constraint c = j.next();
                             name = getCollectionName(c, pass);
-                            l = (List)chldrn.get(name);
+                            l = chldrn.get(name);
                             if (l == null)
-                                chldrn.put(name, (l = new ArrayList()));
+                                chldrn.put(name, (l = new ArrayList<>()));
                             l.add(c);
                         }
                         break;
                     case 4:
-                        writeChild(writer, name, (Constraint)l.get(0));
+                        writeChild(writer, name, l.get(0));
                         break;
                     default:
                         break;
                 }
             }
-            refs = (Collection)((Map)((TreeMap)chldrn).clone()).keySet();
         }
     }
 
@@ -685,7 +691,7 @@ extends SchemaWriter
      */
     private String getCollectionName(Constraint c, int conflict)
     {
-        Set parts = new TreeSet();
+        Set<String> parts = new TreeSet<>();
         Table table = c.getConstrainedTable();
         StringBuffer sb = new StringBuffer();
         String child = table.getName();

@@ -1,9 +1,12 @@
 package org.gusdb.dbadmin.model;
 
+import static org.gusdb.dbadmin.model.GusSchema.toGusTables;
+import static org.gusdb.dbadmin.model.GusSchema.toGusViews;
+
 import java.util.Iterator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author msaffitz
@@ -12,21 +15,23 @@ import org.apache.commons.logging.LogFactory;
  */
 public class VersionSchema extends Schema {
 
-    protected final Log log = LogFactory.getLog( VersionSchema.class );
+    @SuppressWarnings("unused")
+    private static final Logger log = LogManager.getLogger( VersionSchema.class );
+
     private GusSchema   gusSchema;
 
     public VersionSchema( GusSchema gusSchema ) {
         setGusSchema( gusSchema );
         setName( gusSchema.getName( ) + verSuffix );
         setDatabase( gusSchema.getDatabase( ) );
-        for ( Iterator<GusTable> i = gusSchema.getTables( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<GusTable> i = toGusTables(gusSchema.getTables()).iterator( ); i.hasNext( ); ) {
             GusTable table = i.next( );
             if ( table.getVersionTable( ) != null ) {
                 addTable( table.getVersionTable( ) );
             }
         }
-        for ( Iterator<View> i = gusSchema.getViews( ).iterator( ); i.hasNext( ); ) {
-            GusView view = (GusView) i.next( );
+        for ( Iterator<GusView> i = toGusViews(gusSchema.getViews()).iterator( ); i.hasNext( ); ) {
+            GusView view = i.next( );
             if ( view.getVersionView( ) != null ) {
                 addView( view.getVersionView( ) );
             }

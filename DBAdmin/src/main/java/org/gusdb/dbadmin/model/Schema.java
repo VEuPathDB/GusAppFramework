@@ -7,11 +7,11 @@ import java.util.TreeSet;
  *          2005) $
  * @author msaffitz
  */
-public abstract class Schema extends DatabaseObject implements Comparable {
+public abstract class Schema extends DatabaseObject {
 
     private Database       database;
-    private TreeSet<Table> table     = new TreeSet<Table>( );
-    private TreeSet<View>  view      = new TreeSet<View>( );
+    private TreeSet<Table> table     = new TreeSet<>( );
+    private TreeSet<View>  view      = new TreeSet<>( );
     protected final String verSuffix = "Ver";
 
     public Database getDatabase( ) {
@@ -26,7 +26,7 @@ public abstract class Schema extends DatabaseObject implements Comparable {
         }
     }
 
-    public TreeSet<? extends Table> getTables( ) {
+    public TreeSet<Table> getTables( ) {
         return table;
     }
 
@@ -39,7 +39,7 @@ public abstract class Schema extends DatabaseObject implements Comparable {
 
     public void removeTable( Table table ) {
         boolean removed = this.table.remove( table );
-        if ( removed ) table.setSchema( (Schema) null );
+        if ( removed ) table.setSchema( null );
     }
 
     public TreeSet<View> getViews( ) {
@@ -55,7 +55,7 @@ public abstract class Schema extends DatabaseObject implements Comparable {
 
     public void removeView( View view ) {
         boolean removed = this.view.remove( view );
-        if ( removed ) view.setSchema( (Schema) null );
+        if ( removed ) view.setSchema( null );
     }
 
     public Table getTable( String name ) {
@@ -66,17 +66,6 @@ public abstract class Schema extends DatabaseObject implements Comparable {
             }
         }
         return null;
-    }
-
-    @Override
-    public int compareTo( Object o ) {
-        Schema s = (Schema) o;
-        if ( s == null ) return 1;
-        if ( this.getName( ) == null ) {
-            if ( s.getName( ) == null ) return 0;
-            else return -1;
-        }
-        return this.getName( ).compareTo( s.getName( ) );
     }
 
 }

@@ -4,9 +4,13 @@
  */
 package org.gusdb.dbadmin.writer;
 
+import static org.gusdb.dbadmin.model.GusSchema.toGusTables;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.DatabaseObject;
@@ -26,6 +30,8 @@ import org.gusdb.dbadmin.util.ColumnPair;
  * @author msaffitz
  */
 public class PostgresWriter extends RelationalDatabaseWriter {
+
+    private static final Logger log = LogManager.getLogger(PostgresWriter.class);
 
     /**
      * Writes the given database to the internal OutputStreamWriter.
@@ -74,7 +80,7 @@ public class PostgresWriter extends RelationalDatabaseWriter {
         oStream.write( "\n-- Foreign Key Constraints\n\n" );
 
         for ( GusSchema schema : db.getGusSchemas( ) ) {
-            for ( GusTable table : schema.getTables( ) ) {
+            for ( GusTable table : toGusTables(schema.getTables()) ) {
                 writeFKConstraints( table );
                 writeUQConstraints( table );
                 oStream.write( "\n" );
@@ -85,7 +91,7 @@ public class PostgresWriter extends RelationalDatabaseWriter {
         oStream.write( "\n-- Sequences\n\n" );
 
         for ( GusSchema schema : db.getGusSchemas( ) ) {
-            for ( GusTable table : schema.getTables( ) ) {
+            for ( GusTable table : toGusTables(schema.getTables()) ) {
                 writeSequence( table.getSequence( ) );
                 oStream.write( "\n" );
             }

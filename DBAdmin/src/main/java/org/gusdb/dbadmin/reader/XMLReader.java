@@ -9,7 +9,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.apache.commons.digester.Digester;
+import org.apache.commons.digester3.Digester;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusColumn;
@@ -24,6 +26,8 @@ import org.gusdb.dbadmin.model.VersionTable;
  * @version $Revision$
  */
 public class XMLReader extends SchemaReader {
+
+    private static final Logger log = LogManager.getLogger(XMLReader.class);
 
     private FileInputStream XMLFile;
     private Digester        digester = new Digester( );

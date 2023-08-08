@@ -9,11 +9,14 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.DatabaseObject;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.GusView;
 import org.gusdb.dbadmin.model.Schema;
@@ -29,14 +32,15 @@ import org.gusdb.dbadmin.model.View;
  */
 public class MetadataPopulator {
 
-	private final Log log            = LogFactory.getLog( MetadataPopulator.class );
-	private Writer writer;
+    private static final Logger log = LogManager.getLogger( MetadataPopulator.class );
+
+    private Writer writer;
 	private Database db;
 	private String dbVendor;
 
-	private HashMap schemaIDs        = new HashMap();
-	private HashMap tableAndViewIDs  = new HashMap();
-	private HashSet written          = new HashSet();
+	private Map<Integer, Schema> schemaIDs        = new HashMap<>();
+	private Map<Integer, DatabaseObject> tableAndViewIDs  = new HashMap<>();
+	private Set<DatabaseObject> written          = new HashSet<>();
 
 	public MetadataPopulator( Writer writer, Database db, String vendor) {
 		this.writer = writer;
@@ -56,12 +60,12 @@ public class MetadataPopulator {
 			writer.write( "BEGIN;\n\n" );
 		}
         for ( Schema schema : db.getAllSchemas() ) {
-			schemaIDs.put( new Integer( schemaIDs.size() + 1 ), schema );
+			schemaIDs.put( Integer.valueOf( schemaIDs.size() + 1 ), schema );
 			for ( Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext();  ) {
-				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), j.next() );
+				tableAndViewIDs.put( tableAndViewIDs.size() + 1, j.next() );
 			}
 			for ( Iterator<View> j = schema.getViews().iterator(); j.hasNext();  ) {
-				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), j.next() );
+				tableAndViewIDs.put( Integer.valueOf( tableAndViewIDs.size() + 1 ), j.next() );
 			}
 		}
 		for ( Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext();  ) {
@@ -359,9 +363,9 @@ public class MetadataPopulator {
 		}
 	}
 	
-	private int getID( HashMap map, Object obj ) {
+	private int getID( Map<?,?> map, Object obj ) {
 		for ( int i = 1; i < map.size() + 1; i++ ) {
-			if ( map.get( new Integer( i ) ) == obj ) {
+			if ( map.get( Integer.valueOf( i ) ) == obj ) {
 				return i;
 			}
 		}

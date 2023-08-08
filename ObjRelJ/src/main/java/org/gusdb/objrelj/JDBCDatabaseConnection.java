@@ -163,7 +163,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
 	    while (res.next()) {
 		++numReturned;
-		Hashtable rowHash = createHashtableFromResultSet(res);
+		Hashtable<String,Object> rowHash = createHashtableFromResultSet(res);
 		gusRow.setAttributesFromHashtable(rowHash, specialCases);
 	    }
 	    res.close();
@@ -186,7 +186,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	String childSchema = childTable.getSchemaName();
 	String childTableName = childTable.getTableName();
 	String primaryKeyName = childTable.getPrimaryKeyName();
-	Long primaryKeyValue = new Long(child.getPrimaryKeyValue());
+	Long primaryKeyValue = Long.valueOf(child.getPrimaryKeyValue());
 	Long parentPk = null;
 
 	String sql = "select " + childAtt + " from " + childSchema + "." + childTableName + 
@@ -196,7 +196,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    Statement stmt = conn.createStatement();
 	    ResultSet res = stmt.executeQuery(sql);
 	    while (res.next()){
-	        parentPk = new Long(res.getLong(childAtt));
+	        parentPk = Long.valueOf(res.getLong(childAtt));
 	    }
 	}
 	catch (Exception e){
@@ -207,9 +207,9 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     }
 
     @Override
-    public Vector retrieveGUSRowsFromQuery(GUSTable table, String query)
+    public Vector<Hashtable<String,Object>> retrieveGUSRowsFromQuery(GUSTable table, String query)
     {
-	Vector objs = new Vector();
+	Vector<Hashtable<String,Object>> objs = new Vector<>();
 
 	try {
 	    Statement stmt = conn.createStatement();
@@ -217,7 +217,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
 	    while(res.next()) {
 		GUSRow obj = GUSRow.createGUSRow(table);
-		Hashtable rowHash = createHashtableFromResultSet(res);
+		Hashtable<String,Object> rowHash = createHashtableFromResultSet(res);
 		objs.add(rowHash);
 		//obj.setAttributesFromHashtable(rowHash, null);
 		//objs.add(obj);
@@ -233,8 +233,8 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     }
 
     @Override
-    public Vector runSqlQuery(String query) {
-	Vector objs = new Vector();
+    public Vector<Hashtable<String,Object>> runSqlQuery(String query) {
+	Vector<Hashtable<String,Object>> objs = new Vector<>();
 	System.err.println("JDBCDatabaseConnection: runnning sql query " + query);
 	try {
 	    Statement stmt = conn.createStatement();
@@ -252,7 +252,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    // Returns everything as an Object.  CLOB values require special handling.
 	    //dtb: why?
 	    while(res.next()) {
-		Hashtable h = new Hashtable();
+		Hashtable<String,Object> h = new Hashtable<>();
 
 		for(int i = 0;i < numCols;++i) {
 
@@ -445,7 +445,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    if (isInsert) {
 		rowsInserted += rowsAffected;
 		pkeys = new Vector<Long>();
-		pkeys.addElement(new Long(nextId));
+		pkeys.addElement(Long.valueOf(nextId));
 	    } else if (isUpdate) {
 		rowsUpdated += rowsAffected;
 	    } else if (isDelete) {
@@ -745,7 +745,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     /**
      * Helper method for retrieveChild and retrieveChildren;
      */
-    protected Vector retrieveChildren_aux(GUSRow parent, String owner, String tname, String childAtt)
+    protected Vector<Hashtable<String,Object>> retrieveChildren_aux(GUSRow parent, String owner, String tname, String childAtt)
 	throws GUSNoSuchRelationException
     {
 	// First check that such a relationship does in fact exist
@@ -761,7 +761,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	long parentPkVal = parent.getPrimaryKeyValue();
 	String sql = "select * from " + owner + "." + tname + " where " + childAtt + " = " + parentPkVal;
 	//DTB:  put "parentTable" for compiling purposes.  This is likely broken if we decided to keep this method!
-	Vector kids = retrieveGUSRowsFromQuery(parentTable, sql);
+	Vector<Hashtable<String,Object>> kids = retrieveGUSRowsFromQuery(parentTable, sql);
 	return kids;
     }
 
@@ -851,9 +851,9 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
      * names of the ResultSet's table (all lower case) and the value of each key is the value 
      * in the row for the column.
      */
-    private Hashtable createHashtableFromResultSet(ResultSet rs){
+    private Hashtable<String,Object> createHashtableFromResultSet(ResultSet rs){
 
-	Hashtable rowHash = new Hashtable();
+	Hashtable<String,Object> rowHash = new Hashtable<>();
 	
 	try {
 	    ResultSetMetaData rsmd = rs.getMetaData();

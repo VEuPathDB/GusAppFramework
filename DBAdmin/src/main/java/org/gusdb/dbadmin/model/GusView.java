@@ -1,18 +1,11 @@
 package org.gusdb.dbadmin.model;
 
-import java.util.ArrayList;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 /**
  * @author msaffitz
  * @version $Revision$ $Date: 2005-06-16 16:35:04 -0400 (Thu, 16 Jun
  *          2005) $
  */
 public class GusView extends View {
-
-    protected final Log log = LogFactory.getLog( GusView.class );
 
     private String      documentation;
     private boolean     versioned;
@@ -60,32 +53,27 @@ public class GusView extends View {
         }
     }
 
-    public void setSuperclass( GusView superclass ) {
+    public void setGusSuperclass( GusView superclass ) {
         super.setSuperclass( superclass );
         if ( superclass.getVersionView( ) != null && this.versionView != null ) {
             versionView.setSuperclass( superclass.getVersionView( ) );
         }
     }
 
-    public void addSubclass( GusView subclass ) {
+    public void addGusSubclass( GusView subclass ) {
         super.addSubclass( subclass );
         if ( subclass.getVersionView( ) != null && this.versionView != null ) {
             versionView.addSubclass( subclass.getVersionView( ) );
         }
     }
 
-    public void removeSubclass( GusView subclass ) {
+    public void removeGusSubclass( GusView subclass ) {
         super.removeSubclass( subclass );
         if ( subclass.getVersionView( ) != null && this.versionView != null ) {
             versionView.removeSubclass( subclass.getVersionView( ) );
         }
     }
 
-    @Override
-    public ArrayList<GusView> getSubclasses() {
-        return (ArrayList<GusView>) super.getSubclasses();
-    }
-    
     public void setSchema( GusSchema schema ) {
         super.setSchema( schema );
         if ( versionView != null ) {
@@ -102,9 +90,10 @@ public class GusView extends View {
     }
 
     @Override
-    public boolean equals( DatabaseObject o ) {
-        GusView other = (GusView) o;
-        if ( versioned != other.isVersioned( ) ) return false;
+    public boolean equals( Object o ) {
+        if (!(o instanceof GusView)) return false;
+        GusView v = (GusView)o;
+        if ( versioned != v.isVersioned( ) ) return false;
         return super.equals( o );
     }
 

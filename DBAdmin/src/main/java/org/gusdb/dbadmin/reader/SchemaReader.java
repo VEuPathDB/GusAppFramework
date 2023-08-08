@@ -11,8 +11,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Properties;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
@@ -26,8 +26,9 @@ import org.gusdb.dbadmin.util.DatabaseValidator;
  */
 public abstract class SchemaReader {
 	
-	protected final Log log = LogFactory.getLog(SchemaReader.class);
-	protected Properties properties = new Properties();
+    private static final Logger log = LogManager.getLogger(SchemaReader.class);
+
+    protected Properties properties = new Properties();
 	
 	protected ArrayList<HousekeepingColumn> housekeepingColumns = new ArrayList<HousekeepingColumn>();
 	protected ArrayList<HousekeepingColumn> verHousekeepingColumns = new ArrayList<HousekeepingColumn>();
@@ -54,6 +55,9 @@ public abstract class SchemaReader {
 		return db;
 	}
 	
+	/**
+     * @throws Exception if error occurs during validation 
+     */
 	protected boolean valid(GusTable table) throws Exception {
 		return true;
 		//check in here for nulls (documentation)
@@ -79,11 +83,11 @@ public abstract class SchemaReader {
 		}
 	}
 	
-	protected Column getColumn(Collection columns, String name ) {
+	protected Column getColumn(Collection<? extends Column> columns, String name ) {
 		if ( name == null ) return null;
 		if ( columns == null ) return null;
-		for (Iterator i = columns.iterator(); i.hasNext(); ) {
-			Column col = (Column) i.next();
+		for (Iterator<? extends Column> i = columns.iterator(); i.hasNext(); ) {
+			Column col = i.next();
 			if ( col.getName().compareToIgnoreCase(name) == 0 ) {
 				return col;
 			}
@@ -113,16 +117,16 @@ public abstract class SchemaReader {
 		
 	}
 	
-	private void initHousekeeping(Collection array, String[] housekeepingCols) {
+	private void initHousekeeping(Collection<HousekeepingColumn> array, String[] housekeepingCols) {
 		for ( int i = 0; i<housekeepingCols.length; i++ ) {
 			String columnSpec = properties.getProperty("hkspec."+housekeepingCols[i]);
 			String[] columnSpecs = columnSpec.split(",", 4);
 			HousekeepingColumn column = new HousekeepingColumn();
 			column.setName(housekeepingCols[i]);
 			column.setType(Column.ColumnType.valueOf(columnSpecs[0].toUpperCase()));
-			column.setLength((new Integer(columnSpecs[1])).intValue());
-			column.setPrecision((new Integer(columnSpecs[2])).intValue());
-			array.add(column);			
+			column.setLength(Integer.parseInt(columnSpecs[1]));
+			column.setPrecision(Integer.parseInt(columnSpecs[2]));
+			array.add(column);
 		}
 	}
 	

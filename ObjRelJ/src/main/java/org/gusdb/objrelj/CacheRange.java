@@ -47,9 +47,9 @@ public class CacheRange implements java.io.Serializable {
 
     public CacheRange (long start, long end, long length) 
     {
-	this.start = new Long(start);
-	this.end = new Long(end);
-	this.length = new Long(length);
+	this.start = Long.valueOf(start);
+	this.end = Long.valueOf(end);
+	this.length = Long.valueOf(length);
     }
 
     // ------------------------------------------------------------------

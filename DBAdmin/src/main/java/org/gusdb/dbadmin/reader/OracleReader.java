@@ -3,6 +3,8 @@
  */
 package org.gusdb.dbadmin.reader;
 
+import static org.gusdb.dbadmin.model.GusSchema.toGusTables;
+
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -12,6 +14,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
@@ -53,6 +57,8 @@ import org.gusdb.dbadmin.util.DatabaseUtilities;
  * @see SchemaReader
  */
 public class OracleReader extends SchemaReader {
+
+    private static final Logger log = LogManager.getLogger(OracleReader.class);
 
     private Connection                    connection;
     private String                        CORE;
@@ -179,7 +185,7 @@ public class OracleReader extends SchemaReader {
 
         }
 
-        for ( Iterator<GusTable> i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<GusTable> i = toGusTables(schema.getTables()).iterator( ); i.hasNext( ); ) {
 
             GusTable table = i.next( );
 
@@ -246,7 +252,7 @@ public class OracleReader extends SchemaReader {
 
         if ( !table.getSubclasses( ).isEmpty( ) ) {
 
-            for ( Iterator<GusTable> i = table.getSubclasses( ).iterator( ); i.hasNext( ); ) {
+            for ( Iterator<GusTable> i = toGusTables(table.getSubclasses()).iterator(); i.hasNext( ); ) {
                 addColumns( i.next( ), true );
             }
         }
@@ -603,7 +609,7 @@ public class OracleReader extends SchemaReader {
      */
     private void addRemoteConstraints( Database db ) {
         for ( GusSchema schema : db.getGusSchemas() ) {
-            for ( GusTable table : schema.getTables() ) {
+            for ( GusTable table : toGusTables(schema.getTables())) {
                 addRemoteConstraints( table );
             }
         }
@@ -741,7 +747,7 @@ public class OracleReader extends SchemaReader {
             catch ( SQLException ignored ) {}
         }
 
-        for ( Iterator<GusTable> i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<GusTable> i = toGusTables(schema.getTables()).iterator( ); i.hasNext( ); ) {
             populate( i.next( ) );
         }
     }
@@ -857,7 +863,7 @@ public class OracleReader extends SchemaReader {
      */
     private GusTable getTableFromSchemaConstraint( GusSchema schema, String consName ) {
 
-        for ( Iterator<GusTable> i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<GusTable> i = toGusTables(schema.getTables()).iterator( ); i.hasNext( ); ) {
 
             GusTable table = i.next( );
 

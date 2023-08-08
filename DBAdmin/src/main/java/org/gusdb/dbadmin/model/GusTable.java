@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeSet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * @author msaffitz
  * @created May 2, 2005
@@ -12,13 +15,15 @@ import java.util.TreeSet;
  */
 public class GusTable extends Table {
 
+    private static final Logger log = LogManager.getLogger(GusTable.class);
+
     private String              documentation;
     private Category            category;
     private String              categoryRef;
     private String              ref;
-    private TreeSet<Constraint> constraint            = new TreeSet<Constraint>( );
-    private ArrayList<Constraint> referentialConstraint = new ArrayList<Constraint>( );
-    private TreeSet<Index>      index                 = new TreeSet<Index>( );
+    private TreeSet<Constraint> constraint            = new TreeSet<>();
+    private ArrayList<Constraint> referentialConstraint = new ArrayList<>();
+    private TreeSet<Index>      index                 = new TreeSet<>();
     private Sequence            sequence;
     private final String        sequenceSuffix        = "_SQ";
     private Constraint          primaryKey;
@@ -28,7 +33,7 @@ public class GusTable extends Table {
 
     public GusTable( ) {
         setSequence( new Sequence( ) );
-        Integer start = new Integer( System.getProperty( "SEQUENCE_START" ) );
+        Integer start = Integer.parseInt( System.getProperty( "SEQUENCE_START" ) );
         sequence.setStart( start.intValue( ) );
     }
 
@@ -199,11 +204,6 @@ public class GusTable extends Table {
     public GusTable getSuperclass() {
         return (GusTable) super.getSuperclass();
     }
-    
-    @Override
-    public TreeSet<GusTable> getSubclasses( ) {
-        return (TreeSet<GusTable>) super.getSubclasses( );
-    }
 
     public TreeSet<Constraint> getConstraints( ) {
         TreeSet<Constraint> constraints = constraint;
@@ -337,7 +337,7 @@ public class GusTable extends Table {
     }
 
     @Override
-    public boolean equals( DatabaseObject o ) {
+    public boolean equals( Object o ) {
         GusTable other = (GusTable) o;
         if ( versioned != other.isVersioned( ) ) return false;
         return super.equals( o );

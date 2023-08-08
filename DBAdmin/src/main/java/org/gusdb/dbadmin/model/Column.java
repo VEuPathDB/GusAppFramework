@@ -2,8 +2,8 @@ package org.gusdb.dbadmin.model;
 
 import java.util.TreeSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author msaffitz
@@ -13,7 +13,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class Column extends DatabaseObject {
 
-    private final static Log log = LogFactory.getLog( Column.class );
+    private static final Logger log = LogManager.getLogger( Column.class );
 
     private int                length;
     private int                precision;
@@ -101,37 +101,13 @@ public abstract class Column extends DatabaseObject {
         this.type = columnType;
     }
 
-    static Column getColumnFromRef( Database db, String ref ) {
-        String[] path = ref.split( "/" );
-
-        if ( path.length != 3 ) {
-            log.error( "Invalid column ref: '" + ref + "'" );
-            throw new RuntimeException( "Invalid column ref" );
-        }
-        try {
-            Table table = db.getSchema( path[0] ).getTable( path[1] );
-            Column column = table.getColumn( path[2] );
-
-            if ( column == null ) {
-                throw new NullPointerException( "No column found. Table: '" + table.getName( ) + "', Column: '"
-                        + path[2] + "'" );
-            }
-            log.debug( "Resolved Column: '" + column.getName( ) + "'" );
-            return column;
-        }
-        catch ( NullPointerException e ) {
-            log.error( "Unable to parse ref: '" + ref + "'" );
-            throw new RuntimeException( e );
-        }
-    }
-
     @Override
-    public boolean equals( DatabaseObject o ) {
-        Column other = (Column) o;
-
-        if ( length != other.getLength( ) ) return false;
-        if ( precision != other.getPrecision( ) ) return false;
-        if ( type != other.getType( ) ) return false;
+    public boolean equals( Object other ) {
+        if (!(other instanceof Column)) return false;
+        Column o = (Column)other;
+        if ( length != o.getLength( ) ) return false;
+        if ( precision != o.getPrecision( ) ) return false;
+        if ( type != o.getType( ) ) return false;
         return super.equals( o );
     }
 

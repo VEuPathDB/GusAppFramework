@@ -320,10 +320,10 @@ public class Association  {
 	    isNot = false;
 	}
 	
-	Vector<Association> parents = getParents();
+	Vector<Association> parentAssocs = getParents();
 	
-	for (int i = 0; i < parents.size(); i++){
-	    Association nextParent = parents.elementAt(i);
+	for (int i = 0; i < parentAssocs.size(); i++){
+	    Association nextParent = parentAssocs.elementAt(i);
 	    if (nextParent.getReviewStatusId() != UNREVIEWED_ID && nextParent.getIsNot() == true){
 		System.err.println("Association: new hierarchy exception");
 		String badGoId = nextParent.getGoTerm().getRealId();
@@ -362,8 +362,8 @@ public class Association  {
 	}
     }
 
-    public void prepareInstancesToCache(int goTermId, Vector<Instance> instances){
-	cachedEvidenceSets.put(new Integer(goTermId), instances);
+    public void prepareInstancesToCache(int goTermId, Vector<Instance> instancesToCache){
+	cachedEvidenceSets.put(Integer.valueOf(goTermId), instancesToCache);
     }
     
 
@@ -416,9 +416,9 @@ public class Association  {
 	    isNot = true;
 	}
 
-	Vector<Association> children = getChildren();
-	for (int i = 0; i < children.size(); i++){
-	    Association nextAssoc = children.elementAt(i);
+	Vector<Association> childAssocs = getChildren();
+	for (int i = 0; i < childAssocs.size(); i++){
+	    Association nextAssoc = childAssocs.elementAt(i);
 
 	    if (ignoreVerifiedDescendants == false &&
 		nextAssoc.getReviewStatusId() != UNREVIEWED_ID &&

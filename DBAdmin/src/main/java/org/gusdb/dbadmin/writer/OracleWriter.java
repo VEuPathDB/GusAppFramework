@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
@@ -28,8 +30,10 @@ import org.gusdb.dbadmin.model.View;
  */
 public class OracleWriter extends RelationalDatabaseWriter {
 
-    private HashMap tablespacePermissions = new HashMap( );
-    private HashMap tablePermissions      = new HashMap( );
+    private static final Logger log = LogManager.getLogger(OracleWriter.class);
+
+    private HashMap<String,?> tablespacePermissions = new HashMap<>( );
+    private HashMap<String,?> tablePermissions      = new HashMap<>( );
     private boolean skipRoles = false;
 
     /**
@@ -63,7 +67,7 @@ public class OracleWriter extends RelationalDatabaseWriter {
         oStream.flush( );
         oStream.write( "\n-- Foreign Key Constraints\n\n" );
         for ( GusSchema schema : db.getGusSchemas( ) ) {
-            for ( GusTable table : schema.getTables( ) ) {
+            for ( GusTable table : GusSchema.toGusTables(schema.getTables()) ) {
                 if ( schema.getClass( ) == GusSchema.class ) {
                     writeFKConstraints( table );
                     writeUQConstraints( table );
@@ -74,10 +78,8 @@ public class OracleWriter extends RelationalDatabaseWriter {
         oStream.flush( );
         oStream.write( "\n-- Sequences\n\n" );
         for ( GusSchema schema : db.getGusSchemas( ) ) {
-            for ( Iterator<? extends Table> j = schema.getTables( ).iterator( ); j.hasNext( ); ) {
-                GusTable table = (GusTable) j.next( );
-
-                writeSequence( table.getSequence( ) );
+            for ( Iterator<GusTable> j = GusSchema.toGusTables(schema.getTables()).iterator( ); j.hasNext( ); ) {
+                writeSequence( j.next().getSequence( ) );
                 oStream.write( "\n" );
             }
         }
