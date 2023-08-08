@@ -31,20 +31,6 @@
       <artifactId>log4j-core</artifactId>
     </dependency>
 
-    <!--commons-logging.jar
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.2</version>
-    </dependency> -->
-
-    <!--commons-digester.jar-->
-    <!--Base pom only has digester3 which is different
-    <dependency>
-      <groupId>commons-digester</groupId>
-      <artifactId>commons-digester</artifactId>
-      <version>2.1</version>
-    </dependency>-->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-digester3</artifactId>
