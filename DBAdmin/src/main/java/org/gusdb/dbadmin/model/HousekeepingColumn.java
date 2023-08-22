@@ -18,12 +18,11 @@ public class HousekeepingColumn extends Column {
 
     @Override
     public void setTable( Table table ) {
-        Objects.requireNonNull(table);
         if ( getTable() != table ) {
-            getTable().removeHousekeepingColumn( this );
+            if ( getTable( ) != null ) getTable( ).removeHousekeepingColumn( this );
             log.debug( "Setting table: '" + table.getName( ) + "' for HousekeepingColumn: '" + getName( ) + "'" );
             this.table = table;
-            table.addHousekeepingColumn( this );
+            if ( table != null ) table.addHousekeepingColumn( this );
         }
     }
 

@@ -337,7 +337,7 @@ public class GusTable extends Table {
     }
 
     @Override
-    public boolean equals( Object o ) {
+    public boolean equals( DatabaseObject o ) {
         GusTable other = (GusTable) o;
         if ( versioned != other.isVersioned( ) ) return false;
         return super.equals( o );

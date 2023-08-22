@@ -6,7 +6,7 @@ package org.gusdb.dbadmin.model;
  * @version $Revision$
  * @author msaffitz
  */
-abstract public class DatabaseObject implements Comparable<DatabaseObject> {
+abstract public class DatabaseObject implements Comparable {
 
     protected String           name;
 
@@ -24,18 +24,14 @@ abstract public class DatabaseObject implements Comparable<DatabaseObject> {
         this.name = name;
     }
 
-    @Override
-    public boolean equals( Object o ) {
-        if (!(o instanceof DatabaseObject)) return false;
-        DatabaseObject other = (DatabaseObject)o;
-        return getName().equalsIgnoreCase(other.getName());
+    public boolean equals( DatabaseObject o ) {
+        return getName( ).equalsIgnoreCase( o.getName( ) );
     }
 
     @Override
-    public int compareTo( DatabaseObject o ) {
-        String myName = name == null ? "" : name;
-        String oName = o.getName() == null ? "" : o.getName();
-        return myName.compareToIgnoreCase(oName);
+    public int compareTo( Object o ) {
+        DatabaseObject other = (DatabaseObject)o;
+        return this.getName( ).compareToIgnoreCase( other.getName( ) );
     }
 
 }

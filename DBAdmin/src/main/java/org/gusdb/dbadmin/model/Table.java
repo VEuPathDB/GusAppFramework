@@ -178,7 +178,7 @@ public abstract class Table extends DatabaseObject {
     }
 
     @Override
-    public boolean equals( Object o ) {
+    public boolean equals( DatabaseObject o ) {
         Table other = (Table) o;
 
         if ( housekeeping != other.isHousekeeping( ) ) return false;

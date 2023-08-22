@@ -107,11 +107,10 @@ public abstract class View extends DatabaseObject {
     }
 
     @Override
-    public boolean equals( Object other ) {
-        if (!(other instanceof View)) return false;
-        View v = (View)other;
-        if (!sql.equals(v.getSql())) return false;
-        return super.equals(v);
+    public boolean equals( DatabaseObject o ) {
+        View other = (View) o;
+        if ( !sql.equals( other.getSql( ) ) ) return false;
+        return super.equals( o );
     }
 
 }

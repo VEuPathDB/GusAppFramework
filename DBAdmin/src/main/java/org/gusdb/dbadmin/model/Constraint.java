@@ -183,10 +183,10 @@ public class Constraint extends DatabaseObject {
     }
 
     @Override
-    public boolean equals( Object o ) {
-        if (!(o instanceof Constraint)) return false;
-        Constraint c = (Constraint)o;
-        if ( type != c.getType() ) return false;
-        return super.equals( c );
+    public boolean equals( DatabaseObject o ) {
+        Constraint other = (Constraint) o;
+
+        if ( type != other.getType( ) ) return false;
+        return super.equals( o );
     }
 }

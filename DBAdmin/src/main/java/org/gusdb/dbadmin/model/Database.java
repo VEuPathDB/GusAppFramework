@@ -182,10 +182,10 @@ public class Database extends DatabaseObject {
     }
 
     @Override
-    public boolean equals( Object o ) {
-        if (!(o instanceof Database)) return false;
-        Database d = (Database)o;
-        if ( version != d.getVersion() ) return false;
-        return super.equals( d );
+    public boolean equals( DatabaseObject o ) {
+        Database other = (Database) o;
+
+        if ( version != other.getVersion( ) ) return false;
+        return super.equals( o );
     }
 }

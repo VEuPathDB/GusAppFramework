@@ -91,12 +91,12 @@ public class Index extends DatabaseObject {
     }
 
     @Override
-    public boolean equals( Object o ) {
-        if (!(o instanceof Index)) return false;
-        Index i = (Index)o;
-        if (!tablespace.equals(i.getTablespace())) return false;
-        if (type != i.getType()) return false;
-        return super.equals(i);
+    public boolean equals( DatabaseObject o ) {
+        Index other = (Index) o;
+        if ( !tablespace.equals( other.getTablespace( ) ) ) return false;
+        if ( type != other.getType( ) ) return false;
+
+        return super.equals( o );
     }
 
 }

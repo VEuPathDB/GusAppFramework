@@ -90,10 +90,9 @@ public class GusView extends View {
     }
 
     @Override
-    public boolean equals( Object o ) {
-        if (!(o instanceof GusView)) return false;
-        GusView v = (GusView)o;
-        if ( versioned != v.isVersioned( ) ) return false;
+    public boolean equals( DatabaseObject o ) {
+        GusView other = (GusView) o;
+        if ( versioned != other.isVersioned( ) ) return false;
         return super.equals( o );
     }
 
