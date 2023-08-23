@@ -30,7 +30,7 @@ public class IsA_Axioms {
 	public static void main(String[] args) {
 
 		//BIOBANK
-		String path = "/home/jbrestel/data/obo/";
+		//String path = "/home/jbrestel/data/obo/";
 
             String inFile = args[0];
             String outFile = inFile + "_isA.txt";		

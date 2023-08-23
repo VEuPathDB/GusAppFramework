@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -198,17 +199,17 @@ public class OntologyManipulator {
 		return ont;
 	}
 	
-	public static void saveToFile(OWLOntologyManager manager, OWLOntology ont, String filename) {
+	public static void saveToFile(OWLOntologyManager manager, OWLOntology ontParam, String filename) {
 	   try {
 		   // By default ontologies are saved in the format from which they were loaded.  In this case the
 		   // ontology was loaded from an rdf/xml file
 	       // We can get information about the format of an ontology from its manager
-	       OWLOntologyFormat format = manager.getOntologyFormat(ont);
+	       OWLOntologyFormat format = manager.getOntologyFormat(ontParam);
 	       System.out.println("Save ontology in the format: " + format);
 	
 		   // Now save a local copy of the ontology.  (Specify a path appropriate to your setup)
 		   File file = new File(filename);
-		   manager.saveOntology(ont, IRI.create(file.toURI()));
+		   manager.saveOntology(ontParam, IRI.create(file.toURI()));
 				   
 		   System.out.println("The ontology has been save on: " + filename);
 
@@ -257,8 +258,8 @@ public class OntologyManipulator {
 		return mergedOnt; 
 	}
 	
-	public static OWLOntology mergeToTargetOnt (OWLOntologyManager manager, OWLOntology targetOnt, OWLOntology ont) {
-		Set<OWLAxiom> axs = ont.getAxioms();
+	public static OWLOntology mergeToTargetOnt (OWLOntologyManager manager, OWLOntology targetOnt, OWLOntology ontParam) {
+		Set<OWLAxiom> axs = ontParam.getAxioms();
 		for(OWLAxiom ax : axs) {
 	    	if (!targetOnt.containsAxiom(ax, true)) {
 	        	manager.applyChange(new AddAxiom(targetOnt, ax));
@@ -266,14 +267,13 @@ public class OntologyManipulator {
 	    }
 		
 		IRI targetOntIRI = targetOnt.getOntologyID().getOntologyIRI();
-		IRI ontIRI = ont.getOntologyID().getOntologyIRI();
+		IRI ontIRI = ontParam.getOntologyID().getOntologyIRI();
 		
 		System.out.println("All axioms in ontology " + ontIRI.toString() + " have been merged to the ontology " + targetOntIRI.toString());
 		
 		return targetOnt;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static OWLOntology setOntologyID (OWLOntologyManager manager, OWLOntology ont, String newIRIstr) {
 		OWLOntologyID oldID = ont.getOntologyID();
 		String oldIRIstr = oldID.getOntologyIRI().toString();
@@ -289,19 +289,19 @@ public class OntologyManipulator {
 			// change the namespace if it is same as the ontologyIRI
 			OWLOntologyXMLNamespaceManager nsManager = new OWLOntologyXMLNamespaceManager(manager, ont);
 			Map<String, String> prefixNSs = nsManager.getPrefixNamespaceMap();
-			Set s = prefixNSs.entrySet();
-			Iterator it = s.iterator();
+			Set<Entry<String,String>> s = prefixNSs.entrySet();
+			Iterator<Entry<String,String>> it = s.iterator();
 
 	        while(it.hasNext())
 	        {
 	            // key=value separator this by Map.Entry to get key and value
-	            Map.Entry<String, String> m =(Map.Entry<String, String>)it.next();
+	            Map.Entry<String, String> m =it.next();
 
 	            // getKey is used to get key of Map
-	            String prefix = (String) m.getKey();
+	            String prefix = m.getKey();
 
 	            // getValue is used to get value of key in Map
-	            String namespace = (String) m.getValue();
+	            String namespace = m.getValue();
 
 	            System.out.println("Prefix:"+ prefix +"  Namespace:" + namespace);
 	        }
@@ -310,28 +310,27 @@ public class OntologyManipulator {
 		return ont;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static void printPrefixNSs (OWLOntologyManager manager, OWLOntology ont) {
-		OWLOntologyID id = ont.getOntologyID();
+	public static void printPrefixNSs (OWLOntologyManager manager, OWLOntology ontParam) {
+		OWLOntologyID id = ontParam.getOntologyID();
 		System.out.println("Ontology: " + id.getOntologyIRI().toString());
 
- 		IRI documentIRI = manager.getOntologyDocumentIRI(ont);
+ 		IRI documentIRI = manager.getOntologyDocumentIRI(ontParam);
  		System.out.println(" from: " + documentIRI + "\n");
 		
-		OWLOntologyXMLNamespaceManager nsManager = new OWLOntologyXMLNamespaceManager(manager, ont);
+		OWLOntologyXMLNamespaceManager nsManager = new OWLOntologyXMLNamespaceManager(manager, ontParam);
 		Map<String, String> prefixNSs = nsManager.getPrefixNamespaceMap();
-		Set s = prefixNSs.entrySet();
-		Iterator it = s.iterator();
+		Set<Entry<String,String>> s = prefixNSs.entrySet();
+		Iterator<Entry<String,String>> it = s.iterator();
 
 	    while(it.hasNext()) {
 	    	// key=value separator this by Map.Entry to get key and value
-	        Map.Entry<String, String> m =(Map.Entry<String, String>)it.next();
+	        Map.Entry<String, String> m =it.next();
 
 	        // getKey is used to get key of Map
-	        String prefix = (String) m.getKey();
+	        String prefix = m.getKey();
 
 	        // getValue is used to get value of key in Map
-	        String namespace = (String) m.getValue();
+	        String namespace = m.getValue();
 
 	        System.out.println("Prefix:"+ prefix +"  Namespace:" + namespace);
 	    }

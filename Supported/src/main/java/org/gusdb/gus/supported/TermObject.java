@@ -103,13 +103,15 @@ public class TermObject implements Comparable<TermObject>{
 		return is_obsolete;
 	}
 	
-	public int compareTo(TermObject term)
+	@Override
+  public int compareTo(TermObject term)
     {
         return getIriStr().compareTo(term.getIriStr());
     }
 	
 	// this method is used by OntologyVisitor.java for generation of BCGO required output, might not fit other applications 
-	public String toString()
+	@Override
+  public String toString()
 	{
 		String infoStr = getId() + "\t" + getLabel() + "\t" + getDefinition() + "\t" + getSynonyms() + "\t" + getIriStr() + "\t" + getIs_obsolete();
 		return infoStr;
