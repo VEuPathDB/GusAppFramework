@@ -836,7 +836,9 @@ B<Return type:> C<integer>
 
 =cut
 sub getExtDbRlsId {
-  my ($self, $dbNameOrSpecifier, $dbVersion) = @_;
+  my ($self, $dbNameOrSpecifier, $dbVersion, $ontologySchema) = @_;
+
+  $ontologySchema = 'sres' unless($ontologySchema);
 
   my $dbName;
   if ($dbNameOrSpecifier =~ /(.+)\|(.+)/) {
@@ -851,7 +853,7 @@ sub getExtDbRlsId {
   if(!$self->{_extDbRelIdCache}->{$dbName}->{$dbVersion}){
     my $lcName = lc($dbName);
     my $sql = "select ex.external_database_release_id
-               from sres.externaldatabaserelease ex, sres.externaldatabase e
+               from ${ontologySchema}.externaldatabaserelease ex, ${ontologySchema}.externaldatabase e
                where e.external_database_id = ex.external_database_id
                and ex.version like '$dbVersion'
                and lower(e.name) = '$lcName'";
