@@ -209,10 +209,13 @@ sub deleteFromTable{
   if ($self->{commit} == 1) {
 
     my $deleteSql = <<SQL;
+
       delete
       from $tableName
       where $algInvIdColumnName in ($algoInvocIds)
-        and rownum <= $chunkSize
+      AND ctid IN (SELECT ctid
+               FROM $tableName
+               LIMIT $chunkSize);
 SQL
     warn "\n$deleteSql\n" if $self->getArg('verbose');
     my $deleteStmt = $self->{dbh}->prepare($deleteSql) or die $self->{dbh}->errstr;
