@@ -876,7 +876,11 @@ sub queryForAgpMap {
 
   my $sql = "select sp.virtual_na_sequence_id
                                 , p.na_sequence_id as piece_na_sequence_id
-                               , decode(sp.strand_orientation, '+', '+1', '-', '-1', '+1') as piece_strand
+                               , CASE sp.strand_orientation
+                                    WHEN '+' THEN '+1'
+                                    WHEN '-' THEN '-1'
+                                    ELSE '+1'
+                                 END AS piece_strand
                                , sp.start_position as piece_start
                                , sp.end_position as piece_end
                                , sp.distance_from_left + 1 as virtual_start_min
