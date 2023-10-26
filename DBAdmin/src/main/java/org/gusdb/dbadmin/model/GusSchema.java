@@ -39,7 +39,6 @@ public class GusSchema extends Schema {
     @Override
     public void setDatabase( Database database ) {
         super.setDatabase( database );
-        versionSchema.setDatabase( database );
     }
 
     public void addGusTable( GusTable table ) {
