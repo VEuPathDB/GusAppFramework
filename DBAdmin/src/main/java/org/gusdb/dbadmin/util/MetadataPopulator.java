@@ -62,27 +62,25 @@ public class MetadataPopulator {
 			writer.write( "SET ROLE GUS_W;\n\n" );
 		}
         for ( Schema schema : db.getAllSchemas() ) {
-			schemaIDs.put( Integer.valueOf( schemaIDs.size() + 1 ), schema );
-			for ( Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext();  ) {
-				tableAndViewIDs.put( tableAndViewIDs.size() + 1, j.next() );
-			}
-			for ( Iterator<View> j = schema.getViews().iterator(); j.hasNext();  ) {
-				tableAndViewIDs.put( Integer.valueOf( tableAndViewIDs.size() + 1 ), j.next() );
-			}
+			schemaIDs.put(schemaIDs.size() + 1, schema );
+            for (Table table : schema.getTables()) {
+                tableAndViewIDs.put(tableAndViewIDs.size() + 1, table);
+            }
+            for (View view : schema.getViews()) {
+                tableAndViewIDs.put(tableAndViewIDs.size() + 1, view);
+            }
 		}
-		for ( Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext();  ) {
-			writeDatabaseInfo( i.next() );
-		}
-		for ( Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = i.next();
-
-			for ( Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext();  ) {
-				writeTableInfo( j.next() );
-			}
-			for ( Iterator<View> j = schema.getViews().iterator(); j.hasNext();  ) {
-				writeTableInfo( j.next() );
-			}
-		}
+        for (Schema schema : db.getAllSchemas()) {
+            writeDatabaseInfo(schema);
+        }
+        for (Schema schema : db.getAllSchemas()) {
+            for (Table table : schema.getTables()) {
+                writeTableInfo(table);
+            }
+            for (View view : schema.getViews()) {
+                writeTableInfo(view);
+            }
+        }
 		fixSequence( "core.databaseinfo_sq", schemaIDs.size() + 1);
 		fixSequence( "core.tableinfo_sq", tableAndViewIDs.size() + 1);
 		if (dbVendor.equalsIgnoreCase("Postgres")) {
@@ -281,11 +279,11 @@ public class MetadataPopulator {
 			return getPrimaryKey( table.getSuperclass() );
 		}
 		if ( table.getPrimaryKey() != null &&
-			table.getPrimaryKey().getConstrainedColumns().size() > 0 ) {
+                !table.getPrimaryKey().getConstrainedColumns().isEmpty()) {
 			return "'" + ( (Column) table.getPrimaryKey().getConstrainedColumns().toArray()[0] ).getName() + "'";
 		}
-		log.error( "Could not find PK for table " + table.getName() + "" );
-		return new String( "NULL" );
+		log.error( "Could not find PK for table " + table.getName());
+		return "NULL";
 	}
 
 	
@@ -369,7 +367,7 @@ public class MetadataPopulator {
 	
 	private int getID( Map<?,?> map, Object obj ) {
 		for ( int i = 1; i < map.size() + 1; i++ ) {
-			if ( map.get( Integer.valueOf( i ) ) == obj ) {
+			if ( map.get(i) == obj ) {
 				return i;
 			}
 		}
