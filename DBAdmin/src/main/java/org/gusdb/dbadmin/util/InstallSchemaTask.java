@@ -165,8 +165,11 @@ public class InstallSchemaTask extends Task {
         this.tablespace = props.getProperty( "tablespace" );
 
         try {
-            Class.forName( "org.postgresql.Driver" );
-            Class.forName( "oracle.jdbc.OracleDriver" );
+            if (dbVendor.equalsIgnoreCase("Postgres")){
+                Class.forName( "org.postgresql.Driver" );
+            }else {
+                Class.forName( "oracle.jdbc.OracleDriver" );
+            }
         }
         catch ( ClassNotFoundException e ) {
             log.fatal( "Unable to locate class", e );
