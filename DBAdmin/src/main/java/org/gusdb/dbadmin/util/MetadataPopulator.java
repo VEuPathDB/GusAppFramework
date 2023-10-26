@@ -56,8 +56,10 @@ public class MetadataPopulator {
 
 
 	public void writeDatabaseAndTableInfo() throws IOException {
-		if ( dbVendor == "Postgres" ) {
+		if (dbVendor.equalsIgnoreCase("Postgres")) {
 			writer.write( "BEGIN;\n\n" );
+			writer.write( "-- Switch to GUS_W role to make sure all objects are owned by GUS_W\n" );
+			writer.write( "SET ROLE GUS_W;\n\n" );
 		}
         for ( Schema schema : db.getAllSchemas() ) {
 			schemaIDs.put( Integer.valueOf( schemaIDs.size() + 1 ), schema );
@@ -83,7 +85,7 @@ public class MetadataPopulator {
 		}
 		fixSequence( "core.databaseinfo_sq", schemaIDs.size() + 1);
 		fixSequence( "core.tableinfo_sq", tableAndViewIDs.size() + 1);
-		if ( dbVendor == "Postgres" ) {
+		if (dbVendor.equalsIgnoreCase("Postgres")) {
 			writer.write( "\nCOMMIT;\n" );
 		}
 		writer.flush();
@@ -107,8 +109,10 @@ public class MetadataPopulator {
 	}
 
 	public void writeBootstrapData() throws IOException {
-		if ( dbVendor == "Postgres" ) {
+		if (dbVendor.equalsIgnoreCase("Postgres")) {
 			writer.write( "BEGIN;\n\n" );
+			writer.write( "-- Switch to GUS_W role to make sure all objects are owned by GUS_W\n" );
+			writer.write( "SET ROLE GUS_W;\n\n" );
 		}
 		
 		writer.write("INSERT INTO Core.UserInfo VALUES(" + 
@@ -163,7 +167,7 @@ public class MetadataPopulator {
 		writer.write( apktHead +  ",'boolean'," + apktTail);
 		writer.write( apktHead +  ",'date'," + apktTail);
 		
-		if ( dbVendor == "Postgres" ) {
+		if (dbVendor.equalsIgnoreCase("Postgres")) {
 			writer.write( "\nCOMMIT;\n" );
 		}
 		writer.flush();		
