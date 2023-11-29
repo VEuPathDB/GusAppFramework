@@ -52,10 +52,18 @@ my $taxon_id = join(',', @taxon);
 $stmt->finish();
 
 $sql = <<SQL;
-  select taxon_id
-  from SRes.Taxon
-  start with taxon_id in ($taxon_id)
-  connect by prior taxon_id = parent_id
+  WITH RECURSIVE cte AS (
+    SELECT
+      taxon_id
+      , parent_id
+    FROM Sres.Taxon where taxon_id = $taxon_id
+    UNION
+    SELECT dtl.taxon_id, cte.taxon_id parent_id
+    FROM Sres.taxon dtl, cte
+    WHERE cte.taxon_id = dtl.parent_id
+  )
+  SELECT *
+  FROM cte
 SQL
 
 print STDERR "Query: $sql\n" if $verbose;
