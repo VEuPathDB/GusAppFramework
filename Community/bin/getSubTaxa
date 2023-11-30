@@ -63,7 +63,7 @@ $sql = <<SQL;
     FROM Sres.taxon dtl, cte
     WHERE cte.taxon_id = dtl.parent_id
   )
-  SELECT *
+  SELECT taxon_id
   FROM cte
 SQL
 
