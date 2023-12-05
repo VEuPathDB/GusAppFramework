@@ -74,7 +74,25 @@ sub sequenceIdSql{
 sub tableChildRelationsSql{
 	my ($self,$owner)=@_;
 	$owner=~tr/A-Z/a-z/;
-	return "select  distinct n2.nspname,n1.nspname, r2.relname,a2.attname, r1.relname, a1.attname from    pg_namespace n1, pg_namespace n2, pg_class r1, pg_class r2, pg_attribute a1, pg_attribute a2, pg_constraint c where   n1.nspname = '$owner' and r1.relnamespace = n1.oid and r1.oid = c.conrelid and r1.oid = a1.attrelid and c.contype = 'f' and c.confrelid = r2.oid and r2.relnamespace = n2.oid and c.conkey[1] = a1.attnum and c.confkey[1] = a2.attnum and a2.attrelid = r2.oid";
+	return "SELECT DISTINCT
+						n1.nspname ftowner
+						, n2.nspname stowner
+						, r2.relname selftab
+						, a2.attname selfcol
+						, r1.relname fktable
+						, a1.attname fkcol
+					FROM pg_namespace n1, pg_namespace n2, pg_class r1, pg_class r2, pg_attribute a1, pg_attribute a2, pg_constraint c
+					WHERE n2.nspname = '$owner'
+						AND r1.relnamespace = n1.oid
+						AND r1.oid = c.conrelid
+						AND r1.oid = a1.attrelid
+						AND c.contype = 'f'
+						AND c.confrelid = r2.oid
+						AND r2.relnamespace = n2.oid
+						AND c.conkey[1] = a1.attnum
+						AND c.confkey[1] = a2.attnum
+						AND a2.attrelid = r2.OID
+	";
 }
 
 ############################################################
