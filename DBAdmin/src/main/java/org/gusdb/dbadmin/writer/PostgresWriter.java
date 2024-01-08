@@ -62,6 +62,8 @@ public class PostgresWriter extends RelationalDatabaseWriter {
 
         oStream.write( "\n\n" );
         oStream.write( "BEGIN;\n\n" );
+        oStream.write( "-- Switch to GUS_W role to make sure all objects are owned by GUS_W\n" );
+        oStream.write( "SET ROLE GUS_W;\n\n" );
         oStream.write( "-- Schemata\n\n" );
 
         for ( Schema schema : db.getAllSchemas( ) ) {
