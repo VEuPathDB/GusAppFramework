@@ -3,7 +3,6 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 use base qw(GUS::Supported::MetabolicPathwayReader);
 
 use strict;
-use warnings;
 
 use List::MoreUtils qw(any);
 use List::Util qw(sum);
