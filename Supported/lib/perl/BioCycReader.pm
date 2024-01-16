@@ -27,8 +27,9 @@ sub read {
     my ($file, $path, $ext) = fileparse($biopaxFile, '\..*');
     my $rdfFile = "$file.rdf";
 
+    # DO THIS DURING THE UNPACK STAGE INSTEAD OF HERE
     #convert biopax owl to tabulated rdf (writes rdf file in same dir)
-    runCmd("biopaxToRdf.R $biopaxFile $path"); 
+    # runCmd("biopaxToRdf.R $biopaxFile $path");
 
     # reads rdf and extracts only required information as hash
     my $rdf = &makeRdfHash("$path/$rdfFile");
