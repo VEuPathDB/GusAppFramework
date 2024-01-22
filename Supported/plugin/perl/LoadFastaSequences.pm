@@ -8,7 +8,6 @@ use File::Basename;
 
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
-
   my $purpose = <<PLUGIN_PURPOSE;
 Insert or update sequences from a FASTA file or as set of FASTA files.  A set of regular expressions provided on the command line extract from the definition lines of the input sequences various information to stuff into the database.
 PLUGIN_PURPOSE
@@ -45,6 +44,12 @@ my $argsDeclaration =
 [
  integerArg({  name           => 'testnumber',
 	       descr          => 'For testing: stop after this number of iterations',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
+ integerArg({  name           => 'isCore',
+	       descr          => 'If organism is orthomcl core protein. 0 or 1.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -204,7 +209,7 @@ stringArg({   name           => 'ncbiTaxonName',
 	       isList         => 0 }),
 
  tableNameArg({   name        => 'tableName',
-	       descr          => 'Table name to insert sequences into, in schema::table format.  Chose from: DoTS::ExternalNASequence DoTS::VirtualSequence DoTS::ExternalAASequence DoTS::MotifAASequence',
+	       descr          => 'Table name to insert sequences into, in schema::table format.  Chose from: DoTS::ExternalNASequence DoTS::VirtualSequence DoTS::ExternalAASequence DoTS::MotifAASequence ApiDB::OrthoAASequence',
 	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -287,7 +292,6 @@ sub run {
 
   eval("require GUS::Model::".$self->getArg('tableName'));
 
-
   # get primary key for table_name
   my $tableId = $self->className2TableId($self->getArg('tableName'));
 
@@ -312,10 +316,16 @@ sub run {
     $self->fetchTaxonId();
   }
 
+  if ($self->getArg('isCore')) {
+    $self->{isCore} = $self->getArg('isCore');
+  }
+  else {
+    $self->{isCore} = 0;
+  }
+
   if ($self->getArg('sourceIdsFile')) {
     $self->getGoodSourceIds();
   }
-
 
   my $oracleName = $self->className2oracleName($self->getArg('tableName'));
   $checkStmt = $self->getAlgInvocation()->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
@@ -493,6 +503,7 @@ sub process {
   my $aas;
   if ($id && $self->getArg('update')) {
     my $className = "GUS::Model::" . $self->getArg('tableName');
+    $self->log("My className is $className\n");
     $aas = $className->new({$prim_key => $id});
     $aas->retrieveFromDB();
     $aas->setSecondaryIdentifier($secondary_id) unless !$secondary_id || $aas->getSecondaryIdentifier() eq $secondary_id;
@@ -513,6 +524,10 @@ sub process {
 
     $aas->setChromosome($chromosome) unless !$chromosome || $aas->getChromosome() eq $chromosome; 
     $aas->set('chromosome_order_num',$chromosome_order_num) unless !$chromosome_order_num;
+
+    if ($aas->isValidAttribute('is_core')) {
+        $aas->set('is_core',$self->{isCore});
+    }
 
     $aas->setMolecularWeight($mol_wgt) unless ((!$aas->isValidAttribute('molecular_weight')) || (!$mol_wgt || $aas->getMolecularWeight() eq $mol_wgt));  
     $aas->setNumberOfContainedSequences($contained_seqs) unless ((!$aas->isValidAttribute('number_of_contained_sequences')) || (!$contained_seqs || $aas->getNumberOfContainedSequences() eq $contained_seqs)); 
@@ -573,6 +588,10 @@ sub createNewExternalSequence {
     $aas->set('name',$name);
   }
 
+  if ($aas->isValidAttribute('is_core')) {
+      $aas->set('is_core',$self->{isCore});
+  }
+
   if ($self->{sequenceTypeId} && $aas->isValidAttribute('sequence_type_id')) {
     $aas->setSequenceTypeId($self->{sequenceTypeId});
   }
@@ -585,7 +604,6 @@ sub createNewExternalSequence {
     $aas->setSequenceVersion($seq_version);
   }
 
-  #if($self->getArg('taxon_id')){ $aas->setTaxonId($self->getArg('taxon_id'));}
   if ($self->{taxonId}) { 
     if ($aas->isValidAttribute('taxon_id')) {
       $aas->setTaxonId($self->{taxonId});

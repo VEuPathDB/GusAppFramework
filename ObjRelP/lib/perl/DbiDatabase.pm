@@ -685,6 +685,8 @@ sub getTableHasSequence {
 sub getFullTableClassName {
   my ($self, $className) = @_;
 
+  print STDERR "className is $className\n";
+
   if (!exists $self->{'fullClassNames'}) {
     $self->cacheTableNames();
   }
@@ -693,10 +695,18 @@ sub getFullTableClassName {
     $className = $1;
   }
 
+  print STDERR "className after two ifs is $className\n";
+
   &confess("Illegal className '$className' (not in schema::table form)")
     unless ($className =~ /\w+::\w+/);
 
+  print STDERR "className after confess is $className\n";
+
   $className =~ tr/a-z/A-Z/;
+
+  print STDERR "className after subbing consonants is $className\n";
+  print STDERR "$self->{'fullClassNames'}->{$className}\n";
+
   return $self->{'fullClassNames'}->{$className};
 }
 
