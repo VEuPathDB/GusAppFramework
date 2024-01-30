@@ -64,6 +64,18 @@ use GUS::Model::DoTS::NASequenceKeyword;
 use GUS::Model::DoTS::NAComment;
 use GUS::Model::DoTS::ExonFeature;
 
+
+my %SOTermName2SourceId = (
+  "chromosome" => "SO:0000340",
+  "supercontig" => "SO:0000148",
+  "contig" => "SO:0000149",
+  "apicoplast_chromosome" => "SO:0001259",
+  "mitochondrial_chromosome" => "SO:0000819",
+  "maxicircle" => "SO:0000742",
+  "TF_binding_site" => "SO:0000235",
+  "gap" => "SO:0000730"
+);
+
 # future considerations....
 #
 # - need chromosome in na sequence, not just source.
@@ -1452,7 +1464,7 @@ sub getIdFromCache {
 }
 
 sub getSOPrimaryKey {
-  my ($self, $soTerm) = @_;
+  my ($self, $soTermName) = @_;
 
   if (!$self->{soPrimaryKeys}) {
 
@@ -1465,14 +1477,12 @@ sub getSOPrimaryKey {
     } else {
       $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
     }
-    my $soExtDbRlsId= $self->getExtDbRlsId($soExtDbName, $soExtDbVersion);
-
-    #$soExtDbName = $self->getArg('soExtDbName') if ($self->getArg('soExtDbName'));
-    #($soExtDbName) = split (/\|/, $self->getArg('soExtDbSpec') ) if ($self->getArg('soExtDbSpec'));
-    #if (!$soExtDbName) {
-      #$self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
-    #}
-    #my $soExtDbRlsId = $self->getExtDbRlsIdFromExtDbName($soExtDbName);
+    my $soExtDbRlsId;
+    if ($self->getExtDbRlsId($soExtDbName, $soExtDbVersion)) {
+      $soExtDbRlsId = $self->getExtDbRlsId($soExtDbName, $soExtDbVersion);
+    } else {
+      $soExtDbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'), $self->getArg('extDbRlsVer'));
+    }
 
     my $dbh = $self->getQueryHandle();
     my $sql = "
@@ -1491,10 +1501,18 @@ select name, ontology_term_id from SRES.ontologyterm
 
     my $mappingFile = $self->getArg('mapFile');
     (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database '$soExtDbName': " . join(", ", @badSoTerms));
+
+    if (!$self->{soPrimaryKeys}->{$soTermName}) {
+      my $SOTermSourceId = $SOTermName2SourceId{$soTermName};
+      my $SOTermTable = GUS::Model::SRes::OntologyTerm->new({name=>$soTermName, source_id => $SOTermSourceId});
+      $SOTermTable->submit() unless ($SOTermTable->retrieveFromDB());
+      $self->{soPrimaryKeys}->{$soTermName} = $SOTermTable->getId();
+    }
   }
-  $self->error("Can't find primary key for SO term '$soTerm'")
-    unless $self->{soPrimaryKeys}->{$soTerm};
-  return $self->{soPrimaryKeys}->{$soTerm};
+
+  $self->error("Can't find primary key for SO term '$soTermName'")
+    unless $self->{soPrimaryKeys}->{$soTermName};
+  return $self->{soPrimaryKeys}->{$soTermName};
 }
 
 sub getExtDbRlsVerFromExtDbRlsName {
