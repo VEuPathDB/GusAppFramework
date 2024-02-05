@@ -401,7 +401,7 @@ sub setDefaultValues {
   $self->setMaximumNumberOfObjects(10000); ##the default maximum number of objects....
   $self->{globalDeleteEvidence} = 0;  ##default is to not  delete evidence..
   $self->{globalDeleteSimilarity} = 1; ##default is to always delete similarities 
-  $self->setGlobalNoVersion(0);
+  $self->setGlobalNoVersion(1);
   $self->setCommitState(1);
   $self->{xmlId} = 1000;        ##first value for xmlId
 }
