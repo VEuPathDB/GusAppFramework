@@ -208,14 +208,12 @@ sub deleteFromTable{
 
   if ($self->{commit} == 1) {
 
+      # FIXME:  need to delete in chunks
     my $deleteSql = <<SQL;
-
-      delete
-      from $tableName
-      where $algInvIdColumnName in ($algoInvocIds)
-      AND ctid IN (SELECT ctid
-               FROM $tableName
-               LIMIT $chunkSize);
+    DELETE
+    FROM $tableName
+    WHERE $algInvIdColumnName in ($algoInvocIds)
+    --LIMIT $chunkSize
 SQL
     warn "\n$deleteSql\n" if $self->getArg('verbose');
     my $deleteStmt = $self->{dbh}->prepare($deleteSql) or die $self->{dbh}->errstr;
