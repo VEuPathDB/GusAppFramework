@@ -1,19 +1,8 @@
-#############################################################################
-##                    InsertTaxonAndTaxonName.pm
-##
-## Plug_in to a row into sres.taxon and sres.taxonname
-##
-##
-#############################################################################
-
 package GUS::Supported::Plugin::InsertTaxonAndTaxonName;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
-
-
 use strict;
 
-use GUS::ObjRelP::DbiDatabase;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::PluginMgr::Plugin;
@@ -23,79 +12,67 @@ $| = 1;
 sub getArgumentsDeclaration {
   my $argsDeclaration =
     [
-
-     integerArg({name => 'parentNcbiTaxId',
-		 descr => 'ncbi_tax_id of the parent of the organism to be inserted in the taxonomic hierarchy ',
-		 constraintFunc => undef,
-		 reqd => 0,
-		 isList => 0
-		}),
-
-     integerArg({name => 'geneticCodeId',
-         descr => 'Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
-         constraintFunc => undef,
-         reqd => 0,
-         isList => 0
-        }),
-
-     integerArg({name => 'mitochondrialGeneticCodeId',
-         descr => 'Mitochondrial Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
-         constraintFunc => undef,
-         reqd => 0,
-         isList => 0
-        }),
-
-     stringArg({name => 'parentRank',
-		descr => 'reqd if parentNcbiTaxId-taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - \see PLUGIN_NOTES',
-		constraintFunc => undef,
-		reqd => 0,
-		isList => 0
-	       }),
-
-     integerArg({name => 'ncbiTaxId',
-		 descr => 'ncbi_tax_id of the organism to be inserted',
-		 constraintFunc => undef,
-		 reqd => 0,
-		 isList => 0
-		}),
-
-     stringArg({name => 'rank',
-		descr => 'taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - see PLUGIN_NOTES',
-		constraintFunc => undef,
-		reqd => 1,
-		isList => 0
-	       }),
-
-     stringArg({name => 'name',
-		descr => 'name for organism such as scientific name',
-		constraintFunc => undef,
-		reqd => 1,
-		isList => 0
-	       }),
-
-     stringArg({name => 'nameClass',
-		descr => 'type of name such as scientific name, should conform to name_class used by the NCBI taxonomy db - see PLUGIN_NOTES',
-		constraintFunc => undef,
-		reqd => 1,
-		isList => 0,
-	       })
+      integerArg({name => 'ncbiTaxId',
+        descr => 'ncbi_tax_id of the organism to be inserted',
+        constraintFunc => undef,
+        reqd => 1,
+        isList => 0
+      }),
+      stringArg({name => 'rank',
+        descr => 'taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - see PLUGIN_NOTES',
+        constraintFunc => undef,
+        reqd => 0,
+        isList => 0
+      }),
+      stringArg({name => 'name',
+        descr => 'name for organism such as scientific name',
+        constraintFunc => undef,
+        reqd => 0,
+        isList => 0
+      }),
+      integerArg({name => 'parentNcbiTaxId',
+        descr => 'ncbi_tax_id of the parent of the organism to be inserted in the taxonomic hierarchy ',
+        constraintFunc => undef,
+        reqd => 0,
+        isList => 0
+      }),
+      integerArg({name => 'geneticCodeId',
+        descr => 'Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
+        constraintFunc => undef,
+        reqd => 0,
+        isList => 0
+      }),
+      integerArg({name => 'mitochondrialGeneticCodeId',
+        descr => 'Mitochondrial Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
+        constraintFunc => undef,
+        reqd => 0,
+        isList => 0
+      }),
+      enumArg({
+        name => 'mode',
+        descr => 'Operating mode. Either insert or update.',
+        enum => 'insert, update',
+        default => 'insert',
+        constraintFunc => undef,
+        reqd => 0,
+        isList => 0
+      }),
     ];
-
   return $argsDeclaration;
 }
 
 sub getDocumentation {
 
   my $purposeBrief = <<PURPOSEBRIEF;
-Plug_in to add a row into sres.Taxon and into sres.TaxonName.
+Plug_in to insert or update a single record in sres.Taxon and in sres.TaxonName.
 PURPOSEBRIEF
 
   my $purpose = <<PLUGIN_PURPOSE;
-Plug_in that inserts a row into sres.Taxon and sres.TaxonName - adds rows not added by LoadTaxon plugin.
+Plug_in that inserts a row into sres.Taxon and sres.TaxonName or updates an existing record - Used to add rows not added by LoadTaxon plugin or for applying manual patches as needed.
 PLUGIN_PURPOSE
 
   #check the documentation for this
-  my $tablesAffected = [['GUS::Model::SRes::Taxon', 'A single row is added'],['GUS::Model::SRes::TaxonName', 'A single row is added']];
+  my $tablesAffected = [['GUS::Model::SRes::Taxon', 'A single row is added/updated'],['GUS::Model::SRes::TaxonName', 'A single row is added/updated']];
 
   my $tablesDependedOn = [['GUS::Model::SRes::Taxon', 'If parent is invoked, parent taxon_id must exist']];
 
@@ -109,17 +86,16 @@ PLUGIN_FAILURE_CASES
 
   my $notes = <<PLUGIN_NOTES;
 rank argument from the following list:suborder,subspecies,subphylum,species subgroup,class,forma,kingdom,superkingdom,genus,species group,parvorder,family,superfamily,infraclass,superphylum,no rank,phylum,varietas,subfamily,species,subclass,superclass,tribe,subtribe,infraorder,superorder,order,subgenus.
-nameClass argument from the following list:misnomer,misspelling,equivalent name,genbank synonym,anamorph,includes,teleomorph,genbank common name,synonym,scientific name,common name,blast name,in-part,genbank anamorph,genbank acronym,acronym.
 PLUGIN_NOTES
 
   my $documentation = {purposeBrief => $purposeBrief,
-		     purpose => $purpose,
-		     tablesAffected => $tablesAffected,
-		     tablesDependedOn => $tablesDependedOn,
-		     howToRestart => $howToRestart,
-		     failureCases => $failureCases,
-		     notes => $notes
-		    };
+    purpose => $purpose,
+    tablesAffected => $tablesAffected,
+    tablesDependedOn => $tablesDependedOn,
+    howToRestart => $howToRestart,
+    failureCases => $failureCases,
+    notes => $notes
+  };
 
   return $documentation;
 }
@@ -132,17 +108,16 @@ sub new {
   my $documentation = &getDocumentation();
   my $argsDeclaration = &getArgumentsDeclaration();
 
-  $self->initialize({requiredDbVersion => 4,
-		     cvsRevision => '$Revision: 15381 $', # cvs fills this in!
-		     name => ref($self),
-		     argsDeclaration   => $argsDeclaration,
-		     documentation     => $documentation
-		    });
+  $self->initialize({
+    requiredDbVersion => 4,
+    cvsRevision       => '$Revision: 15381 $', # cvs fills this in!
+    name              => ref($self),
+    argsDeclaration   => $argsDeclaration,
+    documentation     => $documentation
+  });
 
   return $self;
 }
-
-
 
 ########################################################################
 # Main Program
@@ -155,112 +130,148 @@ sub run {
   $self->logCommit();
   $self->logArgs();
 
-  $self->checkForExistingRows();
+  my $ncbiTaxId = $self->getArg('ncbiTaxId');
+  my $mode = $self->getArg('mode');
 
-  my $taxon = $self->getTaxon();
+  my $rank = $self->getArg('rank');
+  my $geneticCodeId = $self->getArg('geneticCodeId');
+  my $mitochondrialGeneticCodeId = $self->getArg('mitochondrialGeneticCodeId');
+  my $parentNcbiTaxId = $self->getArg('parentNcbiTaxId');
+  my $name = $self->getArg('name');
 
-  my $taxonName = $self->getTaxonName();
+  # we only support inserting/updating the scientific name at this time.
+  my $nameClass = 'scientific name';
 
-  $taxon->setChild($taxonName);
+  my $exists;
+  my $taxon;
+
+  $taxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$ncbiTaxId});
+  $exists = $taxon->retrieveFromDB();
+
+  if ($exists){
+    if ($mode == 'update') {
+      $self->updateTaxon($taxon, $rank, $geneticCodeId, $mitochondrialGeneticCodeId, $parentNcbiTaxId, $name, $nameClass);
+    } else {
+      $self->userError("Plugin is run in insert mode but an existing entry for $ncbiTaxId is found in the database");
+    }
+  } else {
+    if ($mode == 'insert'){
+      $self->insertTaxon($taxon, $rank, $geneticCodeId, $mitochondrialGeneticCodeId, $parentNcbiTaxId, $name, $nameClass);
+    } else {
+      $self->userError("Plugin is run in update mode but no entry for $ncbiTaxId is found in the database");
+    }
+  }
 
   my $rows = $taxon->submit();
 
+
   $self->undefPointerCache();
 
-  my $name = $self->getArg('name');
-
-  my $resultDescrip = "$rows row(s) inserted into sres.Taxon and sres.TaxonName for $name";
+  my $resultDescrip = $taxon->hasChangedAttributes();
+  if ($mode == 'insert') {
+    $resultDescrip = "A new record is inserted to sres.Taxon and sres.TaxonName for $name ($ncbiTaxId)";
+  } else{
+    $resultDescrip = "The existing records for $ncbiTaxId in sres.Taxon and/or sres.TaxonName are updated with the provided values";
+  }
 
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
 }
 
-#######################################################################
-# Sub-routines
-#######################################################################
+sub insertTaxon {
+  my ($self, $taxon, $rank, $geneticCodeId, $mitochondrialGeneticCodeId, $parentNcbiTaxId, $name, $nameClass) = @_;
 
-sub checkForExistingRows {
-  my ($self) = @_;
+  # Make sure we have everything to create a new record.
+  # if (!($rank && $geneticCodeId && $$mitochondrialGeneticCodeId && $parentNcbiTaxId && $name && $nameClass)){
+  $self->userError("name must be provided at the very minimum to insert a new record.") unless $name;
 
-  my $name = $self->getArg('name');
-
-  my $nameClass = $self->getArg('nameClass');
-
-  my $taxonName = GUS::Model::SRes::TaxonName->new({'name'=>$name,'name_class'=>$nameClass});
-
-  my $existing = $taxonName->retrieveFromDB();
-
-  if ($existing) {
-
-    my $taxonId = $taxonName->getTaxonId();
-
-    $self->userError("There is already an entry in Taxon and in TaxonName for $name with name_class = $nameClass. The taxon_id = $taxonId");
+  # CREATE TAXON ENTRY
+  if ( defined $rank){
+    $taxon->setRank($rank);
+  } else {
+    $taxon->setRank('no rank');
   }
 
-}
+  $taxon->setGeneticCodeId($geneticCodeId) if $geneticCodeId;
+  $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId) if $mitochondrialGeneticCodeId;
 
-sub getTaxon {
-    my ($self) = @_;
-
-    my $ncbiTaxId = $self->getArg('ncbiTaxId') if $self->getArg('ncbiTaxId');
-
-    my $rank = $self->getArg('rank');
-
-    my $taxon;
-
-    if ($self->getArg('ncbiTaxId')) {
-      $taxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$ncbiTaxId});
-      $taxon->retrieveFromDB();
-    }
-    else {
-      $taxon = GUS::Model::SRes::Taxon->new();
-    }
-
-    $taxon->setRank($rank) unless $taxon->getRank();
-
-    if ($self->getArg('parentNcbiTaxId')) {
-
-      my $parentTaxon = $self->getParentTaxon();
-
+  # ASSOCIATE WITH PARENT TAXON
+  if (defined $parentNcbiTaxId ) {
+    my $parentTaxon = GUS::Model::SRes::Taxon->new({ 'ncbi_tax_id' => $parentNcbiTaxId });
+    if ($parentTaxon->retrieveFromDB()) {
       $taxon->setParent($parentTaxon);
     }
+    else {
+      $self->userError("Parent taxon $parentNcbiTaxId must exist to before inserting the taxon entry.");
+    }
+  }
 
-    my $geneticCodeId = $self->getArg('geneticCodeId');
-    $taxon->setGeneticCodeId($geneticCodeId) unless $taxon->getGeneticCodeId();
-
-    my $mitochondrialGeneticCodeId = $self->getArg('mitochondrialGeneticCodeId');
-    $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId) unless $taxon->getMitochondrialGeneticCodeId();
-
-    return $taxon;
+  # CREATE TAXONNAME
+  my $taxonName = GUS::Model::SRes::TaxonName->new ({'name'=>$name,'name_class'=>$nameClass});
+  $taxon->setChild($taxonName);
 }
 
-sub getParentTaxon {
-  my ($self) = @_;
+sub updateTaxon {
+  my ($self, $taxon, $rank, $geneticCodeId, $mitochondrialGeneticCodeId, $parentNcbiTaxId, $name, $nameClass) = @_;
+  my $noUpdates = 0;
 
-  my $parentNcbiTaxId = $self->getArg('parentNcbiTaxId');
+  if (defined $rank) {
+    if ($rank eq $taxon->getRank()) {
+      $self->userError("Rank provided to the plugin ($rank) for update is identical with the database. Remove the parameter to fix this problem");
+    }
+    else {
+      $taxon->setRank($rank);
+      $noUpdates++;
+    }
+  }
 
-  my $parentRank = $self->getArg('parentRank') || $self->userError("Parent rank required if parent ncbi_tax_id argument given");
+  if (defined $geneticCodeId){
+    if ($geneticCodeId eq $taxon->getGeneticCodeId()){
+      $self->userError("GeneticCodeId provided to the plugin ($geneticCodeId) for update is identical with the database. Remove the parameter to fix this problem");
+    } else {
+      $taxon->setGeneticCodeId($geneticCodeId);
+      $noUpdates++;
+    }
+  }
 
-  my $parentTaxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$parentNcbiTaxId});
+  if (defined $mitochondrialGeneticCodeId){
+    if ($mitochondrialGeneticCodeId eq $taxon->getMitochondrialGeneticCodeId()){
+      $self->userError("MitoChondrialGeneticCodeId provided to the plugin ($mitochondrialGeneticCodeId) for update is identical with the database. Remove the parameter to fix this problem");
+    } else {
+      $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId);
+      $noUpdates++;
+    }
+  }
 
-  $parentTaxon->retrieveFromDB();
+  if (defined $parentNcbiTaxId) {
+    my $parentTaxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$parentNcbiTaxId});
 
-  $parentTaxon->setRank($parentRank) unless $parentTaxon->getRank();
+    if ($parentTaxon->retrieveFromDB()){
+      my $currentParentTaxon = $taxon->getParent('SRes::Taxon')->getNcbiTaxId();
+      if ($parentNcbiTaxId eq $currentParentTaxon) {
+        $self->userError("ParentNcbiTaxId provided to the plugin ($parentNcbiTaxId) for update is identical with the database. Remove the parameter to fix this problem");
+      } else{
+        $taxon->setParent($parentTaxon);
+        $noUpdates++;
+      }
+    } else {
+      $self->userError("Parent taxon must exist to update the parent as $parentNcbiTaxId");
+    }
+  }
 
-  return $parentTaxon;
+  ## UPDATE TAXON NAME
+  if (defined $name) {
+    my $taxonName = $taxon->getChild('SRes::TaxonName', 1, 0, { 'name_class' => $nameClass });
+    if ($name eq $taxonName->getName()) {
+      $self->userError("Name provided to the plugin ($name) for update is identical with the database. Remove the parameter to fix this problem");
+    } else {
+      $taxonName->setName($name);
+      $taxonName->setNameClass($nameClass);
+      $noUpdates ++;
+    }
+  }
 
-}
-
-sub getTaxonName {
-  my ($self) = @_;
-
-  my $name = $self->getArg('name');
-
-  my $name_class = $self->getArg('nameClass');
-
-  my $taxonName = GUS::Model::SRes::TaxonName->new ({'name'=>$name,'name_class'=>$name_class});
-
-  return $taxonName;
+  $self->userError("No updates made to the existing taxon entry as all parameters provided are identical to the database.") unless $noUpdates > 0 ;
 
 }
 
@@ -269,7 +280,6 @@ sub undoTables {
 
   return ('SRes.TaxonName','SRes.Taxon');
 }
-
 
 1;
 
