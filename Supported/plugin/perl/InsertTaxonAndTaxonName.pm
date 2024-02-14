@@ -6,6 +6,7 @@ use strict;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::PluginMgr::Plugin;
+use GUS::PluginMgr::PluginUtilities::ConstraintFunction;
 
 $| = 1;
 
@@ -30,21 +31,21 @@ sub getArgumentsDeclaration {
         reqd => 0,
         isList => 0
       }),
-      integerArg({name => 'parentNcbiTaxId',
+      stringArg({name => 'parentNcbiTaxId',
         descr => 'ncbi_tax_id of the parent of the organism to be inserted in the taxonomic hierarchy ',
-        constraintFunc => undef,
+        constraintFunc => sub { CfMatchesRx('numeric', '([0-9]*)',@_) },
         reqd => 0,
         isList => 0
       }),
-      integerArg({name => 'geneticCodeId',
+      stringArg({name => 'geneticCodeId',
         descr => 'Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
-        constraintFunc => undef,
+        constraintFunc => sub { CfMatchesRx('numeric', '([0-9]*)',@_) },
         reqd => 0,
         isList => 0
       }),
-      integerArg({name => 'mitochondrialGeneticCodeId',
+      stringArg({name => 'mitochondrialGeneticCodeId',
         descr => 'Mitochondrial Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
-        constraintFunc => undef,
+        constraintFunc => sub { CfMatchesRx('numeric', '([0-9]*)',@_) },
         reqd => 0,
         isList => 0
       }),
@@ -145,17 +146,17 @@ sub run {
   my $exists;
   my $taxon;
 
-  $taxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$ncbiTaxId});
+  $taxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=> $ncbiTaxId});
   $exists = $taxon->retrieveFromDB();
 
   if ($exists){
-    if ($mode == 'update') {
+    if ($mode eq 'update') {
       $self->updateTaxon($taxon, $rank, $geneticCodeId, $mitochondrialGeneticCodeId, $parentNcbiTaxId, $name, $nameClass);
     } else {
       $self->userError("Plugin is run in insert mode but an existing entry for $ncbiTaxId is found in the database");
     }
   } else {
-    if ($mode == 'insert'){
+    if ($mode eq 'insert'){
       $self->insertTaxon($taxon, $rank, $geneticCodeId, $mitochondrialGeneticCodeId, $parentNcbiTaxId, $name, $nameClass);
     } else {
       $self->userError("Plugin is run in update mode but no entry for $ncbiTaxId is found in the database");
@@ -164,14 +165,13 @@ sub run {
 
   my $rows = $taxon->submit();
 
-
   $self->undefPointerCache();
 
   my $resultDescrip = $taxon->hasChangedAttributes();
-  if ($mode == 'insert') {
-    $resultDescrip = "A new record is inserted to sres.Taxon and sres.TaxonName for $name ($ncbiTaxId)";
+  if ($mode eq 'insert') {
+    $resultDescrip = "A new record is inserted to sres.Taxon and sres.TaxonName for $name ($ncbiTaxId).";
   } else{
-    $resultDescrip = "The existing records for $ncbiTaxId in sres.Taxon and/or sres.TaxonName are updated with the provided values";
+    $resultDescrip = "The existing records for $ncbiTaxId in sres.Taxon and/or sres.TaxonName are updated with the provided values.";
   }
 
   $self->setResultDescr($resultDescrip);
@@ -197,7 +197,7 @@ sub insertTaxon {
 
   # ASSOCIATE WITH PARENT TAXON
   if (defined $parentNcbiTaxId ) {
-    my $parentTaxon = GUS::Model::SRes::Taxon->new({ 'ncbi_tax_id' => $parentNcbiTaxId });
+    my $parentTaxon = GUS::Model::SRes::Taxon->new({'ncbi_tax_id' => $parentNcbiTaxId });
     if ($parentTaxon->retrieveFromDB()) {
       $taxon->setParent($parentTaxon);
     }
@@ -207,7 +207,7 @@ sub insertTaxon {
   }
 
   # CREATE TAXONNAME
-  my $taxonName = GUS::Model::SRes::TaxonName->new ({'name'=>$name,'name_class'=>$nameClass});
+  my $taxonName = GUS::Model::SRes::TaxonName->new ({'name'=> $name, 'name_class'=> $nameClass});
   $taxon->setChild($taxonName);
 }
 
@@ -244,7 +244,7 @@ sub updateTaxon {
   }
 
   if (defined $parentNcbiTaxId) {
-    my $parentTaxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$parentNcbiTaxId});
+    my $parentTaxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=> $parentNcbiTaxId});
 
     if ($parentTaxon->retrieveFromDB()){
       my $currentParentTaxon = $taxon->getParent('SRes::Taxon')->getNcbiTaxId();
@@ -261,7 +261,7 @@ sub updateTaxon {
 
   ## UPDATE TAXON NAME
   if (defined $name) {
-    my $taxonName = $taxon->getChild('SRes::TaxonName', 1, 0, { 'name_class' => $nameClass });
+    my $taxonName = $taxon->getChild('SRes::TaxonName', 1, 0, {'name_class'=> $nameClass });
     if ($name eq $taxonName->getName()) {
       $self->userError("Name provided to the plugin ($name) for update is identical with the database. Remove the parameter to fix this problem");
     } else {
