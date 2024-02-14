@@ -113,7 +113,9 @@ sub run {
     my ($ncbiTaxonId, $speciesNcbiTaxonId, $organismFullName) = split(/\t/, $_);
 
     my $parentTaxon = GUS::Model::SRes::Taxon->new({ 'ncbi_tax_id' => $speciesNcbiTaxonId });
-    $parentTaxon->retrieveFromDB();
+    unless ($parentTaxon->retrieveFromDB()){
+      $self->userError("The parent $speciesNcbiTaxonId given for  $organismFullName ($ncbiTaxonId) does not exist in the database.");
+    }
 
     my $geneticCodeId = $parentTaxon->getGeneticCodeId();
     my $mitochondrialGeneticCodeId = $parentTaxon->getMitochondrialGeneticCodeId();
@@ -133,7 +135,8 @@ sub run {
     $taxon->setChild($taxonName);
     $taxon->setParent($parentTaxon);
 
-    $taxon->submit();
+    # Disable transaction here so all organisms are submitted in a single transaction.
+    $taxon->submit(0, 1);
     $orgCount++;
   }
 
