@@ -114,7 +114,7 @@ sub run {
 
     my $parentTaxon = GUS::Model::SRes::Taxon->new({ 'ncbi_tax_id' => $speciesNcbiTaxonId });
     unless ($parentTaxon->retrieveFromDB()){
-      $self->userError("The parent $speciesNcbiTaxonId given for  $organismFullName ($ncbiTaxonId) does not exist in the database.");
+      $self->userError("The parent $speciesNcbiTaxonId provided for $organismFullName ($ncbiTaxonId) does not exist in the database.");
     }
 
     my $geneticCodeId = $parentTaxon->getGeneticCodeId();
@@ -126,6 +126,10 @@ sub run {
       'mitochondrial_genetic_code_id' => $mitochondrialGeneticCodeId,
       'rank'                          => 'no rank',
     });
+
+    if ($taxon->retrieveFromDB()){
+      $self->userError("There is an existing record with ncbiTaxonId ($ncbiTaxonId) in the database.");
+    }
 
     my $taxonName = GUS::Model::SRes::TaxonName->new({
       'name'       => $organismFullName,
