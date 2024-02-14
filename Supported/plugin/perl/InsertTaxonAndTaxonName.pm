@@ -183,20 +183,20 @@ sub insertTaxon {
 
   # Make sure we have everything to create a new record.
   # if (!($rank && $geneticCodeId && $$mitochondrialGeneticCodeId && $parentNcbiTaxId && $name && $nameClass)){
-  $self->userError("name must be provided at the very minimum to insert a new record.") unless $name;
+  $self->userError("name must be provided at the very minimum to insert a new record.") unless (defined $name && $name ne '');
 
   # CREATE TAXON ENTRY
-  if ( defined $rank){
+  if (defined $rank && $rank ne ''){
     $taxon->setRank($rank);
   } else {
     $taxon->setRank('no rank');
   }
 
-  $taxon->setGeneticCodeId($geneticCodeId) if $geneticCodeId;
-  $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId) if $mitochondrialGeneticCodeId;
+  $taxon->setGeneticCodeId($geneticCodeId) if (defined $geneticCodeId && $geneticCodeId ne '');
+  $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId) if (defined $mitochondrialGeneticCodeId && $mitochondrialGeneticCodeId ne '');
 
   # ASSOCIATE WITH PARENT TAXON
-  if (defined $parentNcbiTaxId ) {
+  if (defined $parentNcbiTaxId && $parentNcbiTaxId ne '') {
     my $parentTaxon = GUS::Model::SRes::Taxon->new({'ncbi_tax_id' => $parentNcbiTaxId });
     if ($parentTaxon->retrieveFromDB()) {
       $taxon->setParent($parentTaxon);
@@ -215,7 +215,7 @@ sub updateTaxon {
   my ($self, $taxon, $rank, $geneticCodeId, $mitochondrialGeneticCodeId, $parentNcbiTaxId, $name, $nameClass) = @_;
   my $noUpdates = 0;
 
-  if (defined $rank) {
+  if (defined $rank && $rank ne '') {
     if ($rank eq $taxon->getRank()) {
       $self->userError("Rank provided to the plugin ($rank) for update is identical with the database. Remove the parameter to fix this problem");
     }
@@ -225,7 +225,7 @@ sub updateTaxon {
     }
   }
 
-  if (defined $geneticCodeId){
+  if (defined $geneticCodeId && $geneticCodeId ne ''){
     if ($geneticCodeId eq $taxon->getGeneticCodeId()){
       $self->userError("GeneticCodeId provided to the plugin ($geneticCodeId) for update is identical with the database. Remove the parameter to fix this problem");
     } else {
@@ -234,7 +234,7 @@ sub updateTaxon {
     }
   }
 
-  if (defined $mitochondrialGeneticCodeId){
+  if (defined $mitochondrialGeneticCodeId && $mitochondrialGeneticCodeId ne ''){
     if ($mitochondrialGeneticCodeId eq $taxon->getMitochondrialGeneticCodeId()){
       $self->userError("MitoChondrialGeneticCodeId provided to the plugin ($mitochondrialGeneticCodeId) for update is identical with the database. Remove the parameter to fix this problem");
     } else {
@@ -243,11 +243,12 @@ sub updateTaxon {
     }
   }
 
-  if (defined $parentNcbiTaxId) {
+  if (defined $parentNcbiTaxId && $parentNcbiTaxId ne '') {
     my $parentTaxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=> $parentNcbiTaxId});
 
     if ($parentTaxon->retrieveFromDB()){
-      my $currentParentTaxon = $taxon->getParent('SRes::Taxon')->getNcbiTaxId();
+      my $currentParent = $taxon->getParent('SRes::Taxon', 1);
+      my $currentParentTaxon = $currentParent->getNcbiTaxId();
       if ($parentNcbiTaxId eq $currentParentTaxon) {
         $self->userError("ParentNcbiTaxId provided to the plugin ($parentNcbiTaxId) for update is identical with the database. Remove the parameter to fix this problem");
       } else{
@@ -260,7 +261,7 @@ sub updateTaxon {
   }
 
   ## UPDATE TAXON NAME
-  if (defined $name) {
+  if (defined $name && $name ne '') {
     my $taxonName = $taxon->getChild('SRes::TaxonName', 1, 0, {'name_class'=> $nameClass });
     if ($name eq $taxonName->getName()) {
       $self->userError("Name provided to the plugin ($name) for update is identical with the database. Remove the parameter to fix this problem");
