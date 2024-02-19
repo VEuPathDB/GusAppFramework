@@ -148,6 +148,11 @@ sub run{
 
    my $pluginName = $self->getArg('plugin');
    my $workflowContext = $self->getArg('workflowContext');
+   my $workflowStepId = $self->getArg('workflowstepid');
+
+  if ($workflowContext && !$workflowStepId){
+    $self->userError("Must provide workflowStepId when called with --workflowContext");
+  }
    $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
    $self->{'dbh'} = $self->getQueryHandle();
    $self->{'dbh'}->{AutoCommit}=0;
@@ -185,18 +190,49 @@ sub run{
 ### done getting tables
 
    foreach my $table (@tables) {
-
       $self->deleteFromTable($table,'row_alg_invocation_id', $self->getArg('limit'));
    }
 
    if ($workflowContext) {
-     $self->deleteFromTable('ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
+     $self->deleteFromWorkflowTable($workflowStepId, 'ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
    }
 
    $self->deleteFromTable('Core.AlgorithmParam', 'row_alg_invocation_id');
 
    $self->deleteFromTable('Core.AlgorithmInvocation', 'row_alg_invocation_id');
 
+}
+
+sub deleteFromWorkflowTable{
+  my ($self, $workflowStepId, $tableName, $algInvIdColumnName) = @_;
+  my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
+
+  if ($self->{commit} == 1) {
+    my $deleteSql = <<SQL;
+DELETE
+FROM $tableName
+WHERE
+  workflow_step_id = $workflowStepId
+  AND $algInvIdColumnName in ($algoInvocIds)
+SQL
+    warn "\n$deleteSql\n" if $self->getArg('verbose');
+    my $deleteStmt = $self->{dbh}->prepare($deleteSql) or die $self->{dbh}->errstr;
+    my $rowsDeleted = $deleteStmt->execute() or die $self->{dbh}->errstr;
+    $self->log("Deleted $rowsDeleted rows from $tableName");
+    $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
+  } else{
+    # commit off -- query for row count and log it
+    my $queryStmt = $self->{dbh}->prepare(<<SQL) or die $self->{dbh}->errstr;
+      SELECT count(*)
+      FROM $tableName
+      WHERE
+        workflow_step_id = $workflowStepId
+        AND $algInvIdColumnName in ($algoInvocIds)
+SQL
+    $queryStmt->execute() or die $self->{dbh}->errstr;
+    my  ($rows) = $queryStmt->fetchrow_array();
+    $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
+  }
 }
 
 sub deleteFromTable{
