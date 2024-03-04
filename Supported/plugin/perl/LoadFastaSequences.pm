@@ -3,6 +3,9 @@ package GUS::Supported::Plugin::LoadFastaSequences;
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 use GUS::PluginMgr::Plugin;
+
+use GUS::Supported::SequenceOntologyLookup;
+
 use File::Basename;
 
 
@@ -106,8 +109,14 @@ stringArg({   name           => 'ncbiTaxonName',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
-
- integerArg({   name          => 'ncbiTaxId',
+  fileArg({   name             => 'soGusConfigFile',
+	       descr          => 'The name of the FASTA file containing the input sequences',
+	       reqd           => 0,
+               mustExist => 0,
+               format =>"FASTA",
+	       constraintFunc => undef,
+	       isList         => 0 }),
+  integerArg({   name          => 'ncbiTaxId',
 	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or ncbiTaxonName or regexNcbiTaxId args.',
 	       reqd           => 0,
 	       constraintFunc => undef,
@@ -303,6 +312,7 @@ sub run {
   elsif ($self->getArg('sequenceTypeName') && $self->getArg('nucleotideType')) {
     $self->fetchSequenceTypeId();
   }
+
 
   if ($self->getArg('SOTermName')) {
     $self->fetchSequenceOntologyId();
@@ -724,25 +734,42 @@ sub fetchSequenceTypeId {
 sub fetchSequenceOntologyId {
   my ($self, $name) = @_;
 
-  my $name = $self->getArg('SOTermName');
-  my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
-
-  if (!defined($extDbRlsSpec)) {
-    $self->userError('When SOTermName is provided, SOExtDbRls must be specified');
+  my $soGusConfigFile = $self->getArg('soGusConfigFile');
+  unless($soGusConfigFile) {
+    $soGusConfigFile = $self->getArg('gusConfigFile');
   }
+  my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
+  my $soLookup = GUS::Supported::SequenceOntologyLookup->new($extDbRlsSpec, $soGusConfigFile);
+
+  my $name = $self->getArg('SOTermName');
 
   my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
 
   eval ("require GUS::Model::SRes::OntologyTerm");
 
-  my $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $name, external_database_release_id => $extDbRlsId });
+  my $soSourceId = $soLookup->getSourceIdFromName($name);
+  unless($soSourceId) {
+    $self->error("Could not determine source_id from ontology term: $name");
+  }
+
+  my $SOTerm;
+
+  if($extDbRlsId) {
+    $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $name, source_id => $soSourceId, external_database_release_id => $extDbRlsId });
+  }
+  else {
+    $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $name, source_id => $soSourceId });
+  }
 
   $SOTerm->retrieveFromDB;
 
   $self->{sequenceOntologyId} = $SOTerm->getId();
 
-  $self->{sequenceOntologyId}
-    || $self->userError("Can't find SO term '$name' in database");
+  unless($self->{sequenceOntologyId}) {
+    $self->log("Can't find SO term '$name' in database... adding");
+    $SOTerm->submit();
+  }
+
 }
 
 
