@@ -743,7 +743,7 @@ sub fetchSequenceOntologyId {
 
   my $name = $self->getArg('SOTermName');
 
-  my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+  my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec) if (!$self->getArg('soGusConfigFile'));
 
   eval ("require GUS::Model::SRes::OntologyTerm");
 
