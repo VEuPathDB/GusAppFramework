@@ -1464,7 +1464,7 @@ sub getIdFromCache {
 sub getSOPrimaryKey {
   my ($self, $soTerm) = @_;
 
-  if (!$self->{soPrimaryKeys}) {
+  if (!$self->{soPrimaryKeys}->{$soTerm}) {
 
     my ($soExtDbName, $soExtDbVersion);
     if ($self->getArg('soExtDbSpec')) {
@@ -1576,6 +1576,25 @@ sub releaseAlreadyExists{
   return $relId; #if exists, entry has already been made for this version
 }
 
+sub makeNewReleaseId {
+  my ($self, $extDbId,$dbVer) = @_;
+  my $newRelease = GUS::Model::SRes::ExternalDatabaseRelease->new({
+								   external_database_id => $extDbId,
+								   version => $dbVer,
+								   download_url => '',
+								   id_type => '',
+								   id_url => '',
+								   secondary_id_type => '',
+								   secondary_id_url => '',
+								   description => '',
+								   file_name => '',
+								   file_md5 => '',
+								  });
+
+  $newRelease->submit();
+  my $newReleasePk = $newRelease->getId();
+  return $newReleasePk;
+}
 
 sub getExtDbRlsVerFromExtDbRlsName {
   my ($self, $extDbRlsName) = @_;
