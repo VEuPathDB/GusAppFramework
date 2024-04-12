@@ -64,7 +64,7 @@ use GUS::Model::DoTS::NASequenceKeyword;
 use GUS::Model::DoTS::NAComment;
 use GUS::Model::DoTS::ExonFeature;
 
-use GUS::Supported::SequenceOntologyLookup;
+use GUS::Supported::OntologyLookup;
 
 # future considerations....
 #
@@ -1480,7 +1480,7 @@ sub getSOPrimaryKey {
     my $soExtDbRlsId;
     if ($soGusConfigFile) {
       $soExtDbRlsId= $self->getOrCreateExtDbRlsId($soExtDbName, $soExtDbVersion);
-      my $soLookup = GUS::Supported::SequenceOntologyLookup->new($self->getArg('soExtDbSpec'), $soGusConfigFile);
+      my $soLookup = GUS::Supported::OntologyLookup->new($self->getArg('soExtDbSpec'), $soGusConfigFile);
       my $soSourceId = $soLookup->getSourceIdFromName($soTerm);
       unless($soSourceId) {
 	$self->error("Could not determine sourceId from ontology term: $soTerm");

@@ -4,7 +4,7 @@ package GUS::Supported::Plugin::LoadFastaSequences;
 use strict;
 use GUS::PluginMgr::Plugin;
 
-use GUS::Supported::SequenceOntologyLookup;
+use GUS::Supported::OntologyLookup;
 
 use File::Basename;
 
@@ -739,7 +739,7 @@ sub fetchSequenceOntologyId {
     $soGusConfigFile = $self->getArg('gusConfigFile');
   }
   my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
-  my $soLookup = GUS::Supported::SequenceOntologyLookup->new($extDbRlsSpec, $soGusConfigFile);
+  my $soLookup = GUS::Supported::OntologyLookup->new($extDbRlsSpec, $soGusConfigFile);
 
   my $name = $self->getArg('SOTermName');
 

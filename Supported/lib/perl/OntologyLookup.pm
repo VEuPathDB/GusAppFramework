@@ -1,4 +1,4 @@
-package GUS::Supported::SequenceOntologyLookup;
+package GUS::Supported::OntologyLookup;
 
 use strict;
 
@@ -6,8 +6,8 @@ use DBI;
 
 use GUS::Supported::GusConfig;
 
-sub getSequenceOntologyTermsHash {$_[0]->{_sequence_ontology_terms_hash}}
-sub setSequenceOntologyTermsHash {
+sub getOntologyTermsHash {$_[0]->{_sequence_ontology_terms_hash}}
+sub setOntologyTermsHash {
     my ($self, $extDbSpec, $dbh) = @_;
 
     my ($dbName, $dbVersion) = split(/\|/, $extDbSpec);
@@ -58,7 +58,7 @@ sub new {
 
   my $self = bless({}, $class);
 
-  $self->setSequenceOntologyTermsHash($extDbSpec, $dbh);
+  $self->setOntologyTermsHash($extDbSpec, $dbh);
   $dbh->disconnect();
   return $self;
 }
@@ -66,7 +66,7 @@ sub new {
 sub getSourceIdFromName {
     my ($self, $name) = @_;
 
-    my $hash = $self->getSequenceOntologyTermsHash();
+    my $hash = $self->getOntologyTermsHash();
     my $sourceId = $hash->{$name};
 
     if($sourceId) {
