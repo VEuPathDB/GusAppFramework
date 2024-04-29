@@ -8,6 +8,8 @@ use GUS::Supported::OntologyLookup;
 
 use File::Basename;
 
+use GUS::Model::SRes::ExternalDatabase;
+use GUS::Model::SRes::ExternalDatabaseRelease;
 
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
@@ -743,7 +745,13 @@ sub fetchSequenceOntologyId {
 
   my $name = $self->getArg('SOTermName');
 
-  my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec) if (!$self->getArg('soGusConfigFile'));
+  my $extDbRlsId;
+  if ($self->getArg('soGusConfigFile')) {
+    my ($sdbName, $sdbVersion) = split (/\|/, $extDbRlsSpec);
+    $extDbRlsId = $self->getOrCreateExtDbRlsId($sdbName, $sdbVersion);
+  } else {
+    $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+  }
 
   eval ("require GUS::Model::SRes::OntologyTerm");
 
@@ -768,8 +776,8 @@ sub fetchSequenceOntologyId {
   unless($self->{sequenceOntologyId}) {
     $self->log("Can't find SO term '$name' in database... adding");
     $SOTerm->submit();
+    $self->{sequenceOntologyId} = $SOTerm->getId();
   }
-
 }
 
 
@@ -801,6 +809,82 @@ sub fetchTaxonIdFromName {
   $taxon->retrieveFromDB || die "The taxon name '$taxonName' provided in the file is not found in the database\n";
 
   $self->{taxonId} = $taxon->getTaxonId();
+}
+
+## newly added
+sub getOrCreateExtDbRlsId {
+  my ($self, $dbName,$dbVer) = @_;
+  my $extDbId=$self->InsertExternalDatabase($dbName);
+  my $extDbRlsId=$self->InsertExternalDatabaseRls($dbName,$dbVer,$extDbId);
+  return $extDbRlsId;
+}
+
+sub InsertExternalDatabase{
+  my ($self,$dbName) = @_;
+  my $extDbId;
+  my $sql = "select external_database_id from sres.externaldatabase where lower(name) like '" . lc($dbName) ."'";
+  my $sth = $self->prepareAndExecute($sql);
+  $extDbId = $sth->fetchrow_array();
+
+  if ($extDbId){
+    print STEDRR "Not creating a new entry for $dbName as one already exists in the database (id $extDbId)\n";
+  } else {
+    my $newDatabase = GUS::Model::SRes::ExternalDatabase->new({
+                                                               name => $dbName,
+                                                              });
+    $newDatabase->submit();
+    $extDbId = $newDatabase->getId();
+    print STEDRR "created new entry for database $dbName with primary key $extDbId\n";
+  }
+  return $extDbId;
+}
+
+sub InsertExternalDatabaseRls{
+  my ($self,$dbName,$dbVer,$extDbId) = @_;
+  my $extDbRlsId = $self->releaseAlreadyExists($extDbId,$dbVer);
+
+  if ($extDbRlsId){
+    print STDERR "Not creating a new release Id for $dbName as there is already one for $dbName version $dbVer\n";
+  } else{
+    $extDbRlsId = $self->makeNewReleaseId($extDbId,$dbVer);
+    print STDERR "Created new release id for $dbName with version $dbVer and release id $extDbRlsId\n";
+  }
+  return $extDbRlsId;
+}
+
+sub releaseAlreadyExists{
+  my ($self, $extDbId,$dbVer) = @_;
+
+  my $sql = "select external_database_release_id
+ from SRes.ExternalDatabaseRelease
+ where external_database_id = $extDbId
+ and version = '$dbVer'
+";
+
+  my $sth = $self->prepareAndExecute($sql);
+  my ($relId) = $sth->fetchrow_array();
+
+  return $relId; #if exists, entry has already been made for this version
+}
+
+sub makeNewReleaseId {
+  my ($self, $extDbId,$dbVer) = @_;
+  my $newRelease = GUS::Model::SRes::ExternalDatabaseRelease->new({
+                                                                   external_database_id => $extDbId,
+                                                                   version => $dbVer,
+                                                                   download_url => '',
+                                                                   id_type => '',
+                                                                   id_url => '',
+                                                                   secondary_id_type => '',
+                                                                   secondary_id_url => '',
+                                                                   description => '',
+                                                                   file_name => '',
+                                                                   file_md5 => '',
+                                                                  });
+
+  $newRelease->submit();
+  my $newReleasePk = $newRelease->getId();
+  return $newReleasePk;
 }
 
 sub getChromosomeMapping {
