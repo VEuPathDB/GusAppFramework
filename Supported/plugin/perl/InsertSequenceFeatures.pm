@@ -1479,7 +1479,14 @@ sub getSOPrimaryKey {
     my $soGusConfigFile = $self->getArg('soGusConfigFile');
     my $soExtDbRlsId;
     if ($soGusConfigFile) {
-      $soExtDbRlsId= $self->getOrCreateExtDbRlsId($soExtDbName, $soExtDbVersion);
+      if ($soExtDbName eq "SO_RSRC") {
+	my $checkDbName = GUS::Model::SRes::ExternalDatabase->new({name => $soExtDbName});
+	if ($checkDbName->retrieveFromDB) {
+	  $soExtDbRlsId = $self->getExtDbRlsId($self->getArg('soExtDbSpec'));
+	} else {
+	  $soExtDbRlsId= $self->getOrCreateExtDbRlsId($soExtDbName, $soExtDbVersion);
+	}
+      }
       my $soLookup = GUS::Supported::OntologyLookup->new($self->getArg('soExtDbSpec'), $soGusConfigFile);
       my $soSourceId = $soLookup->getSourceIdFromName($soTerm);
       unless($soSourceId) {
