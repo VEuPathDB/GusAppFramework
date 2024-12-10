@@ -204,6 +204,11 @@ sub insertTaxon {
     $taxon->setRank('no rank');
   }
 
+  if ($parentNcbiTaxId) {
+    $geneticCodeId = $parentNcbiTaxId->getGeneticCodeId() if (!$geneticCodeId);
+    $mitochondrialGeneticCodeId = $parentNcbiTaxId->getMitochondrialGeneticCodeId() if (!$mitochondrialGeneticCodeId);
+  }
+
   $taxon->setGeneticCodeId($geneticCodeId) if (defined $geneticCodeId && $geneticCodeId ne '');
   $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId) if (defined $mitochondrialGeneticCodeId && $mitochondrialGeneticCodeId ne '');
 
