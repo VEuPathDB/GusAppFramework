@@ -170,7 +170,7 @@ sub getOrCreateGOInstance {
 
  unless ($evdObj->retrieveFromDB) { $evdObj->submit(); }
 
-return $instId;
+ return $gusObj, $evdObj;
 }
 
 
