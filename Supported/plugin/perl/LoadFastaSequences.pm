@@ -748,7 +748,17 @@ sub fetchSequenceOntologyId {
   my $extDbRlsId;
   if ($self->getArg('soGusConfigFile')) {
     my ($sdbName, $sdbVersion) = split (/\|/, $extDbRlsSpec);
-    $extDbRlsId = $self->getOrCreateExtDbRlsId($sdbName, $sdbVersion);
+
+    if ($sdbName eq "SO_RSRC") {
+      my $checkDbName = GUS::Model::SRes::ExternalDatabase->new({name => $sdbName});
+      if ($checkDbName->retrieveFromDB) {
+	$extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+      } else {
+	$extDbRlsId = $self->getOrCreateExtDbRlsId($sdbName, $sdbVersion);
+      }
+    } else {
+      $extDbRlsId = $self->getOrCreateExtDbRlsId($sdbName, $sdbVersion);
+    }
   } else {
     $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
   }
