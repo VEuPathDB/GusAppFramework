@@ -105,7 +105,15 @@ my $argsDeclaration  =
 	     descr => 'The plugin was run by a workflow, so rows in WorkflowStepAlgInvocation must be deleted.',
 	     reqd  => 0,
 	     default=> 0,
-	    })
+	    }),
+
+   integerArg({name  => 'undoWorkflowStepId',
+      descr => 'workflowStepId for the step we are trying to undo',
+      reqd  => 0,
+      default=> 0,
+      constraintFunc=>undef,
+      isList=>0,
+    })
   ];
 
 
@@ -136,9 +144,9 @@ sub run{
   $self->undoSequences();
 
   if ($self->getArg('workflowContext')) {
-    my $workflowStepId = $self->getArg('workflowstepid');
-    $self->userError("Must provide workflowStepId when called with --workflowContext") unless $workflowStepId;
-    $self->deleteFromWorkflowTable($workflowStepId, 'ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
+    my $undoWorkflowStepId = $self->getArg('undoWorkflowStepId');
+    $self->userError("Must provide undoWorkflowStepId when called with --workflowContext") unless $undoWorkflowStepId;
+    $self->deleteFromWorkflowTable($undoWorkflowStepId, 'ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
   }
 
   $self->_deleteFromTable('Core.AlgorithmParam');
@@ -266,7 +274,7 @@ sub deleteFromTable{
 }
 
 sub deleteFromWorkflowTable{
-  my ($self, $workflowStepId, $tableName, $algInvIdColumnName) = @_;
+  my ($self, $undoWorkflowStepId, $tableName, $algInvIdColumnName) = @_;
   my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
 
   if ($self->{commit} == 1) {
@@ -274,7 +282,7 @@ sub deleteFromWorkflowTable{
 DELETE
 FROM $tableName
 WHERE
-  workflow_step_id = $workflowStepId
+  workflow_step_id = $undoWorkflowStepId
   AND $algInvIdColumnName in ($algoInvocIds)
 SQL
     warn "\n$deleteSql\n" if $self->getArg('verbose');
@@ -288,7 +296,7 @@ SQL
       SELECT count(*)
       FROM $tableName
       WHERE
-        workflow_step_id = $workflowStepId
+        workflow_step_id = $undoWorkflowStepId
         AND $algInvIdColumnName in ($algoInvocIds)
 SQL
     $queryStmt->execute() or die $self->{dbh}->errstr;

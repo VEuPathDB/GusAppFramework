@@ -111,6 +111,14 @@ my $argsDeclaration  =
 	     default=> 0,
 	    }),
 
+  integerArg({name  => 'undoWorkflowStepId',
+    descr => 'workflowStepId for the step we are trying to undo',
+    reqd  => 0,
+    default=> 0,
+    constraintFunc=>undef,
+    isList=>0,
+  }),
+
  stringArg({name => 'undoTables',
             descr => 'A comma delimited list of table names to undo, schema.table format, e.g. dots.nasequence.',
             constraintFunc=> undef,
@@ -148,9 +156,9 @@ sub run{
 
    my $pluginName = $self->getArg('plugin');
    my $workflowContext = $self->getArg('workflowContext');
-   my $workflowStepId = $self->getArg('workflowstepid');
+   my $undoWorkflowStepId = $self->getArg('undoWorkflowStepId');
 
-  if ($workflowContext && !$workflowStepId){
+  if ($workflowContext && !$undoWorkflowStepId){
     $self->userError("Must provide workflowStepId when called with --workflowContext");
   }
    $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
@@ -194,7 +202,7 @@ sub run{
    }
 
    if ($workflowContext) {
-     $self->deleteFromWorkflowTable($workflowStepId, 'ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
+     $self->deleteFromWorkflowTable($undoWorkflowStepId, 'ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
    }
 
    $self->deleteFromTable('Core.AlgorithmParam', 'row_alg_invocation_id');
@@ -204,7 +212,7 @@ sub run{
 }
 
 sub deleteFromWorkflowTable{
-  my ($self, $workflowStepId, $tableName, $algInvIdColumnName) = @_;
+  my ($self, $undoWorkflowStepId, $tableName, $algInvIdColumnName) = @_;
   my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
 
   if ($self->{commit} == 1) {
@@ -212,7 +220,7 @@ sub deleteFromWorkflowTable{
 DELETE
 FROM $tableName
 WHERE
-  workflow_step_id = $workflowStepId
+  workflow_step_id = $undoWorkflowStepId
   AND $algInvIdColumnName in ($algoInvocIds)
 SQL
     warn "\n$deleteSql\n" if $self->getArg('verbose');
@@ -226,7 +234,7 @@ SQL
       SELECT count(*)
       FROM $tableName
       WHERE
-        workflow_step_id = $workflowStepId
+        workflow_step_id = $undoWorkflowStepId
         AND $algInvIdColumnName in ($algoInvocIds)
 SQL
     $queryStmt->execute() or die $self->{dbh}->errstr;
