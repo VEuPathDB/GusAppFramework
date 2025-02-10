@@ -20,6 +20,8 @@ use GUS::Model::DoTS::AASequenceEnzymeClass;
 use GUS::Model::SRes::EnzymeClass;
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::GeneFeature;
+# External AA sequence now needed due to merging with orthomcl workflow
+use GUS::Model::DoTS::ExternalAASequence;
 #use GUS::Model::DoTS::NAFeatureNaGene;
 use GUS::Model::DoTS::NAGene;
 

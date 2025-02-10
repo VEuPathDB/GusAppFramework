@@ -132,6 +132,12 @@ stringArg({   name           => 'ncbiTaxonName',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
+ integerArg({  name           => 'isCore',
+               descr          => 'If organism is orthomcl core protein. 0 or 1.',
+               reqd           => 0,
+               constraintFunc => undef,
+               isList         => 0 }),
+
   fileArg({   name           => 'seqFileDir',
 	       descr          => 'If set, treat all files in this directory as FASTA files and load them all',
 	       reqd           => 0,
@@ -318,6 +324,13 @@ sub run {
 
   if ($self->getArg('SOTermName')) {
     $self->fetchSequenceOntologyId();
+  }
+
+  if ($self->getArg('isCore')) {
+    $self->{isCore} = $self->getArg('isCore');
+  }
+  else {
+    $self->{isCore} = 0;
   }
 
   if ($self->getArg('ncbiTaxId')) {
@@ -526,6 +539,10 @@ sub process {
     $aas->setChromosome($chromosome) unless !$chromosome || $aas->getChromosome() eq $chromosome; 
     $aas->set('chromosome_order_num',$chromosome_order_num) unless !$chromosome_order_num;
 
+    if ($aas->isValidAttribute('is_core')) {
+        $aas->set('is_core',$self->{isCore});
+    }
+
     $aas->setMolecularWeight($mol_wgt) unless ((!$aas->isValidAttribute('molecular_weight')) || (!$mol_wgt || $aas->getMolecularWeight() eq $mol_wgt));  
     $aas->setNumberOfContainedSequences($contained_seqs) unless ((!$aas->isValidAttribute('number_of_contained_sequences')) || (!$contained_seqs || $aas->getNumberOfContainedSequences() eq $contained_seqs)); 
     $aas->setSequenceVersion($seq_version) unless (!$aas->isValidAttribute('sequence_version') || ($aas->getSequenceVersion() = $seq_version));
@@ -583,6 +600,10 @@ sub createNewExternalSequence {
 
   if ($name && $aas->isValidAttribute('name')) {
     $aas->set('name',$name);
+  }
+
+  if ($aas->isValidAttribute('is_core')) {
+      $aas->set('is_core',$self->{isCore});
   }
 
   if ($self->{sequenceTypeId} && $aas->isValidAttribute('sequence_type_id')) {
