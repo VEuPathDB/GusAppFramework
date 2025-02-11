@@ -205,8 +205,9 @@ sub insertTaxon {
   }
 
   if ($parentNcbiTaxId) {
-    $geneticCodeId = $parentNcbiTaxId->getGeneticCodeId() if (!$geneticCodeId);
-    $mitochondrialGeneticCodeId = $parentNcbiTaxId->getMitochondrialGeneticCodeId() if (!$mitochondrialGeneticCodeId);
+    my $parentTaxon = GUS::Model::SRes::Taxon->new({ 'ncbi_tax_id' => $parentNcbiTaxId });
+    $geneticCodeId = $parentTaxon->getGeneticCodeId() if (!$geneticCodeId);
+    $mitochondrialGeneticCodeId = $parentTaxon->getMitochondrialGeneticCodeId() if (!$mitochondrialGeneticCodeId);
   }
 
   $taxon->setGeneticCodeId($geneticCodeId) if (defined $geneticCodeId && $geneticCodeId ne '');
