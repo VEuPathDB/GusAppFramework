@@ -105,7 +105,15 @@ my $argsDeclaration  =
 	     descr => 'The plugin was run by a workflow, so rows in WorkflowStepAlgInvocation must be deleted.',
 	     reqd  => 0,
 	     default=> 0,
-	    })
+	    }),
+
+   integerArg({name  => 'undoWorkflowStepId',
+      descr => 'workflowStepId for the step we are trying to undo',
+      reqd  => 0,
+      default=> 0,
+      constraintFunc=>undef,
+      isList=>0,
+    })
   ];
 
 
@@ -131,21 +139,19 @@ sub run{
   $self->{'dbh'} = $self->getQueryHandle();
   $self->{'dbh'}->{AutoCommit}=0;
 
-  $self->undoFeatures();
 
+  $self->undoFeatures();
   $self->undoSequences();
 
   if ($self->getArg('workflowContext')) {
-
-     deleteFromTable('ApiDB.WorkflowStepAlgInvocation', $self->{'algInvocationIds'}, $self->{'dbh'}, $self->{'commit'},'algorithm_invocation_id');       
-
+    my $undoWorkflowStepId = $self->getArg('undoWorkflowStepId');
+    $self->userError("Must provide undoWorkflowStepId when called with --workflowContext") unless $undoWorkflowStepId;
+    $self->deleteFromWorkflowTable($undoWorkflowStepId, 'ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
   }
 
   $self->_deleteFromTable('Core.AlgorithmParam');
-
   $self->_deleteFromTable('Core.AlgorithmInvocation');
 
- 
 }
 
 sub undoFeatures{
@@ -264,6 +270,38 @@ sub deleteFromTable{
       }else{
          print STDERR "Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n";
        }
+  }
+}
+
+sub deleteFromWorkflowTable{
+  my ($self, $undoWorkflowStepId, $tableName, $algInvIdColumnName) = @_;
+  my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
+
+  if ($self->{commit} == 1) {
+    my $deleteSql = <<SQL;
+DELETE
+FROM $tableName
+WHERE
+  workflow_step_id = $undoWorkflowStepId
+  AND $algInvIdColumnName in ($algoInvocIds)
+SQL
+    warn "\n$deleteSql\n" if $self->getArg('verbose');
+    my $deleteStmt = $self->{dbh}->prepare($deleteSql) or die $self->{dbh}->errstr;
+    my $rowsDeleted = $deleteStmt->execute() or die $self->{dbh}->errstr;
+    $self->log("Deleted $rowsDeleted rows from $tableName");
+    $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
+  } else{
+    # commit off -- query for row count and log it
+    my $queryStmt = $self->{dbh}->prepare(<<SQL) or die $self->{dbh}->errstr;
+      SELECT count(*)
+      FROM $tableName
+      WHERE
+        workflow_step_id = $undoWorkflowStepId
+        AND $algInvIdColumnName in ($algoInvocIds)
+SQL
+    $queryStmt->execute() or die $self->{dbh}->errstr;
+    my  ($rows) = $queryStmt->fetchrow_array();
+    $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
   }
 }
 

@@ -47,15 +47,24 @@ while(my($currentTaxon) = $stmt->fetchrow_array()){
   push(@taxon, $currentTaxon);
 }
 
-my $taxon_id = join(',', @taxon);
+my $taxon_ids = join(',', @taxon);
 
 $stmt->finish();
 
 $sql = <<SQL;
-  select taxon_id
-  from SRes.Taxon
-  start with taxon_id in ($taxon_id)
-  connect by prior taxon_id = parent_id
+  WITH RECURSIVE cte AS (
+    SELECT
+      taxon_id
+      , parent_id
+    FROM Sres.Taxon
+    WHERE taxon_id IN ($taxon_ids)
+    UNION
+    SELECT dtl.taxon_id, cte.taxon_id parent_id
+    FROM Sres.taxon dtl, cte
+    WHERE cte.taxon_id = dtl.parent_id
+  )
+  SELECT taxon_id
+  FROM cte
 SQL
 
 print STDERR "Query: $sql\n" if $verbose;

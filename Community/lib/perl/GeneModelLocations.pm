@@ -543,69 +543,61 @@ sub _initAllModelsHash {
   my $dbh = $self->getDatabaseHandle();
   my $extDbRlsId = $self->getGeneExternalDatabaseReleaseId();
 
-  my $sql = "select gf.source_id as gene_source_id
-     , gf.na_feature_id as gene_na_feature_id
-     , t.source_id as transcript_source_id
-     , t.na_feature_id as transcript_na_feature_id
-     , ef.source_id as exon_source_id
-     , ef.na_feature_id as exon_na_feature_id
-     , l.start_min as exon_start_min
-     , l.end_max as exon_end_max
-     , l.is_reversed as exon_is_reversed
-     , p.translation_start
-     , p.translation_stop
-     , gfl.start_min as gene_start_min
-     , gfl.end_max as gene_end_max
-     , gfl.is_reversed as gene_is_reversed
-     , s.source_id as sequence_source_id
-     , p.protein_source_id
-     , p.protein_aa_feature_id
-     , p.protein_aa_sequence_id
-     , p.coding_start
-     , p.coding_end
-     , gf.na_sequence_id 
-     , so.name as gene_so_term
-     , tso.name as transcript_so_term
-     , s.taxon_id
-     , gf.name
-from dots.genefeature gf
-   , dots.nalocation gfl
-   , dots.nasequence s
-   , dots.exonfeature ef
-   , dots.nalocation l
-   , dots.transcript t
-   , dots.rnafeatureexon rfe
-   , sres.ontologyterm so
-   , sres.ontologyterm tso
-   , (select taf.na_feature_id 
-           , taf.translation_start
-           , taf.translation_stop
-           , aas.source_id as protein_source_id
-           , taf.aa_feature_id as protein_aa_feature_id
-           , aas.aa_sequence_id as protein_aa_sequence_id
-           , afe.coding_start
-           , afe.coding_end
-           , afe.exon_feature_id
-       from dots.translatedaafeature taf
-          , dots.aafeatureexon afe
-          , dots.translatedaasequence aas
-       where taf.aa_feature_id = afe.aa_feature_id
-       and taf.aa_sequence_id = aas.aa_sequence_id
-       ) p
-where gf.na_feature_id = ef.parent_id
-and gf.na_feature_id = gfl.na_feature_id
-and gf.na_sequence_id = s.na_sequence_id
-and ef.na_feature_id = l.na_feature_id
-and t.na_feature_id = rfe.rna_feature_id
-and rfe.exon_feature_id = ef.na_feature_id
-and t.parent_id = gf.na_feature_id
-and rfe.exon_feature_id = p.exon_feature_id (+)
-and rfe.rna_feature_id = p.na_feature_id (+)
-and gf.external_database_release_id = ?
-and gf.sequence_ontology_id = so.ontology_term_id
-and t.sequence_ontology_id = tso.ontology_term_id
-order by gf.na_feature_id, t.na_feature_id, l.start_min
-";
+  my $sql = <<EOF;
+SELECT gf.source_id as gene_source_id
+   , gf.na_feature_id as gene_na_feature_id
+   , t.source_id as transcript_source_id
+   , t.na_feature_id as transcript_na_feature_id
+   , ef.source_id as exon_source_id
+   , ef.na_feature_id as exon_na_feature_id
+   , l.start_min as exon_start_min
+   , l.end_max as exon_end_max
+   , l.is_reversed as exon_is_reversed
+   , p.translation_start
+   , p.translation_stop
+   , gfl.start_min as gene_start_min
+   , gfl.end_max as gene_end_max
+   , gfl.is_reversed as gene_is_reversed
+   , s.source_id as sequence_source_id
+   , p.protein_source_id
+   , p.protein_aa_feature_id
+   , p.protein_aa_sequence_id
+   , p.coding_start
+   , p.coding_end
+   , gf.na_sequence_id
+   , so.name as gene_so_term
+   , tso.name as transcript_so_term
+   , s.taxon_id
+   , gf.name
+FROM dots.genefeature gf
+   INNER JOIN dots.nalocation gfl ON gf.na_feature_id = gfl.na_feature_id
+   INNER JOIN dots.nasequence s ON gf.na_sequence_id = s.na_sequence_id
+   INNER JOIN dots.exonfeature ef ON gf.na_feature_id = ef.parent_id
+   INNER JOIN dots.nalocation l ON ef.na_feature_id = l.na_feature_id
+   INNER JOIN dots.rnafeatureexon rfe ON rfe.exon_feature_id = ef.na_feature_id
+   INNER JOIN dots.transcript t ON t.na_feature_id = rfe.rna_feature_id AND t.parent_id = gf.na_feature_id
+   INNER JOIN sres.ontologyterm so ON gf.sequence_ontology_id = so.ontology_term_id
+   INNER JOIN sres.ontologyterm tso ON t.sequence_ontology_id = tso.ontology_term_id
+   LEFT JOIN (
+      SELECT taf.na_feature_id
+        , taf.translation_start
+        , taf.translation_stop
+        , aas.source_id as protein_source_id
+        , taf.aa_feature_id as protein_aa_feature_id
+        , aas.aa_sequence_id as protein_aa_sequence_id
+        , afe.coding_start
+        , afe.coding_end
+        , afe.exon_feature_id
+      FROM dots.translatedaafeature taf
+         , dots.aafeatureexon afe
+         , dots.translatedaasequence aas
+      WHERE taf.aa_feature_id = afe.aa_feature_id
+        AND taf.aa_sequence_id = aas.aa_sequence_id
+   ) p ON rfe.exon_feature_id = p.exon_feature_id AND rfe.rna_feature_id = p.na_feature_id
+WHERE
+   gf.external_database_release_id = ?
+ORDER BY gf.na_feature_id, t.na_feature_id, l.start_min
+EOF
 
   my $sh = getGeneSh();
   unless ($sh) {
@@ -876,7 +868,11 @@ sub queryForAgpMap {
 
   my $sql = "select sp.virtual_na_sequence_id
                                 , p.na_sequence_id as piece_na_sequence_id
-                               , decode(sp.strand_orientation, '+', '+1', '-', '-1', '+1') as piece_strand
+                               , CASE sp.strand_orientation
+                                    WHEN '+' THEN '+1'
+                                    WHEN '-' THEN '-1'
+                                    ELSE '+1'
+                                 END AS piece_strand
                                , sp.start_position as piece_start
                                , sp.end_position as piece_end
                                , sp.distance_from_left + 1 as virtual_start_min

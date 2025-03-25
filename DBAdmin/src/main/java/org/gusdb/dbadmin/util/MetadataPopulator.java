@@ -201,12 +201,16 @@ public class MetadataPopulator {
 		writer.write( getTableID( table ) + ", '" + table.getName() + "', '" + getTableType( table ) + "', " );
         String pk = ( table instanceof GusTable) ? getPrimaryKey((GusTable) table) : "null";
         writer.write( pk + ", " + getSchemaID( table.getSchema() ) + ", " );
-		if ( table.getClass() == GusTable.class ) {
-			writer.write( b2i( ( (GusTable) table ).isVersioned() ) + "" );
-		}
-		else {
-			writer.write( "0" );
-		}
+
+		// IGNORE isVersioned setting as we no longer create version schemas
+		writer.write( "0" );
+		// if ( table.getClass() == GusTable.class ) {
+		//	writer.write( b2i( ( (GusTable) table ).isVersioned() ) + "" );
+		// }
+		// else {
+		//	writer.write( "0" );
+		// }
+
 		writer.write(",0,null,");
 		if ( table.getSuperclass() != null ) {
 			writer.write( "" + getTableID( table.getSuperclass() ) );
@@ -239,12 +243,15 @@ public class MetadataPopulator {
 		writer.write( getViewID( view ) + ", '" + view.getName() + "', '" + getTableType( view ) + "', " );
 		String pk = ( view instanceof GusView) ? getPrimaryKey((GusView) view) : "null";
         writer.write( pk + ", " + getSchemaID( view.getSchema() ) + ", " );
-		if ( view.getClass() == GusView.class ) {
-			writer.write( b2i( ( (GusView) view ).isVersioned() ) + "" );
-		}
-		else {
-			writer.write( "0" );
-		}
+
+		// IGNORE isVersioned setting as we no longer create version schemas
+		writer.write( "0" );
+		// if ( view.getClass() == GusView.class ) {
+		// 	writer.write( b2i( ( (GusView) view ).isVersioned() ) + "" );
+		// }
+		// else {
+		//  writer.write( "0" );
+		// }
 		writer.write( ", 1, " + getTableID( view.getTable() ) + ", " );
 		if ( view.getSuperclass() != null ) {
 			writer.write( "" + getViewID( view.getSuperclass() ) );

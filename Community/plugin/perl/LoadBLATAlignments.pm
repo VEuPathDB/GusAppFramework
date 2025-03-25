@@ -470,7 +470,7 @@ sub loadAlignments {
                      "$nextvalVar, " .
                      "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
                      "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
-                     "SYSDATE, 1, 1, 1, 1, 1, 0, " .
+                     "CURRENT_TIMESTAMP, 1, 1, 1, 1, 1, 0, " .
                      "$userId, $groupId, $projectId, $algInvId)");
    #print STDERR "LoadBLATAlignments: insert sql = '$insertSql'\n";
 

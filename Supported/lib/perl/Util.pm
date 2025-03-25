@@ -377,6 +377,8 @@ sub getTranslatedAAFeatureIdListFromGeneSourceId {
       }else{
 	  $geneFeatId = getGeneFeatureId($plugin, $sourceId);
       }
+    # Return an empty list reference if $geneFeatId is undefined or null
+    return \@aaFeatIdList unless defined $geneFeatId;
 
     my $sql = "
 SELECT taf.aa_feature_id
@@ -384,7 +386,7 @@ FROM Dots.Transcript t, Dots.TranslatedAAFeature taf
 WHERE t.parent_id = '$geneFeatId'
 AND taf.na_feature_id = t.na_feature_id
 ";
-    my $stmt = $plugin->prepareAndExecute($sql);
+    my $stmt = $plugin->prepareAndExecute($sql) if $geneFeatId;
 
   while(my $aaFeatId = $stmt->fetchrow_array()){
     push(@aaFeatIdList, $aaFeatId);

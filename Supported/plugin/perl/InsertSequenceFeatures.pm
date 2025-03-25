@@ -64,6 +64,8 @@ use GUS::Model::DoTS::NASequenceKeyword;
 use GUS::Model::DoTS::NAComment;
 use GUS::Model::DoTS::ExonFeature;
 
+use GUS::Supported::OntologyLookup;
+
 # future considerations....
 #
 # - need chromosome in na sequence, not just source.
@@ -183,6 +185,14 @@ my $argsDeclaration  =
 	    mustExist => 1,
 	    format=>'XML'
 	   }),
+
+  fileArg({name           => 'soGusConfigFile',
+           descr          => 'The gus config file for database containing SO term info',
+           reqd           => 0,
+           mustExist      => 0,
+           format         =>'TXT',
+           constraintFunc => undef,
+           isList         => 0 }),
 
    fileArg({name => 'inputFileOrDir',
 	    descr => 'Text file containing features and optionally sequence data, or a directory containing such files',
@@ -1454,7 +1464,7 @@ sub getIdFromCache {
 sub getSOPrimaryKey {
   my ($self, $soTerm) = @_;
 
-  if (!$self->{soPrimaryKeys}) {
+  if (!$self->{soPrimaryKeys}->{$soTerm}) {
 
     my ($soExtDbName, $soExtDbVersion);
     if ($self->getArg('soExtDbSpec')) {
@@ -1465,20 +1475,39 @@ sub getSOPrimaryKey {
     } else {
       $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
     }
-    my $soExtDbRlsId= $self->getExtDbRlsId($soExtDbName, $soExtDbVersion);
 
-    #$soExtDbName = $self->getArg('soExtDbName') if ($self->getArg('soExtDbName'));
-    #($soExtDbName) = split (/\|/, $self->getArg('soExtDbSpec') ) if ($self->getArg('soExtDbSpec'));
-    #if (!$soExtDbName) {
-      #$self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
-    #}
-    #my $soExtDbRlsId = $self->getExtDbRlsIdFromExtDbName($soExtDbName);
+    my $soGusConfigFile = $self->getArg('soGusConfigFile');
+    my $soExtDbRlsId;
+    if ($soGusConfigFile) {
+      if ($soExtDbName eq "SO_RSRC") {
+	my $checkDbName = GUS::Model::SRes::ExternalDatabase->new({name => $soExtDbName});
+	if ($checkDbName->retrieveFromDB) {
+	  $soExtDbRlsId = $self->getExtDbRlsId($self->getArg('soExtDbSpec'));
+	} else {
+	  $soExtDbRlsId= $self->getOrCreateExtDbRlsId($soExtDbName, $soExtDbVersion);
+	}
+      }
+      my $soLookup = GUS::Supported::OntologyLookup->new($self->getArg('soExtDbSpec'), $soGusConfigFile);
+      my $soSourceId = $soLookup->getSourceIdFromName($soTerm);
+      unless($soSourceId) {
+	$self->error("Could not determine sourceId from ontology term: $soTerm");
+      }
+      my $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $soTerm, source_id => $soSourceId, external_database_release_id => $soExtDbRlsId});
+      unless ($SOTerm->retrieveFromDB) {
+	$self->log("Can't find SO term '$soTerm' in database... adding");
+	$SOTerm->submit();
+      }
+
+    } else {
+      $soExtDbRlsId= $self->getExtDbRlsId($soExtDbName, $soExtDbVersion);
+    }
 
     my $dbh = $self->getQueryHandle();
     my $sql = "
 select name, ontology_term_id from SRES.ontologyterm
  where external_database_release_id=$soExtDbRlsId
 ";
+
     my $stmt = $dbh->prepareAndExecute($sql);
     while (my ($term, $pk) = $stmt->fetchrow_array()){
       $self->{soPrimaryKeys}->{$term} = $pk;
@@ -1495,6 +1524,83 @@ select name, ontology_term_id from SRES.ontologyterm
   $self->error("Can't find primary key for SO term '$soTerm'")
     unless $self->{soPrimaryKeys}->{$soTerm};
   return $self->{soPrimaryKeys}->{$soTerm};
+}
+
+
+## newly added
+sub getOrCreateExtDbRlsId {
+  my ($self, $dbName,$dbVer) = @_;
+  my $extDbId=$self->InsertExternalDatabase($dbName);
+  my $extDbRlsId=$self->InsertExternalDatabaseRls($dbName,$dbVer,$extDbId);
+  return $extDbRlsId;
+}
+
+sub InsertExternalDatabase{
+  my ($self,$dbName) = @_;
+  my $extDbId;
+  my $sql = "select external_database_id from sres.externaldatabase where lower(name) like '" . lc($dbName) ."'";
+  my $sth = $self->prepareAndExecute($sql);
+  $extDbId = $sth->fetchrow_array();
+
+  if ($extDbId){
+    print STEDRR "Not creating a new entry for $dbName as one already exists in the database (id $extDbId)\n";
+  } else {
+    my $newDatabase = GUS::Model::SRes::ExternalDatabase->new({
+							       name => $dbName,
+							      });
+    $newDatabase->submit();
+    $extDbId = $newDatabase->getId();
+    print STEDRR "created new entry for database $dbName with primary key $extDbId\n";
+  }
+  return $extDbId;
+}
+
+sub InsertExternalDatabaseRls{
+  my ($self,$dbName,$dbVer,$extDbId) = @_;
+  my $extDbRlsId = $self->releaseAlreadyExists($extDbId,$dbVer);
+
+  if ($extDbRlsId){
+    print STDERR "Not creating a new release Id for $dbName as there is already one for $dbName version $dbVer\n";
+  } else{
+    $extDbRlsId = $self->makeNewReleaseId($extDbId,$dbVer);
+    print STDERR "Created new release id for $dbName with version $dbVer and release id $extDbRlsId\n";
+  }
+  return $extDbRlsId;
+}
+
+sub releaseAlreadyExists{
+  my ($self, $extDbId,$dbVer) = @_;
+
+  my $sql = "select external_database_release_id
+ from SRes.ExternalDatabaseRelease
+ where external_database_id = $extDbId
+ and version = '$dbVer'
+";
+
+  my $sth = $self->prepareAndExecute($sql);
+  my ($relId) = $sth->fetchrow_array();
+
+  return $relId; #if exists, entry has already been made for this version
+}
+
+sub makeNewReleaseId {
+  my ($self, $extDbId,$dbVer) = @_;
+  my $newRelease = GUS::Model::SRes::ExternalDatabaseRelease->new({
+								   external_database_id => $extDbId,
+								   version => $dbVer,
+								   download_url => '',
+								   id_type => '',
+								   id_url => '',
+								   secondary_id_type => '',
+								   secondary_id_url => '',
+								   description => '',
+								   file_name => '',
+								   file_md5 => '',
+								  });
+
+  $newRelease->submit();
+  my $newReleasePk = $newRelease->getId();
+  return $newReleasePk;
 }
 
 sub getExtDbRlsVerFromExtDbRlsName {

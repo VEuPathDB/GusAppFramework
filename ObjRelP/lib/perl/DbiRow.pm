@@ -130,12 +130,17 @@ sub get {
 sub getSubstrFromClob {
   my($self,$att,$start,$length) = @_;
   my $string = "";
+
+  my $dbType = $self->getDbHandle()->get_info(17);
+  #print STDERR "\$dbType = $dbType\n";
+
   if(!$self->{'didNotRetrieve'}->{$att} && $self->get($att)){
     $string = substr($self->get($att),$start - 1,$length);
   }else{
     my $stmt = $self->getTable()->getCachedStatement('clobSubstr',$att);
     if (!$stmt) {
       my $pkatts = $self->getTable()->getPrimaryKeyAttributes();
+
       my $query = "select " . 
                    $self->getDatabase()->getClobSubstringFunctionName() . 
                   "($att,?,?) from " . 
@@ -147,7 +152,12 @@ sub getSubstrFromClob {
     }
     ##need loop if $length > 4000 as can only get 4000 at a time....
     for (my $s = $start; $s < $start + $length;$s += 4000) {
-      $stmt->execute($s + 4000 <= $start + $length ? 4000 : $length + $start - $s,$s,$self->getId());
+#      $stmt->execute($s + 4000 <= $start + $length ? 4000 : $length + $start - $s,$s,$self->getId());
+      if ($dbType =~ /PostgreSQL/i) {
+	$stmt->execute($s, $s + 4000 <= $start + $length ? 4000 : $length + $start - $s, $self->getId());
+      } else {
+	$stmt->execute($s + 4000 <= $start + $length ? 4000 : $length + $start - $s,$s,$self->getId());
+      }
       while (my($str) = $stmt->fetchrow_array()) {
         #      print STDERR "$str\n";
         $string .= $str;

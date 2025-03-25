@@ -111,6 +111,14 @@ my $argsDeclaration  =
 	     default=> 0,
 	    }),
 
+  integerArg({name  => 'undoWorkflowStepId',
+    descr => 'workflowStepId for the step we are trying to undo',
+    reqd  => 0,
+    default=> 0,
+    constraintFunc=>undef,
+    isList=>0,
+  }),
+
  stringArg({name => 'undoTables',
             descr => 'A comma delimited list of table names to undo, schema.table format, e.g. dots.nasequence.',
             constraintFunc=> undef,
@@ -148,6 +156,11 @@ sub run{
 
    my $pluginName = $self->getArg('plugin');
    my $workflowContext = $self->getArg('workflowContext');
+   my $undoWorkflowStepId = $self->getArg('undoWorkflowStepId');
+
+  if ($workflowContext && !$undoWorkflowStepId){
+    $self->userError("Must provide workflowStepId when called with --workflowContext");
+  }
    $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
    $self->{'dbh'} = $self->getQueryHandle();
    $self->{'dbh'}->{AutoCommit}=0;
@@ -185,18 +198,49 @@ sub run{
 ### done getting tables
 
    foreach my $table (@tables) {
-
       $self->deleteFromTable($table,'row_alg_invocation_id', $self->getArg('limit'));
    }
 
    if ($workflowContext) {
-     $self->deleteFromTable('ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
+     $self->deleteFromWorkflowTable($undoWorkflowStepId, 'ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
    }
 
    $self->deleteFromTable('Core.AlgorithmParam', 'row_alg_invocation_id');
 
    $self->deleteFromTable('Core.AlgorithmInvocation', 'row_alg_invocation_id');
 
+}
+
+sub deleteFromWorkflowTable{
+  my ($self, $undoWorkflowStepId, $tableName, $algInvIdColumnName) = @_;
+  my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
+
+  if ($self->{commit} == 1) {
+    my $deleteSql = <<SQL;
+DELETE
+FROM $tableName
+WHERE
+  workflow_step_id = $undoWorkflowStepId
+  AND $algInvIdColumnName in ($algoInvocIds)
+SQL
+    warn "\n$deleteSql\n" if $self->getArg('verbose');
+    my $deleteStmt = $self->{dbh}->prepare($deleteSql) or die $self->{dbh}->errstr;
+    my $rowsDeleted = $deleteStmt->execute() or die $self->{dbh}->errstr;
+    $self->log("Deleted $rowsDeleted rows from $tableName");
+    $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
+  } else{
+    # commit off -- query for row count and log it
+    my $queryStmt = $self->{dbh}->prepare(<<SQL) or die $self->{dbh}->errstr;
+      SELECT count(*)
+      FROM $tableName
+      WHERE
+        workflow_step_id = $undoWorkflowStepId
+        AND $algInvIdColumnName in ($algoInvocIds)
+SQL
+    $queryStmt->execute() or die $self->{dbh}->errstr;
+    my  ($rows) = $queryStmt->fetchrow_array();
+    $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
+  }
 }
 
 sub deleteFromTable{
@@ -208,11 +252,12 @@ sub deleteFromTable{
 
   if ($self->{commit} == 1) {
 
+      # FIXME:  need to delete in chunks
     my $deleteSql = <<SQL;
-      delete
-      from $tableName
-      where $algInvIdColumnName in ($algoInvocIds)
-        and rownum <= $chunkSize
+    DELETE
+    FROM $tableName
+    WHERE $algInvIdColumnName in ($algoInvocIds)
+    --LIMIT $chunkSize
 SQL
     warn "\n$deleteSql\n" if $self->getArg('verbose');
     my $deleteStmt = $self->{dbh}->prepare($deleteSql) or die $self->{dbh}->errstr;

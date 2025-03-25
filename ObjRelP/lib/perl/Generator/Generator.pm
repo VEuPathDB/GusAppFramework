@@ -115,6 +115,8 @@ sub generate {
 	$wrapperG->generate($newOnly) if ($type == 0 || $type == 2);
 
     }
+
+    $self->{db}->logout();
 }
 
 

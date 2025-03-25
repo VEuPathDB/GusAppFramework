@@ -1144,13 +1144,13 @@ sub openInvocation {
    $alg_inv_gus->setDefaultAlgoInvoId($alg_inv_gus->getId);
 
    # if run by a workflow, associate the alg_inv_id with the workflow step
+  ## TODO this change breaks compatibility with master
    if ($cla->{commit} && $cla->{workflowstepid}) {
      my $alg_inv_id = $alg_inv_gus->getId();
-     my $next_val = $plugin->getDb->getDbPlatform->nextVal('apidb.WorkflowStepAlgInvocation');
      my $sql =
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
-(workflow_step_alg_inv_id, workflow_step_id, algorithm_invocation_id)
-VALUES ($next_val, $cla->{workflowstepid}, $alg_inv_id)";
+(workflow_step_id, algorithm_invocation_id)
+VALUES ($cla->{workflowstepid}, $alg_inv_id)";
      my $handle = $plugin->getDb()->makeNewHandle(1);
      $handle->prepareAndExecute($sql);
      $handle->disconnect();

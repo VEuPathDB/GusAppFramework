@@ -3,8 +3,13 @@ package GUS::Supported::Plugin::LoadFastaSequences;
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 use GUS::PluginMgr::Plugin;
+
+use GUS::Supported::OntologyLookup;
+
 use File::Basename;
 
+use GUS::Model::SRes::ExternalDatabase;
+use GUS::Model::SRes::ExternalDatabaseRelease;
 
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
@@ -106,8 +111,14 @@ stringArg({   name           => 'ncbiTaxonName',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
-
- integerArg({   name          => 'ncbiTaxId',
+  fileArg({   name             => 'soGusConfigFile',
+	       descr          => 'The name of the FASTA file containing the input sequences',
+	       reqd           => 0,
+               mustExist => 0,
+               format =>"FASTA",
+	       constraintFunc => undef,
+	       isList         => 0 }),
+  integerArg({   name          => 'ncbiTaxId',
 	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or ncbiTaxonName or regexNcbiTaxId args.',
 	       reqd           => 0,
 	       constraintFunc => undef,
@@ -120,6 +131,12 @@ stringArg({   name           => 'ncbiTaxonName',
                format =>"FASTA",
 	       constraintFunc => undef,
 	       isList         => 0 }),
+
+ integerArg({  name           => 'isCore',
+               descr          => 'If organism is orthomcl core protein. 0 or 1.',
+               reqd           => 0,
+               constraintFunc => undef,
+               isList         => 0 }),
 
   fileArg({   name           => 'seqFileDir',
 	       descr          => 'If set, treat all files in this directory as FASTA files and load them all',
@@ -304,8 +321,16 @@ sub run {
     $self->fetchSequenceTypeId();
   }
 
+
   if ($self->getArg('SOTermName')) {
     $self->fetchSequenceOntologyId();
+  }
+
+  if ($self->getArg('isCore')) {
+    $self->{isCore} = $self->getArg('isCore');
+  }
+  else {
+    $self->{isCore} = 0;
   }
 
   if ($self->getArg('ncbiTaxId')) {
@@ -514,6 +539,10 @@ sub process {
     $aas->setChromosome($chromosome) unless !$chromosome || $aas->getChromosome() eq $chromosome; 
     $aas->set('chromosome_order_num',$chromosome_order_num) unless !$chromosome_order_num;
 
+    if ($aas->isValidAttribute('is_core')) {
+        $aas->set('is_core',$self->{isCore});
+    }
+
     $aas->setMolecularWeight($mol_wgt) unless ((!$aas->isValidAttribute('molecular_weight')) || (!$mol_wgt || $aas->getMolecularWeight() eq $mol_wgt));  
     $aas->setNumberOfContainedSequences($contained_seqs) unless ((!$aas->isValidAttribute('number_of_contained_sequences')) || (!$contained_seqs || $aas->getNumberOfContainedSequences() eq $contained_seqs)); 
     $aas->setSequenceVersion($seq_version) unless (!$aas->isValidAttribute('sequence_version') || ($aas->getSequenceVersion() = $seq_version));
@@ -571,6 +600,10 @@ sub createNewExternalSequence {
 
   if ($name && $aas->isValidAttribute('name')) {
     $aas->set('name',$name);
+  }
+
+  if ($aas->isValidAttribute('is_core')) {
+      $aas->set('is_core',$self->{isCore});
   }
 
   if ($self->{sequenceTypeId} && $aas->isValidAttribute('sequence_type_id')) {
@@ -724,25 +757,58 @@ sub fetchSequenceTypeId {
 sub fetchSequenceOntologyId {
   my ($self, $name) = @_;
 
-  my $name = $self->getArg('SOTermName');
-  my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
-
-  if (!defined($extDbRlsSpec)) {
-    $self->userError('When SOTermName is provided, SOExtDbRls must be specified');
+  my $soGusConfigFile = $self->getArg('soGusConfigFile');
+  unless($soGusConfigFile) {
+    $soGusConfigFile = $self->getArg('gusConfigFile');
   }
+  my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
+  my $soLookup = GUS::Supported::OntologyLookup->new($extDbRlsSpec, $soGusConfigFile);
 
-  my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+  my $name = $self->getArg('SOTermName');
+
+  my $extDbRlsId;
+  if ($self->getArg('soGusConfigFile')) {
+    my ($sdbName, $sdbVersion) = split (/\|/, $extDbRlsSpec);
+
+    if ($sdbName eq "SO_RSRC") {
+      my $checkDbName = GUS::Model::SRes::ExternalDatabase->new({name => $sdbName});
+      if ($checkDbName->retrieveFromDB) {
+	$extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+      } else {
+	$extDbRlsId = $self->getOrCreateExtDbRlsId($sdbName, $sdbVersion);
+      }
+    } else {
+      $extDbRlsId = $self->getOrCreateExtDbRlsId($sdbName, $sdbVersion);
+    }
+  } else {
+    $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
+  }
 
   eval ("require GUS::Model::SRes::OntologyTerm");
 
-  my $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $name, external_database_release_id => $extDbRlsId });
+  my $soSourceId = $soLookup->getSourceIdFromName($name);
+  unless($soSourceId) {
+    $self->error("Could not determine source_id from ontology term: $name");
+  }
+
+  my $SOTerm;
+
+  if($extDbRlsId) {
+    $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $name, source_id => $soSourceId, external_database_release_id => $extDbRlsId });
+  }
+  else {
+    $SOTerm = GUS::Model::SRes::OntologyTerm->new({ name => $name, source_id => $soSourceId });
+  }
 
   $SOTerm->retrieveFromDB;
 
   $self->{sequenceOntologyId} = $SOTerm->getId();
 
-  $self->{sequenceOntologyId}
-    || $self->userError("Can't find SO term '$name' in database");
+  unless($self->{sequenceOntologyId}) {
+    $self->log("Can't find SO term '$name' in database... adding");
+    $SOTerm->submit();
+    $self->{sequenceOntologyId} = $SOTerm->getId();
+  }
 }
 
 
@@ -774,6 +840,82 @@ sub fetchTaxonIdFromName {
   $taxon->retrieveFromDB || die "The taxon name '$taxonName' provided in the file is not found in the database\n";
 
   $self->{taxonId} = $taxon->getTaxonId();
+}
+
+## newly added
+sub getOrCreateExtDbRlsId {
+  my ($self, $dbName,$dbVer) = @_;
+  my $extDbId=$self->InsertExternalDatabase($dbName);
+  my $extDbRlsId=$self->InsertExternalDatabaseRls($dbName,$dbVer,$extDbId);
+  return $extDbRlsId;
+}
+
+sub InsertExternalDatabase{
+  my ($self,$dbName) = @_;
+  my $extDbId;
+  my $sql = "select external_database_id from sres.externaldatabase where lower(name) like '" . lc($dbName) ."'";
+  my $sth = $self->prepareAndExecute($sql);
+  $extDbId = $sth->fetchrow_array();
+
+  if ($extDbId){
+    print STEDRR "Not creating a new entry for $dbName as one already exists in the database (id $extDbId)\n";
+  } else {
+    my $newDatabase = GUS::Model::SRes::ExternalDatabase->new({
+                                                               name => $dbName,
+                                                              });
+    $newDatabase->submit();
+    $extDbId = $newDatabase->getId();
+    print STEDRR "created new entry for database $dbName with primary key $extDbId\n";
+  }
+  return $extDbId;
+}
+
+sub InsertExternalDatabaseRls{
+  my ($self,$dbName,$dbVer,$extDbId) = @_;
+  my $extDbRlsId = $self->releaseAlreadyExists($extDbId,$dbVer);
+
+  if ($extDbRlsId){
+    print STDERR "Not creating a new release Id for $dbName as there is already one for $dbName version $dbVer\n";
+  } else{
+    $extDbRlsId = $self->makeNewReleaseId($extDbId,$dbVer);
+    print STDERR "Created new release id for $dbName with version $dbVer and release id $extDbRlsId\n";
+  }
+  return $extDbRlsId;
+}
+
+sub releaseAlreadyExists{
+  my ($self, $extDbId,$dbVer) = @_;
+
+  my $sql = "select external_database_release_id
+ from SRes.ExternalDatabaseRelease
+ where external_database_id = $extDbId
+ and version = '$dbVer'
+";
+
+  my $sth = $self->prepareAndExecute($sql);
+  my ($relId) = $sth->fetchrow_array();
+
+  return $relId; #if exists, entry has already been made for this version
+}
+
+sub makeNewReleaseId {
+  my ($self, $extDbId,$dbVer) = @_;
+  my $newRelease = GUS::Model::SRes::ExternalDatabaseRelease->new({
+                                                                   external_database_id => $extDbId,
+                                                                   version => $dbVer,
+                                                                   download_url => '',
+                                                                   id_type => '',
+                                                                   id_url => '',
+                                                                   secondary_id_type => '',
+                                                                   secondary_id_url => '',
+                                                                   description => '',
+                                                                   file_name => '',
+                                                                   file_md5 => '',
+                                                                  });
+
+  $newRelease->submit();
+  my $newReleasePk = $newRelease->getId();
+  return $newReleasePk;
 }
 
 sub getChromosomeMapping {
