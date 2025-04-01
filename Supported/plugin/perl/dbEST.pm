@@ -763,8 +763,9 @@ sub populateEst {
     $est->setContactId($self->{contact}->{$e->{id_contact}});
   }else {
     # get from DB and cache
-    my $c = GUS::Model::SRes::Contact->new({ 'source_id' => $e->{id_contact},
-                                             'external_database_release_id' => $self->{dbest_ext_db_rel_id} });
+    # ONLY NEED SOURCE_ID HERE BECAUSE ID_CONTACT_ID IS DISTINCT ACCROSS DBEST
+    my $c = GUS::Model::SRes::Contact->new({ 'source_id' => $e->{id_contact}
+                                             );
     unless ($c->retrieveFromDB()) {
       $self->newContact($e,$c,$estDbh);
     }
