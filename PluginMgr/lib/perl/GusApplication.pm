@@ -1159,8 +1159,9 @@ VALUES ($cla->{workflowstepid}, $alg_inv_id)";
      $handle->disconnect();
 
      # this is temporary
-     my $sh = $plugin->getQueryHandle();
+     my $queryHandle = $plugin->getQueryHandle();
      my $sql = "select count(*) from apidb.workflowstepalginvocation where workflow_step_id = ? and algorithm_invocation_id=  ?";
+     my $sh = $queryHandle->prepare($sql);
      $sh->execute($cla->{workflowstepid}, $alg_inv_id);
      my ($count) = $sh->fetchrow_array();
      $sh->finish();
