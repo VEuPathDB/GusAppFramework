@@ -1152,8 +1152,21 @@ sub openInvocation {
 (workflow_step_id, algorithm_invocation_id)
 VALUES ($cla->{workflowstepid}, $alg_inv_id)";
      my $handle = $plugin->getDb()->makeNewHandle(1);
+
+     $plugin->log("Inserting WorklfowStepAlgInvocation.  workflow_step_id=" . $cla->{workflowstepid}. "; algInvocationId=" . $alg_inv_id);
+     
      $handle->prepareAndExecute($sql);
      $handle->disconnect();
+
+     # this is temporary
+     my $sh = $plugin->getQueryHandle();
+     my $sql = "select count(*) from apidb.workflowstepalginvocation where workflow_step_id = ? and algorithm_invocation_id=  ?";
+     $sh->execute($cla->{workflowstepid}, $alg_inv_id);
+     my ($count) = $sh->fetchrow_array();
+     $sh->finish();
+     unless($count > 0) {
+         die "NO rows found for workflow step id=" . $cla->{workflowstepid} . " and row_alg_invocation_id=$alg_inv_id";
+     }
    }
 
    # set parameter values in the DB.
