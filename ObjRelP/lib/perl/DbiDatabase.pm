@@ -368,11 +368,20 @@ sub cacheFourCoreChildRelations {
   }
 }
 
+sub closeQueryHandle {
+  my ($self) = @_;
+  if ($self->{'queryDbh'}) {
+    $self->{'queryDbh'}->rollback();
+    $self->{'queryDbh'}->disconnect();
+    $self->{'queryDbh'} = undef;
+  }
+}
+
 sub logout {
   my ($self) = @_;
-  if ($self->{'dbh'}) { 
+  if ($self->{'dbh'}) {
     $self->{'dbh'}->rollback(); ##rolls back anything that  has not been committed
-    $self->{'dbh'}->disconnect(); 
+    $self->{'dbh'}->disconnect();
   }
   if ($self->{'metaDbh'}) {
     $self->{'metaDbh'}->disconnect();

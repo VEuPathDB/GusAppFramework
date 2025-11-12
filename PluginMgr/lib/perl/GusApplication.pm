@@ -607,6 +607,10 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
 
+      # Close the query handle before running the plugin.
+      # If the plugin needs it, it will be reopened on demand.
+      $pu->getDb()->closeQueryHandle();
+
       # include the args for legacy plugins
       $resultDescrip = $pu->run({ cla      => $pu->getCla,
                                   self_inv => $pu->getSelfInv,
@@ -625,8 +629,10 @@ sub doMajorMode_RunOrReport {
    }
 
    my $err = $@;
-   $Run && $self->closeInvocation($pu, "FAILED");
+   my $errMessage = $err ? "FAILED" : "SUCCESS";
 
+   $Run && $self->closeInvocation($pu, $errMessage);
+   
    if ($err) {
      die $err;
    } else {
@@ -1144,8 +1150,7 @@ sub openInvocation {
    $alg_inv_gus->setDefaultAlgoInvoId($alg_inv_gus->getId);
 
    # if run by a workflow, associate the alg_inv_id with the workflow step
-  ## TODO this change breaks compatibility with master
-   if ($cla->{commit} && $cla->{workflowstepid}) {
+     if ($cla->{commit} && $cla->{workflowstepid}) {
      my $alg_inv_id = $alg_inv_gus->getId();
      my $sql =
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
@@ -1245,18 +1250,21 @@ If you are developing the plugin, you may need to check it in to the repostory a
 sub closeInvocation {
    my $self   = shift;
    my $plugin = shift;
-   my $failmsg = shift;
+   my $invocationResult = shift;
 
-   $plugin->setResultDescr($failmsg) if $failmsg; # until we add an errmsg attribute
+   #$plugin->setResultDescr($invocationResult) if $invocationResult; # until we add an errmsg attribute
 
    # do this first in case the submit below fails
    if ($plugin->getQueryHandle()) {
      $plugin->getQueryHandle()->rollback(); # rollback uncommitted changes
    }
    $plugin->getAlgInvocation->setGlobalNoVersion(1);
-   $plugin->getAlgInvocation->setResult($plugin->getResultDescr);
+   $plugin->getAlgInvocation->setResult($invocationResult);
    $plugin->getAlgInvocation->setEndTime($plugin->getAlgInvocation->getDatabase()->getDateFunction());
    $plugin->getAlgInvocation->submit(1);
+
+   $plugin->getAlgInvocation->setCommentString($plugin->getResultDesc() or $invocationResult)
+
 
    $plugin->getDb()->logout();
 
