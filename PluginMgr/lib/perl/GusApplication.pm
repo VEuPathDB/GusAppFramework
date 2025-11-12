@@ -1263,7 +1263,7 @@ sub closeInvocation {
    $plugin->getAlgInvocation->setEndTime($plugin->getAlgInvocation->getDatabase()->getDateFunction());
    $plugin->getAlgInvocation->submit(1);
 
-   $plugin->getAlgInvocation->setCommentString($plugin->getResultDesc() or $invocationResult)
+   $plugin->getAlgInvocation->setCommentString($plugin->getResultDescr() or $invocationResult);
 
 
    $plugin->getDb()->logout();
