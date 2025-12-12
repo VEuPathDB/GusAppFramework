@@ -47,12 +47,16 @@ BEGIN {
 }
 
 sub new {
-  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $soExclude) = @_;
+  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $soExclude, $filterByTranscriptOrGene) = @_;
+
+  # Default to filtering by transcript for backwards compatibility
+  $filterByTranscriptOrGene = 'transcript' unless $filterByTranscriptOrGene;
 
   my $self = bless {'_database_handle' => $dbh,
                     '_gene_external_database_release_id' => $geneExtDbRlsId,
                     '_want_top_level' => $wantTopLevel,
                     '_sequence_ontology_exclude' => $soExclude,
+                    '_filter_by_transcript_or_gene' => $filterByTranscriptOrGene,
   }, $class;
 
   # Convert SO term(s) to hashref for efficient lookup
@@ -100,6 +104,7 @@ sub getSequenceOntologyTermHash { $_[0]->{_sequence_ontology_term_hash} }
 sub getSequenceOntologyExclude { $_[0]->{_sequence_ontology_exclude} }
 sub setSequenceOntologyExclude { $_[0]->{_sequence_ontology_exclude} = $_[1] }
 
+sub getFilterByTranscriptOrGene { $_[0]->{_filter_by_transcript_or_gene} }
 
 sub getAllGeneIds {
   my ($self) = @_;
@@ -639,6 +644,7 @@ EOF
 
   my $soTermHash = $self->getSequenceOntologyTermHash();
   my $soExclude = $self->getSequenceOntologyExclude();
+  my $filterByTranscriptOrGene = $self->getFilterByTranscriptOrGene();
 
 
   while(my $arr = $sh->fetchrow_arrayref()) {
@@ -674,8 +680,11 @@ EOF
 
     unless($seenGenes{$geneSourceId}) {
 
-      next if(%$soTermHash && !$soTermHash->{$transcriptSoTerm} && !$soExclude); # only rows for SO terms in hash
-      next if(%$soTermHash && $soTermHash->{$transcriptSoTerm} && $soExclude); # only rows which are not in the SO term hash
+      # Determine which SO term to use for filtering based on the parameter
+      my $soTermForFilter = $filterByTranscriptOrGene eq 'gene' ? $gfSoTerm : $transcriptSoTerm;
+
+      next if(%$soTermHash && !$soTermHash->{$soTermForFilter} && !$soExclude); # only rows for SO terms in hash
+      next if(%$soTermHash && $soTermHash->{$soTermForFilter} && $soExclude); # only rows which are not in the SO term hash
 
       my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand, $wantTopLevel);
 
