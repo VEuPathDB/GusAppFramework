@@ -47,14 +47,30 @@ BEGIN {
 }
 
 sub new {
-  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $soExclude) = @_;
+  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $soExclude, $filterByTranscriptOrGene) = @_;
 
-  my $self = bless {'_database_handle' => $dbh, 
-                    '_gene_external_database_release_id' => $geneExtDbRlsId, 
+  # Default to filtering by transcript for backwards compatibility
+  $filterByTranscriptOrGene = 'transcript' unless $filterByTranscriptOrGene;
+
+  my $self = bless {'_database_handle' => $dbh,
+                    '_gene_external_database_release_id' => $geneExtDbRlsId,
                     '_want_top_level' => $wantTopLevel,
-                    '_sequence_ontology_term' => $optionalSoTerm,
                     '_sequence_ontology_exclude' => $soExclude,
+                    '_filter_by_transcript_or_gene' => $filterByTranscriptOrGene,
   }, $class;
+
+  # Convert SO term(s) to hashref for efficient lookup
+  my $soTermHash = {};
+  if ($optionalSoTerm) {
+    if (ref($optionalSoTerm) eq 'ARRAY') {
+      # Convert array to hash
+      $soTermHash = { map { $_ => 1 } @$optionalSoTerm };
+    } else {
+      # Single scalar value
+      $soTermHash = { $optionalSoTerm => 1 };
+    }
+  }
+  $self->{'_sequence_ontology_term_hash'} = $soTermHash;
 
   my $agpMap = {};
 
@@ -80,12 +96,15 @@ sub getWantTopLevel { $_[0]->{_want_top_level} }
 sub getAgpMap { $_[0]->{_agp_map} }
 sub setAgpMap { $_[0]->{_agp_map} = $_[1] }
 
-sub getSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} }
-sub setSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} = $_[1] }
+# sub getSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} }
+# sub setSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} = $_[1] }
+
+sub getSequenceOntologyTermHash { $_[0]->{_sequence_ontology_term_hash} }
 
 sub getSequenceOntologyExclude { $_[0]->{_sequence_ontology_exclude} }
 sub setSequenceOntologyExclude { $_[0]->{_sequence_ontology_exclude} = $_[1] }
 
+sub getFilterByTranscriptOrGene { $_[0]->{_filter_by_transcript_or_gene} }
 
 sub getAllGeneIds {
   my ($self) = @_;
@@ -623,8 +642,9 @@ EOF
 
   my $virtualSequenceIds = $self->{_virtual_sequence_ids};
 
-  my $soTerm = $self->getSequenceOntologyTerm();
+  my $soTermHash = $self->getSequenceOntologyTermHash();
   my $soExclude = $self->getSequenceOntologyExclude();
+  my $filterByTranscriptOrGene = $self->getFilterByTranscriptOrGene();
 
 
   while(my $arr = $sh->fetchrow_arrayref()) {
@@ -660,8 +680,11 @@ EOF
 
     unless($seenGenes{$geneSourceId}) {
 
-      next if($soTerm && $transcriptSoTerm ne $soTerm && !$soExclude); # only rows for this so term
-      next if($soTerm && $transcriptSoTerm eq $soTerm && $soExclude); # only rows which are not this so term
+      # Determine which SO term to use for filtering based on the parameter
+      my $soTermForFilter = $filterByTranscriptOrGene eq 'gene' ? $gfSoTerm : $transcriptSoTerm;
+
+      next if(%$soTermHash && !$soTermHash->{$soTermForFilter} && !$soExclude); # only rows for SO terms in hash
+      next if(%$soTermHash && $soTermHash->{$soTermForFilter} && $soExclude); # only rows which are not in the SO term hash
 
       my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand, $wantTopLevel);
 
