@@ -11,6 +11,7 @@ if($ARGV[0]) {
 }
 
 my $force = $ARGV[1];
+my $gusConfigFile = $ARGV[2];
 
 open(FILE, $errFile) or die "Cannot open $errFile for reading: $!";
 
@@ -23,7 +24,8 @@ while(<FILE>) {
     $plugin = $a[2];
   }
   if(/AlgInvocationId/ && $plugin) {
-    print "ga GUS::Community::Plugin::Undo --plugin $plugin --algInvocationId $a[2] --commit\n";
+    my $gusConfigOpt = $gusConfigFile ? " --gusConfigFile $gusConfigFile" : "";
+    print "ga GUS::Community::Plugin::Undo --plugin $plugin --algInvocationId $a[2] --commit$gusConfigOpt\n";
     $plugin = undef;
     $count++;
   }
