@@ -1543,7 +1543,7 @@ sub InsertExternalDatabase{
   $extDbId = $sth->fetchrow_array();
 
   if ($extDbId){
-    print STEDRR "Not creating a new entry for $dbName as one already exists in the database (id $extDbId)\n";
+    print STDERR "Not creating a new entry for $dbName as one already exists in the database (id $extDbId)\n";
   } else {
     my $newDatabase = GUS::Model::SRes::ExternalDatabase->new({
 							       name => $dbName,
