@@ -395,7 +395,7 @@ sub getTaxonIdListFromFile {
     $taxonList = $_;
     $taxonList =~ s/,$//;
     $taxonList .= "," if $taxonList;
-    $taxonList .+ $_;
+    $taxonList .= $_;
   }
 
   $taxonList =~ s/,$//;
@@ -921,8 +921,8 @@ sub getMostRecentEntry {
   my ($self,$e,$estDbh,$R) = @_;
   $R->{new} = $e;
 
-  my $sth = $estDbh->prepare("select * from dbest.est where id_est = $e->{replaced_by}");
-  $sth->execute();
+  my $sth = $estDbh->prepare("select * from dbest.est where id_est = ?");
+  $sth->execute($e->{replaced_by});
   my $re;
 
   my $re = $sth->fetchrow_hashref('NAME_lc');
@@ -1104,8 +1104,8 @@ Populates the attributes for a new DoTS.Library entry from dbEST.
 sub newLibrary {
   my ($self,$e,$l,$estDbh) = @_;
 
-  my $sth = $estDbh->prepare("select id_lib,name,organism,strain,cultivar,sex,organ,tissue_type,cell_type,cell_line,dev_stage,lab_host,vector,v_type,re_1,re_2 from dbest.library where id_lib = $e->{id_lib}");
-  $sth->execute();
+  my $sth = $estDbh->prepare("select id_lib,name,organism,strain,cultivar,sex,organ,tissue_type,cell_type,cell_line,dev_stage,lab_host,vector,v_type,re_1,re_2 from dbest.library where id_lib = ?");
+  $sth->execute($e->{id_lib});
 
   my $dbest_lib = $sth->fetchrow_hashref('NAME_lc');
 
@@ -1236,9 +1236,8 @@ Populate the attributes of a new SRes.Contact entry
 sub newContact {
   my ($self,$e,$c,$estDbh)  = @_;
 
-  my $sth = $estDbh->prepare("select * from dbest.contact where id_contact = $e->{id_contact}");
-
-  $sth->execute();
+  my $sth = $estDbh->prepare("select * from dbest.contact where id_contact = ?");
+  $sth->execute($e->{id_contact});
 
   my $C = $sth->fetchrow_hashref('NAME_lc');
 
