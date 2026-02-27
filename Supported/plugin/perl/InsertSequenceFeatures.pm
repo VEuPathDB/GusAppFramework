@@ -503,7 +503,7 @@ sub run {
 
 	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $self->getArg('postprocessingDir'), $self->getArg('postprocessingDirective'));
 
-	    $self->undefPointerCache();
+	    $self->undefPointerCache() if ( $self->{totalFeatureTreeCount} % 5 == 0 );
 
 	    last if $self->checkTestNum();
 	}
@@ -1009,7 +1009,16 @@ sub processFeatureTrees {
       $self->{postprocessingDataStore} =
 	$self->postprocessFeatureTree($NAFeature, $postprocessDirective, $postprocessDir, $self->{postprocessingDataStore});
 
+      # In processFeatureTrees(), replace the per-tree submit with batch submit:
+      my $BATCH_SIZE = 200;   # tune this
+
       $NAFeature->submit() unless $doNotSubmit;
+
+      if ($self->{totalFeatureTreeCount} % $BATCH_SIZE == 0) {
+	$self->getDb()->manageTransaction(0, 'commit');
+	$self->getDb()->manageTransaction(0, 'begin');
+	#$self->log("Committed batch at tree $self->{totalFeatureTreeCount}");
+      }
 
        $self->{fileFeatureTreeCount}++;
        $self->{totalFeatureTreeCount}++;
@@ -1017,12 +1026,11 @@ sub processFeatureTrees {
        $self->{fileBrokenFeatureTreeCount}++;
        $self->{brokenFeatureTreeCount}++;
    }
-       
-    
 
-    $self->log("Inserted $self->{fileFeatureTreeCount} feature trees") 
-      if $self->{fileFeatureTreeCount} % 100 == 0;
-    $self->undefPointerCache();
+    $self->log("Inserted $self->{fileFeatureTreeCount} feature trees") if ($self->{fileFeatureTreeCount} % 100 == 0);
+
+    $self->undefPointerCache() if ($self->{fileFeatureTreeCount} % 5 == 0);
+
     if($self->checkBrokenTreeNum()){
 	$self->log("$self->{brokenFeatureTreeCount} feature trees could not be validated. Pleased check validation log for errors.\n");
 	last;
