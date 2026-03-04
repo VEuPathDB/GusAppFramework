@@ -740,7 +740,7 @@ sub convertGFFStreamToSeqIO {
       @$features = @keep;
     }
 
-    $seq->add_SeqFeature($_) for @$features;
+    $seq->add_SeqFeature(@$features);  ## pass the full list in one call so BioPerl sorts only once for better performance
     push @seqs, $seq;
   }
 
