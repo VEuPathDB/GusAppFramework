@@ -17,7 +17,6 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 use FileHandle;
 use Carp;
 use GUS::Model::DoTS::AASequenceEnzymeClass;
-use GUS::Model::SRes::EnzymeClass;
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::GeneFeature;
 # External AA sequence now needed due to merging with orthomcl workflow
@@ -115,9 +114,13 @@ sub run {
   my $queryHandle = $self->getQueryHandle();
   my $sth = $queryHandle->prepare($sql);
 
-  my %ecNumbers = ();
-
-  my $enzymeClass;
+  my %ecNumberCache;
+  my $ecClassSth = $queryHandle->prepare("SELECT ec_number, enzyme_class_id FROM SRes.EnzymeClass");
+  $ecClassSth->execute();
+  while (my ($ecNum, $ecId) = $ecClassSth->fetchrow_array()) {
+    $ecNumberCache{$ecNum} = $ecId;
+  }
+  $ecClassSth->finish();
 
   my $evidCode = $self->getArg('evidenceCode');
 
@@ -139,12 +142,7 @@ sub run {
 
 	$self->log("Processing Pfid: $locusTag, ECNumber: $ecNumber\n");
 
-	if ($ecNumbers{$ecNumber}){
-	  $enzymeClass = $ecNumbers{$ecNumber};
-	}
-	else {
-	  $enzymeClass = $self->getEnzymeClass($ecNumber, \%ecNumbers);
-	}
+        my $enzymeClass = $ecNumberCache{$ecNumber};
 
         my $aaSeqIds;
 	if ($self->{aa_sequence_ids}->{$locusTag}){
@@ -173,25 +171,6 @@ sub run {
   my $msg = "Finished processing EC Mapping file\n";
 
   return $msg;
-}
-
-###### FETCH THE EC ID FOR A GIVEN EC NUMBER ######
-
-sub getEnzymeClass {
-  my ($self, $ecNumber, $ecHash) = @_;
-
-  my $newEnzymeClass =  GUS::Model::SRes::EnzymeClass->new({
-	'ec_number' => $ecNumber
-	});
-
-  $newEnzymeClass->retrieveFromDB();
-  my $enzymeClass = $newEnzymeClass->getId();
-
-$$ecHash{$ecNumber} = $enzymeClass;
-
-print "EC NUMBER: $enzymeClass\n";
-
-return $enzymeClass;
 }
 
 ###### FETCH THE AA SEQUNCE ID FOR A GIVEN ALIAS ######
