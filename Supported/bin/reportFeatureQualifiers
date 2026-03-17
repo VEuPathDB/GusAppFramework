@@ -208,8 +208,10 @@ sub convertGFFStreamToSeqIO {
 	  }
 	} else {
 	  push @keep, $feature;
+	  print STDERR "\$feature = seqId: " . $feature->seq_id() . " at '" . $feature->location->start . "' .. '" . $feature->location->end . "'\n" if ($feature->primary_tag() eq "mRNA");
 	  $top{$id} = $feature if $id; # only features with IDs can
 	                               # have children
+          print STDERR "\$id = $id\n" if ($id && $feature->primary_tag() eq "mRNA");
 	}
       }
 
