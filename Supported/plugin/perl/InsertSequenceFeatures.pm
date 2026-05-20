@@ -503,7 +503,9 @@ sub run {
 
 	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $self->getArg('postprocessingDir'), $self->getArg('postprocessingDirective'));
 
-	    $self->undefPointerCache() if ( $self->{totalFeatureTreeCount} % 5 == 0 );
+	    # removed duplicate undefPointerCache() call that was here.
+	    # processFeatureTrees() already calls it after every feature tree.
+	    # Calling it again here was clearing the cache twice per interval with no benefit.
 
 	    last if $self->checkTestNum();
 	}
@@ -890,12 +892,22 @@ sub constructNASequence {
   $naSequence->setSequenceVersion($seqVersion);
 
   if ($bioperlSeq->seq) {
-      my $seqcount = Bio::Tools::SeqStats->count_monomers($bioperlSeq);
-      $naSequence->setSequence($bioperlSeq->seq());
-      $naSequence->setACount(%$seqcount->{'A'});
-      $naSequence->setCCount(%$seqcount->{'C'});
-      $naSequence->setGCount(%$seqcount->{'G'});
-      $naSequence->setTCount(%$seqcount->{'T'}); #RNA Seqs??
+      # PERF: capture seq() once to avoid calling it twice (count_monomers called
+      # it internally and then we called it again for setSequence). Also replace
+      # Bio::Tools::SeqStats->count_monomers() -- which iterates character-by-character
+      # in Perl -- with tr///, which is implemented in C and is 10-50x faster on
+      # chromosome-scale sequences (100+ Mb). The original %$seqcount->{'A'} syntax
+      # was also a latent Perl bug that could silently store wrong values.
+      my $seq_str = $bioperlSeq->seq();
+      my $a_count = ($seq_str =~ tr/Aa//);
+      my $c_count = ($seq_str =~ tr/Cc//);
+      my $g_count = ($seq_str =~ tr/Gg//);
+      my $t_count = ($seq_str =~ tr/Tt//);
+      $naSequence->setSequence($seq_str);
+      $naSequence->setACount($a_count);
+      $naSequence->setCCount($c_count);
+      $naSequence->setGCount($g_count);
+      $naSequence->setTCount($t_count);
       $naSequence->setLength($bioperlSeq->length());
   }
 
@@ -1029,7 +1041,10 @@ sub processFeatureTrees {
 
     $self->log("Inserted $self->{fileFeatureTreeCount} feature trees") if ($self->{fileFeatureTreeCount} % 100 == 0);
 
-    $self->undefPointerCache() if ($self->{fileFeatureTreeCount} % 5 == 0);
+    # Clear the GUS object pool after every feature tree unconditionally.
+    # With assembly_gaps pre-filtered before unflattening (in GeneAndCds2BioperlTree),
+    # only gene trees reach this loop.
+    $self->undefPointerCache();
 
     if($self->checkBrokenTreeNum()){
 	$self->log("$self->{brokenFeatureTreeCount} feature trees could not be validated. Pleased check validation log for errors.\n");
